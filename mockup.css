@@ -1,0 +1,230 @@
+/* Custom Colors */
+:root {
+  --orange-50: #fff7ed;
+  --orange-100: #ffedd5;
+  --orange-200: #fed7aa;
+  --orange-600: #ea580c;
+  --orange-700: #c2410c;
+  --orange-800: #9a3412;
+
+  --blue-100: #dbeafe;
+  --blue-600: #2563eb;
+
+  --red-100: #fee2e2;
+  --red-600: #dc2626;
+
+  --green-100: #dcfce7;
+  --green-600: #16a34a;
+
+  --purple-100: #f3e8ff;
+  --purple-600: #9333ea;
+
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+}
+
+body {
+  background-color: var(--gray-50);
+  color: var(--gray-900);
+}
+
+/* Stat Icons */
+.stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bg-blue-light {
+  background-color: var(--blue-100);
+}
+
+.bg-red-light {
+  background-color: var(--red-100);
+}
+
+.bg-green-light {
+  background-color: var(--green-100);
+}
+
+.bg-purple-light {
+  background-color: var(--purple-100);
+}
+
+.text-purple {
+  color: var(--purple-600);
+}
+
+/* Patient Cards */
+.patient-card {
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+}
+
+.patient-card.alert-active {
+  border: 2px solid var(--orange-200);
+  background-color: var(--orange-50);
+}
+
+.patient-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+.alert-box {
+  background-color: var(--orange-100);
+  border: 1px solid var(--orange-200);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.alert-title {
+  font-weight: 500;
+  color: var(--orange-800);
+}
+
+.alert-text {
+  color: var(--orange-700);
+  margin-top: 0.25rem;
+}
+
+.alert-overdue {
+  color: var(--orange-800);
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+/* Badges */
+.badge-first-contact {
+  background-color: var(--blue-600);
+}
+
+.badge-followup {
+  background-color: var(--gray-500);
+}
+
+.badge-disabled {
+  background-color: var(--gray-400);
+}
+
+.badge-overdue {
+  background-color: var(--red-600);
+}
+
+.badge-waiting {
+  background-color: var(--gray-500);
+}
+
+.badge-outline {
+  background-color: transparent;
+  border: 1px solid var(--gray-300);
+  color: var(--gray-700);
+}
+
+/* History Items */
+.history-container {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.history-item {
+  background-color: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.history-date {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+.history-notes {
+  color: var(--gray-700);
+  margin-bottom: 0.25rem;
+}
+
+.material-tag {
+  display: inline-block;
+  background-color: var(--gray-100);
+  border: 1px solid var(--gray-200);
+  border-radius: 4px;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.75rem;
+  margin-right: 0.25rem;
+  margin-bottom: 0.25rem;
+  color: var(--gray-700);
+}
+
+/* Material Tags in Form */
+#materials-container .material-badge {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--gray-100);
+  border: 1px solid var(--gray-300);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  margin-right: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+#materials-container .material-badge .remove-material {
+  margin-left: 0.25rem;
+  cursor: pointer;
+  color: var(--gray-500);
+}
+
+#materials-container .material-badge .remove-material:hover {
+  color: var(--red-600);
+}
+
+/* Buttons */
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.btn-success {
+  background-color: var(--green-600);
+  border-color: var(--green-600);
+}
+
+.btn-success:hover {
+  background-color: #15803d;
+  border-color: #15803d;
+}
+
+.btn-danger {
+  background-color: var(--red-600);
+  border-color: var(--red-600);
+}
+
+.btn-danger:hover {
+  background-color: #b91c1c;
+  border-color: #b91c1c;
+}
