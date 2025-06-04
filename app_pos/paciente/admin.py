@@ -6,17 +6,17 @@ from django.utils import timezone
 
 @admin.register(RegraLembrete)
 class RegraLembreteAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'nutricionista', 'dias_apos', 'primeira_consulta')
-    list_filter = ('nutricionista', 'primeira_consulta')
-    search_fields = ('nome', 'descricao', 'nutricionista__email')
+    list_display = ('nome', 'nutricionista', 'dias_apos')
+    list_filter = ('nutricionista','ordem')
+    search_fields = ('nome', 'descricao','nutricionista__email')
     ordering = ('nutricionista', 'dias_apos')
 
     fieldsets = (
         (None, {
-            'fields': ('nome', 'descricao')
+            'fields': ('nome','descricao')
         }),
         ('Configuração da Regra', {
-            'fields': ('dias_apos', 'primeira_consulta', 'nutricionista')
+            'fields': ('dias_apos','nutricionista','ordem')
         }),
     )
 
@@ -41,7 +41,7 @@ class PacienteAdmin(admin.ModelAdmin):
         data_consulta = form.cleaned_data['data_primeira_consulta']
         consulta = Consulta.objects.create(paciente=obj, data_consulta=data_consulta)
 
-        regras = RegraLembrete.objects.filter(nutricionista=obj.dono, primeira_consulta=True)
+        regras = RegraLembrete.objects.filter(nutricionista=obj.dono, ordem=0)
         for regra in regras:
             data_lembrete = data_consulta + timedelta(days=regra.dias_apos)
             Lembrete.objects.create(

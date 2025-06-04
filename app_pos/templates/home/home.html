@@ -149,54 +149,47 @@
 
     <!-- Contact Modal -->
     <div class="modal fade" id="contactModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-        <div class="modal-header">
-            <h5 class="modal-title">Registrar Contato - <span id="contact-patient-name"></span></h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-            <form id="contact-form">
-            <input type="hidden" id="contact-patient-id">
-            <input type="hidden" id="contact-type">
-
-            <div class="mb-3">
-                <label class="form-label">Tipo de Contato</label>
-                <div class="p-2 bg-light rounded">
-                <span id="contact-type-badge" class="badge bg-primary"></span>
-                </div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Registrar Contato - <span id="contact-patient-name"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            <div class="modal-body">
+                <form id="contact-form">
+                <input type="hidden" id="contact-patient-id">
+                <input type="hidden" id="contact-type">
 
-            <div class="mb-3">
-                <label for="contact-notes" class="form-label">Anotações do Contato</label>
-                <textarea class="form-control" id="contact-notes" rows="4" placeholder="Descreva como foi o contato, feedback do paciente, orientações dadas..."></textarea>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Materiais Entregues</label>
-                
-                <!-- Chips selecionados -->
-                <div id="selected-materials" class="d-flex flex-wrap gap-2 mb-2"></div>
-                
-                <!-- Input + botão de adicionar -->
-                <div class="input-group mb-2">
-                <input type="text" class="form-control" id="new-material" placeholder="Ex: Ebook sobre alimentação, Lista de compras...">
+                <div class="mb-3">
+                    <label for="contact-notes" class="form-label">Anotações do Contato</label>
+                    <textarea class="form-control" id="contact-notes" rows="4" placeholder="Descreva como foi o contato, feedback do paciente, orientações dadas..."></textarea>
                 </div>
 
-                <div id="materials-container" class="d-flex flex-wrap gap-2 mt-2"></div>
+                <div class="mb-3">
+                    <label class="form-label">Materiais Entregues</label>
+                    
+                    <!-- Chips selecionados -->
+                    <div id="selected-materials" class="d-flex flex-wrap gap-2 mb-2"></div>
+                    
+                    <!-- Input + botão de adicionar -->
+                    <div class="input-group mb-2">
+                    <input type="text" class="form-control" id="new-material" placeholder="Ex: Ebook sobre alimentação, Lista de compras...">
+                    </div>
 
-                <!-- Sugestões -->
-                <div id="material-suggestions" class="d-flex flex-wrap gap-2"></div>
-            </div>
+                    <div id="materials-container" class="d-flex flex-wrap gap-2 mt-2"></div>
 
-            <div class="d-flex gap-2 pt-3">
-                <button type="submit" class="btn btn-primary flex-grow-1">Registrar Contato</button>
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <!-- Sugestões -->
+                    <div id="material-suggestions" class="d-flex flex-wrap gap-2"></div>
+                </div>
+
+                <div class="d-flex gap-2 pt-3">
+                    <button type="submit" class="btn btn-primary flex-grow-1">Registrar Contato</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+                </form>
             </div>
-            </form>
+            </div>
         </div>
-        </div>
-    </div>
     </div>
 
     <!-- Delete Confirmation Modal -->
@@ -223,5 +216,6 @@
     <!-- Custom JS -->
     <!-- <script src="{% static 'js/mockup.js' %}"></script> -->
     <script src="{% static 'js/home.js' %}"></script>
+    <script src="{% static 'js/registrar-contato.js' %}"></script>
 </body>
 </html>
