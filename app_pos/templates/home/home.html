@@ -140,7 +140,7 @@
                     <label for="lastConsultation" class="form-label">Data da Última Consulta *</label>
                     <input type="date" class="form-control" id="lastConsultation" required>
                 </div>
-                <button type="submit" class="btn btn-primary w-100">Cadastrar Paciente</button>
+                <button type="submit" class="btn btn-primary w-100" id="submit-contact-btn">Cadastrar Paciente</button>
                 </form>
             </div>
             </div>
@@ -215,7 +215,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
     <!-- <script src="{% static 'js/mockup.js' %}"></script> -->
-    <script src="{% static 'js/home.js' %}"></script>
-    <script src="{% static 'js/registrar-contato.js' %}"></script>
+    <script type="module" src="{% static 'js/home.js' %}"></script>
+    <script type="module" src="{% static 'js/registrar-contato.js' %}"></script>
 </body>
 </html>
