@@ -1,0 +1,135 @@
+/* Toast Notifications - Estilos essenciais para as mensagens de sucesso e erro */
+.custom-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 300px;
+  max-width: 500px;
+  z-index: 9999;
+  transform: translateX(100%);
+  opacity: 0;
+  transition: all 0.3s ease;
+  border-left: 4px solid;
+}
+
+.custom-toast.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.custom-toast.toast-success {
+  border-left-color: var(--green-600);
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+}
+
+.custom-toast.toast-error {
+  border-left-color: var(--red-600);
+  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+}
+
+.toast-content {
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  font-weight: 500;
+  color: var(--gray-800);
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: var(--gray-500);
+  cursor: pointer;
+  padding: 4px;
+  margin-left: 12px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.toast-close:hover {
+  background-color: var(--gray-100);
+  color: var(--gray-700);
+}
+
+.toast-close i {
+  font-size: 16px;
+}
+
+/* Mobile responsiveness for toasts */
+@media (max-width: 768px) {
+  .custom-toast {
+    right: 10px;
+    left: 10px;
+    min-width: auto;
+    max-width: none;
+    transform: translateY(-100%);
+  }
+
+  .custom-toast.show {
+    transform: translateY(0);
+  }
+}
+
+/* Loading states para feedback visual */
+.btn.loading {
+  position: relative;
+  color: transparent !important;
+}
+
+.btn.loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin-left: -8px;
+  margin-top: -8px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Form validation styles */
+.form-control.is-invalid {
+  border-color: var(--red-600);
+  box-shadow: 0 0 0 0.2rem rgba(220, 38, 38, 0.25);
+}
+
+.form-control.is-valid {
+  border-color: var(--green-600);
+  box-shadow: 0 0 0 0.2rem rgba(22, 163, 74, 0.25);
+}
+
+.invalid-feedback {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--red-600);
+}
+
+.valid-feedback {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--green-600);
+}
