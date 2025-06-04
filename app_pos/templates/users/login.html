@@ -1,0 +1,11 @@
+{% load static %}
+
+{% block content %}
+<h2>Login</h2>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <p><a href="{% url 'password_reset' %}">Esqueci minha senha</a></p>
+  <button type="submit">Entrar</button>
+</form>
+{% endblock %}

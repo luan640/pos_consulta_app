@@ -1,0 +1,227 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pós-Atendimento Nutricional</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'css/input_material.css' %}">
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+    <!-- Header -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold">Pós-Atendimento Nutricional</h1>
+            <p class="text-secondary">Gerencie o acompanhamento dos seus pacientes</p>
+        </div>
+        <button class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newPatientModal">
+            <i class="bi bi-plus"></i>
+            Novo Paciente
+        </button>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="card h-100">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon bg-blue-light">
+                        <i class="bi bi-calendar text-primary"></i>
+                    </div>
+                    <div>
+                        <p class="text-secondary small mb-0">Total de Pacientes</p>
+                        <p class="fs-4 fw-bold mb-0" id="total-patients">0</p>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon bg-red-light">
+                        <i class="bi bi-exclamation-triangle text-danger"></i>
+                    </div>
+                    <div>
+                        <p class="text-secondary small mb-0">Alertas Ativos</p>
+                        <p class="fs-4 fw-bold text-danger mb-0" id="active-alerts">0</p>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon bg-green-light">
+                        <i class="bi bi-check-circle text-success"></i>
+                    </div>
+                    <div>
+                        <p class="text-secondary small mb-0">Pacientes Ativos</p>
+                        <p class="fs-4 fw-bold text-success mb-0" id="active-patients">0</p>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon bg-purple-light">
+                        <i class="bi bi-calendar-week text-purple"></i>
+                    </div>
+                    <div>
+                        <p class="text-secondary small mb-0">Média Dias Última Consulta</p>
+                        <p class="fs-4 fw-bold text-purple mb-0" id="avg-days">0</p>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patients List -->
+    <div class="mb-4">
+        <div id="empty-state" class="card text-center p-5">
+        <i class="bi bi-calendar3 fs-1 text-secondary mx-auto mb-3"></i>
+        <h3 class="fs-5 fw-medium mb-2">Nenhum paciente cadastrado</h3>
+        <p class="text-secondary mb-4">Comece cadastrando seu primeiro paciente para acompanhamento.</p>
+        <button class="btn btn-primary mx-auto" data-bs-toggle="modal" data-bs-target="#newPatientModal">
+            <i class="bi bi-plus me-2"></i>
+            Cadastrar Primeiro Paciente
+        </button>
+        </div>
+
+        <div id="patients-list" class="d-none">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="fs-4 fw-semibold">Lista de Pacientes (<span id="patient-count">0</span>)</h2>
+            <div class="small text-secondary">Ordenados por prioridade de contato</div>
+        </div>
+        <div id="patients-container" class="patients-container">
+            <!-- Patient cards will be inserted here by JavaScript -->
+        </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- New Patient Modal -->
+    <div class="modal fade" id="newPatientModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cadastrar Novo Paciente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="patient-form">
+                <div class="mb-3">
+                    <label for="name" class="form-label">Nome do Paciente *</label>
+                    <input type="text" class="form-control" id="name" required placeholder="Digite o nome completo">
+                </div>
+                <div class="mb-3">
+                    <label for="phone" class="form-label">Telefone</label>
+                    <input type="tel" class="form-control" id="phone" placeholder="(11) 99999-9999">
+                </div>
+                <div class="mb-3">
+                    <label for="lastConsultation" class="form-label">Data da Última Consulta *</label>
+                    <input type="date" class="form-control" id="lastConsultation" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Cadastrar Paciente</button>
+                </form>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Modal -->
+    <div class="modal fade" id="contactModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Registrar Contato - <span id="contact-patient-name"></span></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <form id="contact-form">
+            <input type="hidden" id="contact-patient-id">
+            <input type="hidden" id="contact-type">
+
+            <div class="mb-3">
+                <label class="form-label">Tipo de Contato</label>
+                <div class="p-2 bg-light rounded">
+                <span id="contact-type-badge" class="badge bg-primary"></span>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="contact-notes" class="form-label">Anotações do Contato</label>
+                <textarea class="form-control" id="contact-notes" rows="4" placeholder="Descreva como foi o contato, feedback do paciente, orientações dadas..."></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Materiais Entregues</label>
+                
+                <!-- Chips selecionados -->
+                <div id="selected-materials" class="d-flex flex-wrap gap-2 mb-2"></div>
+                
+                <!-- Input + botão de adicionar -->
+                <div class="input-group mb-2">
+                <input type="text" class="form-control" id="new-material" placeholder="Ex: Ebook sobre alimentação, Lista de compras...">
+                </div>
+
+                <div id="materials-container" class="d-flex flex-wrap gap-2 mt-2"></div>
+
+                <!-- Sugestões -->
+                <div id="material-suggestions" class="d-flex flex-wrap gap-2"></div>
+            </div>
+
+            <div class="d-flex gap-2 pt-3">
+                <button type="submit" class="btn btn-primary flex-grow-1">Registrar Contato</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            </div>
+            </form>
+        </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Excluir Paciente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir <span id="delete-patient-name"></span>? Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete">Excluir</button>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <!-- <script src="{% static 'js/mockup.js' %}"></script> -->
+    <script src="{% static 'js/home.js' %}"></script>
+</body>
+</html>
