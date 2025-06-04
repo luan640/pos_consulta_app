@@ -38,7 +38,7 @@ class RegraLembrete(models.Model):
     nome = models.CharField(max_length=100)
     dias_apos = models.IntegerField(help_text="Dias após o evento para criar o lembrete")
     descricao = models.TextField()
-    primeira_consulta = models.BooleanField(default=False)
+    ordem = models.IntegerField(help_text="Ordem de prioridade para a regra")
 
     def __str__(self):
         return f"{self.nome} ({self.dias_apos} dias)"

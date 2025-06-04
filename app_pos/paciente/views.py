@@ -5,8 +5,13 @@ from django.http import JsonResponse
 from django.db.models import Max, Min
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.dateparse import parse_date
+from django.utils.timezone import now
 
-from .models import Paciente, Consulta, Lembrete, RegraLembrete, Material
+from .models import (
+    Paciente, Lembrete, ContatoNutricionista,
+    AnotacaoContato, Material, MaterialEnviado,
+    RegraLembrete, Consulta
+)
 
 import json
 from datetime import timedelta
@@ -74,7 +79,7 @@ def cadastrar_paciente(request):
         )
 
         # Buscar regras da primeira consulta
-        regras = RegraLembrete.objects.filter(nutricionista=request.user, primeira_consulta=True)
+        regras = RegraLembrete.objects.filter(nutricionista=request.user, ordem=0)
 
         # Criar lembretes com base nas regras
         for regra in regras:
@@ -82,7 +87,8 @@ def cadastrar_paciente(request):
             Lembrete.objects.create(
                 paciente=paciente,
                 data_lembrete=data_lembrete,
-                texto=regra.descricao
+                texto=regra.descricao,
+                regra=regra
             )
 
         return JsonResponse({'mensagem': 'Paciente cadastrado com sucesso'})
@@ -93,3 +99,82 @@ def cadastrar_paciente(request):
 def listar_materiais(request):
     materiais = Material.objects.filter(dono=request.user).values_list('descricao', flat=True)
     return JsonResponse({'materiais': list(materiais)})
+
+@csrf_exempt
+@login_required
+def registrar_contato(request):
+    if request.method != 'POST':
+        return JsonResponse({'erro': 'Método não permitido'}, status=405)
+
+    data = json.loads(request.body)
+    paciente_id = data.get('paciente_id')
+    tipo_contato = data.get('tipo')  # ex: "first" ou "followup"
+    anotacao_texto = data.get('anotacao', '')
+    materiais = data.get('materiais', [])  # lista de strings
+
+    if not paciente_id or not tipo_contato:
+        return JsonResponse({'erro': 'Paciente e tipo de contato são obrigatórios'}, status=400)
+
+    try:
+        paciente = Paciente.objects.get(id=paciente_id, dono=request.user)
+    except Paciente.DoesNotExist:
+        return JsonResponse({'erro': 'Paciente não encontrado'}, status=404)
+
+    # 1. Criar contato
+    contato = ContatoNutricionista.objects.create(
+        paciente=paciente,
+        data_contato=now().date(),
+        tipo=tipo_contato
+    )
+
+    # 2. Criar anotação
+    anotacao = AnotacaoContato.objects.create(
+        contato=contato,
+        texto=anotacao_texto
+    )
+
+    # 3. Associar materiais (criar se necessário)
+    for nome in materiais:
+        material_obj, _ = Material.objects.get_or_create(descricao=nome, dono=request.user)
+        anotacao.material_enviado.add(material_obj)
+
+    anotacao.save()
+
+    # 4. Marcar lembrete atual como concluído (se existir)
+    lembrete_atual = Lembrete.objects.filter(paciente=paciente, concluido=False).order_by('data_lembrete').first()
+    if lembrete_atual:
+        lembrete_atual.concluido = True
+        lembrete_atual.save()
+
+        # 5. Determinar próxima regra
+        regra_atual = lembrete_atual.regra
+        nova_regra = None
+
+        if regra_atual:
+            regras = list(RegraLembrete.objects.filter(nutricionista=request.user).order_by('ordem'))
+            regras_ordenadas = {r.ordem: r for r in regras}
+            proxima_ordem = regra_atual.ordem + 1
+
+            if proxima_ordem in regras_ordenadas:
+                nova_regra = regras_ordenadas[proxima_ordem]
+            else:
+                nova_regra = regra_atual  # repete a última regra se não houver próxima
+
+        if nova_regra:
+            nova_data = now().date() + timedelta(days=nova_regra.dias_apos)
+            # Verifica se já existe
+            existe = Lembrete.objects.filter(paciente=paciente, data_lembrete=nova_data, concluido=False).exists()
+            if not existe:
+                Lembrete.objects.create(
+                    paciente=paciente,
+                    regra=nova_regra,
+                    data_lembrete=nova_data,
+                    texto=nova_regra.descricao
+                )
+
+            return JsonResponse({
+                'mensagem': 'Contato registrado com sucesso',
+                'proximo_lembrete': nova_data.strftime('%d/%m/%Y')
+            })
+
+    return JsonResponse({'mensagem': 'Contato registrado com sucesso', 'proximo_lembrete': None})

@@ -170,9 +170,6 @@ function openContactModal(patient) {
   const status = getContactStatus(patient);
   contactTypeEl.value = status.type;
 
-  contactTypeBadgeEl.textContent = status.type === "first" ? "Primeiro Contato Pós-Consulta" : "Acompanhamento";
-  contactTypeBadgeEl.className = `badge ${status.type === "first" ? "badge-first-contact" : "badge-followup"}`;
-
   document.getElementById("contact-notes").value = "";
   materialsContainer.innerHTML = "";
 
