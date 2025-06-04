@@ -1,4 +1,10 @@
+import { showToast } from './message.js';
+
 document.addEventListener('DOMContentLoaded', () => {
+  listarPacientes();
+});
+
+function listarPacientes() {
   fetch('/api/pacientes/')
     .then(response => response.json())
     .then(data => {
@@ -25,9 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     })
     .catch(err => {
-      console.error('Erro ao carregar pacientes:', err);
+      showToast('Erro ao carregar pacientes', 'error');
     });
-});
+}
 
 export function renderizarCardPaciente(paciente) {
   const ultimaRaw = paciente.ultima_consulta;
@@ -100,8 +106,21 @@ export function renderizarCardPaciente(paciente) {
   topRow.className = 'd-flex justify-content-between align-items-center mb-3';
 
   const contato = document.createElement('div');
-  contato.className = 'd-flex gap-3 text-secondary';
-  contato.innerHTML = `<i class="bi bi-telephone"></i> ${paciente.telefone || '---'}`;
+  contato.className = 'd-flex gap-2 align-items-center text-secondary';
+
+  // Garante que o telefone esteja em formato apenas números
+  const telefoneLimpo = paciente.telefone?.replace(/\D/g, '');
+
+  if (telefoneLimpo) {
+    contato.innerHTML = `
+      <a href="https://wa.me/55${telefoneLimpo}" target="_blank" class="text-success" style="text-decoration: none;">
+        <i class="bi bi-whatsapp" style="font-size: 1.2rem;"></i>
+      </a>
+      <span>${paciente.telefone}</span>
+    `;
+  } else {
+    contato.innerHTML = `<i class="bi bi-whatsapp"></i> ---`;
+  }
 
   const botoesContainer = document.createElement('div');
   botoesContainer.className = 'd-flex gap-2';
@@ -151,7 +170,6 @@ export function renderizarCardPaciente(paciente) {
   card.appendChild(body);
   return card;
 }
-
 
 const contactModal = new bootstrap.Modal(document.getElementById('contactModal'));
 const contactPatientNameEl = document.getElementById('contact-patient-name');
@@ -213,13 +231,16 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.remove('modal-open');
         document.querySelector('.modal-backdrop').remove();
         form.reset();
-        location.reload(); // ou chamar diretamente a função de carregar pacientes
+        
+        listarPacientes();
+        
+        showToast(result.mensagem, 'success');
+
       } else {
         alert(result.erro || 'Erro ao cadastrar paciente.');
       }
     } catch (err) {
-      console.error('Erro:', err);
-      alert('Erro inesperado ao cadastrar paciente.');
+      showToast('Erro inesperado ao cadastrar paciente.', 'error');
     }
   });
 

@@ -1,5 +1,5 @@
-// importar função de outro arquivo js
 import { renderizarCardPaciente } from './home.js';
+import { showToast } from './message.js';
 
 document.getElementById('contact-form').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -36,6 +36,8 @@ document.getElementById('contact-form').addEventListener('submit', function (e) 
     .then(data => {
         const contactModalEl = document.getElementById('contactModal');
         const contactModal = bootstrap.Modal.getInstance(contactModalEl);
+        
+        showToast(data.mensagem,'success');
 
         document.getElementById('contact-form').reset();
         if (contactModal) contactModal.hide();
@@ -44,6 +46,7 @@ document.getElementById('contact-form').addEventListener('submit', function (e) 
         fetch(`/api/paciente/${patientId}/`)
         .then(res => res.json())
         .then(updated => {
+            
             const container = document.getElementById('patients-container');
             const oldCard = container.querySelector(`[data-paciente-id="${updated.id}"]`);
             const newCard = renderizarCardPaciente(updated);
@@ -54,8 +57,7 @@ document.getElementById('contact-form').addEventListener('submit', function (e) 
         });
     })
     .catch(err => {
-        console.error(err);
-        alert('Ocorreu um erro ao registrar o contato.');
+        showToast('Erro ao registrar contato: ' + err.erro, 'error');
     })
     .finally(() => {
         submitBtn.disabled = false;
