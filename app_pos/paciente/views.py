@@ -178,3 +178,39 @@ def registrar_contato(request):
             })
 
     return JsonResponse({'mensagem': 'Contato registrado com sucesso', 'proximo_lembrete': None})
+
+@login_required
+def paciente_detalhe(request, pk):
+    try:
+        paciente = Paciente.objects.get(pk=pk, dono=request.user)
+    except Paciente.DoesNotExist:
+        return JsonResponse({'erro': 'Paciente não encontrado'}, status=404)
+
+    # Última consulta
+    ultima_consulta = (
+        ContatoNutricionista.objects
+        .filter(paciente=paciente)
+        .order_by('-data_contato')
+        .first()
+    )
+
+    # Próximo lembrete
+    lembrete = (
+        Lembrete.objects
+        .filter(paciente=paciente, concluido=False)
+        .order_by('data_lembrete')
+        .first()
+    )
+
+    data = {
+        'id': paciente.id,
+        'nome': paciente.nome,
+        'telefone': paciente.telefone,
+        'ultima_consulta': ultima_consulta.data_contato.isoformat() if ultima_consulta else None,
+        'proximo_lembrete': lembrete.data_lembrete.isoformat() if lembrete else None,
+        'texto_lembrete': lembrete.texto if lembrete else None,
+        'nome_lembrete': lembrete.regra.nome if lembrete and lembrete.regra else None,
+        'lembretes_ativos': lembrete is not None,
+    }
+
+    return JsonResponse(data)

@@ -17,131 +17,10 @@ document.addEventListener('DOMContentLoaded', () => {
         count.textContent = lista.length;
 
         lista.forEach(paciente => {
-          const ultimaRaw = paciente.ultima_consulta;
-          const proximoRaw = paciente.proximo_lembrete;
-          const textoLembrete = paciente.texto_lembrete;
-
-          const ultima = ultimaRaw ? new Date(ultimaRaw + 'T00:00:00') : null;
-          const proximo = proximoRaw ? new Date(proximoRaw + 'T00:00:00') : null;
-
-          const diasAtras = ultima
-            ? Math.floor((new Date() - ultima) / (1000 * 60 * 60 * 24))
-            : null;
-
-          const diasParaProximo = proximo
-            ? Math.ceil((proximo - new Date()) / (1000 * 60 * 60 * 24))
-            : null;
-
-          const atrasado = diasParaProximo !== null && diasParaProximo < 0;
-
-          const ultimaStr = ultima ? ultima.toISOString().split('T')[0] : '---';
-          const proximoStr = proximo ? proximo.toISOString().split('T')[0] : '---';
-          const diasAtrasStr = diasAtras !== null ? `${diasAtras} dias atrás` : '---';
-
-          const badgeClass = atrasado ? 'badge-overdue' : 'badge-waiting';
-          const badgeText = atrasado
-            ? `Atrasado ${Math.abs(diasParaProximo)} dias`
-            : `Próximo contato em ${diasParaProximo} dias`;
-
-          const card = document.createElement('div');
-          card.className = 'card patient-card mb-3' + (atrasado ? ' alert-active' : '');
-
-          // Header
-          const header = document.createElement('div');
-          header.className = 'card-header pb-3';
-
-          const headerRow = document.createElement('div');
-          headerRow.className = 'd-flex justify-content-between align-items-start';
-
-          const headerLeft = document.createElement('div');
-          headerLeft.className = 'flex-grow-1';
-
-          const title = document.createElement('h5');
-          title.className = 'card-title';
-          title.textContent = paciente.nome;
-
-          const infos = document.createElement('div');
-          infos.className = 'd-flex flex-wrap gap-3 mt-2';
-
-          infos.innerHTML = `
-            <div class="patient-info"><i class="bi bi-calendar"></i> Última consulta: ${ultimaStr}</div>
-            <div class="patient-info"><i class="bi bi-clock"></i> ${diasAtrasStr}</div>
-            <div class="patient-info"><i class="bi bi-calendar text-primary"></i> Próximo: ${proximoStr}</div>
-          `;
-
-          const badge = document.createElement('span');
-          badge.className = `badge ${badgeClass} ms-2`;
-          badge.textContent = badgeText;
-
-          headerLeft.appendChild(title);
-          headerLeft.appendChild(infos);
-          headerRow.appendChild(headerLeft);
-          headerRow.appendChild(badge);
-          header.appendChild(headerRow);
-          card.appendChild(header);
-
-          // Body
-          const body = document.createElement('div');
-          body.className = 'card-body pt-0';
-
-          const topRow = document.createElement('div');
-          topRow.className = 'd-flex justify-content-between align-items-center mb-3';
-
-          const contato = document.createElement('div');
-          contato.className = 'd-flex gap-3 text-secondary';
-          contato.innerHTML = `<i class="bi bi-telephone"></i> ${paciente.telefone || '---'}`;
-
-          const botoesContainer = document.createElement('div');
-          botoesContainer.className = 'd-flex gap-2';
-
-          // Botão "Registrar Contato"
-          if (paciente.lembretes_ativos && paciente.proximo_lembrete) {
-            const contactBtn = document.createElement('button');
-            contactBtn.className = 'btn btn-sm btn-success';
-            contactBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Registrar Contato';
-            contactBtn.addEventListener('click', () => openContactModal({
-              id: paciente.id,
-              name: paciente.nome,
-              type: paciente.nome_lembrete?.toLowerCase().includes("primeiro") ? "first" : "followup"
-            }));
-            botoesContainer.appendChild(contactBtn);
-          }
-
-          // Botão "Desabilitar"
-          const disableBtn = document.createElement('button');
-          disableBtn.className = 'btn btn-sm btn-outline-secondary';
-          disableBtn.innerHTML = '<i class="bi bi-bell-slash me-1"></i> Desabilitar';
-          botoesContainer.appendChild(disableBtn);
-
-          // Botão "Excluir"
-          const deleteBtn = document.createElement('button');
-          deleteBtn.className = 'btn btn-sm btn-outline-danger';
-          deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
-          botoesContainer.appendChild(deleteBtn);
-
-          topRow.appendChild(contato);
-          topRow.appendChild(botoesContainer);
-          body.appendChild(topRow);
-
-          // Alerta se atrasado
-          if (atrasado) {
-            const alertBox = document.createElement('div');
-            alertBox.className = 'alert-box';
-            alertBox.innerHTML = `
-              <div class="d-flex gap-2">
-                <i class="bi bi-exclamation-triangle text-warning mt-1"></i>
-                <div>
-                  <p class="alert-title">${paciente.nome_lembrete || 'Lembrete Pendente'}</p>
-                  <p class="alert-text">${paciente.texto_lembrete || '---'}</p>
-                  <p class="alert-overdue">⚠️ Contato em atraso há ${Math.abs(diasParaProximo)} dias</p>
-                </div>
-              </div>
-            `;
-            body.appendChild(alertBox);
-          }
-
-          card.appendChild(body);
+          
+          const card = renderizarCardPaciente(paciente);
           container.appendChild(card);
+  
         });
       }
     })
@@ -149,6 +28,130 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('Erro ao carregar pacientes:', err);
     });
 });
+
+export function renderizarCardPaciente(paciente) {
+  const ultimaRaw = paciente.ultima_consulta;
+  const proximoRaw = paciente.proximo_lembrete;
+  const textoLembrete = paciente.texto_lembrete;
+
+  const ultima = ultimaRaw ? new Date(ultimaRaw + 'T00:00:00') : null;
+  const proximo = proximoRaw ? new Date(proximoRaw + 'T00:00:00') : null;
+
+  const diasAtras = ultima
+    ? Math.floor((new Date() - ultima) / (1000 * 60 * 60 * 24))
+    : null;
+
+  const diasParaProximo = proximo
+    ? Math.ceil((proximo - new Date()) / (1000 * 60 * 60 * 24))
+    : null;
+
+  const atrasado = diasParaProximo !== null && diasParaProximo < 0;
+
+  const ultimaStr = ultima ? ultima.toISOString().split('T')[0] : '---';
+  const proximoStr = proximo ? proximo.toISOString().split('T')[0] : '---';
+  const diasAtrasStr = diasAtras !== null ? `${diasAtras} dias atrás` : '---';
+
+  const badgeClass = atrasado ? 'badge-overdue' : 'badge-waiting';
+  const badgeText = atrasado
+    ? `Atrasado ${Math.abs(diasParaProximo)} dias`
+    : `Próximo contato em ${diasParaProximo} dias`;
+
+  const card = document.createElement('div');
+  card.className = 'card patient-card mb-3' + (atrasado ? ' alert-active' : '');
+  card.dataset.pacienteId = paciente.id;
+
+  const header = document.createElement('div');
+  header.className = 'card-header pb-3';
+
+  const headerRow = document.createElement('div');
+  headerRow.className = 'd-flex justify-content-between align-items-start';
+
+  const headerLeft = document.createElement('div');
+  headerLeft.className = 'flex-grow-1';
+
+  const title = document.createElement('h5');
+  title.className = 'card-title';
+  title.textContent = paciente.nome;
+
+  const infos = document.createElement('div');
+  infos.className = 'd-flex flex-wrap gap-3 mt-2';
+
+  infos.innerHTML = `
+    <div class="patient-info"><i class="bi bi-calendar"></i> Última consulta: ${ultimaStr}</div>
+    <div class="patient-info"><i class="bi bi-clock"></i> ${diasAtrasStr}</div>
+    <div class="patient-info"><i class="bi bi-calendar text-primary"></i> Próximo: ${proximoStr}</div>
+  `;
+
+  const badge = document.createElement('span');
+  badge.className = `badge ${badgeClass} ms-2`;
+  badge.textContent = badgeText;
+
+  headerLeft.appendChild(title);
+  headerLeft.appendChild(infos);
+  headerRow.appendChild(headerLeft);
+  headerRow.appendChild(badge);
+  header.appendChild(headerRow);
+  card.appendChild(header);
+
+  const body = document.createElement('div');
+  body.className = 'card-body pt-0';
+
+  const topRow = document.createElement('div');
+  topRow.className = 'd-flex justify-content-between align-items-center mb-3';
+
+  const contato = document.createElement('div');
+  contato.className = 'd-flex gap-3 text-secondary';
+  contato.innerHTML = `<i class="bi bi-telephone"></i> ${paciente.telefone || '---'}`;
+
+  const botoesContainer = document.createElement('div');
+  botoesContainer.className = 'd-flex gap-2';
+
+  if (paciente.lembretes_ativos && paciente.proximo_lembrete) {
+    const contactBtn = document.createElement('button');
+    contactBtn.className = 'btn btn-sm btn-success';
+    contactBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Registrar Contato';
+    contactBtn.addEventListener('click', () => openContactModal({
+      id: paciente.id,
+      name: paciente.nome,
+      type: paciente.nome_lembrete?.toLowerCase().includes("primeiro") ? "first" : "followup"
+    }));
+    botoesContainer.appendChild(contactBtn);
+  }
+
+  const disableBtn = document.createElement('button');
+  disableBtn.className = 'btn btn-sm btn-outline-secondary';
+  disableBtn.innerHTML = '<i class="bi bi-bell-slash me-1"></i> Desabilitar';
+  botoesContainer.appendChild(disableBtn);
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'btn btn-sm btn-outline-danger';
+  deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
+  botoesContainer.appendChild(deleteBtn);
+
+  topRow.appendChild(contato);
+  topRow.appendChild(botoesContainer);
+  body.appendChild(topRow);
+
+  if (atrasado) {
+    const alertBox = document.createElement('div');
+    alertBox.className = 'alert-box';
+    alertBox.innerHTML = `
+      <div class="d-flex gap-2">
+        <i class="bi bi-exclamation-triangle text-warning mt-1"></i>
+        <div>
+          <p class="alert-title">${paciente.nome_lembrete || 'Lembrete Pendente'}</p>
+          <p class="alert-text">${paciente.texto_lembrete || '---'}</p>
+          <p class="alert-overdue">⚠️ Contato em atraso há ${Math.abs(diasParaProximo)} dias</p>
+        </div>
+      </div>
+    `;
+    body.appendChild(alertBox);
+  }
+
+  card.appendChild(body);
+  return card;
+}
+
 
 const contactModal = new bootstrap.Modal(document.getElementById('contactModal'));
 const contactPatientNameEl = document.getElementById('contact-patient-name');
