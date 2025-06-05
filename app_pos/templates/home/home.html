@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="{% static 'css/home.css' %}">
     <link rel="stylesheet" href="{% static 'css/input_material.css' %}">
     <link rel="stylesheet" href="{% static 'css/toast-styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/contact-modal.css' %}">
 </head>
 <body class="bg-light">
     <div class="container py-4">
@@ -150,45 +151,60 @@
 
     <!-- Contact Modal -->
     <div class="modal fade" id="contactModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Registrar Contato - <span id="contact-patient-name"></span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="contact-form">
-                <input type="hidden" id="contact-patient-id">
-                <input type="hidden" id="contact-type">
-
-                <div class="mb-3">
-                    <label for="contact-notes" class="form-label">Anotações do Contato</label>
-                    <textarea class="form-control" id="contact-notes" rows="4" placeholder="Descreva como foi o contato, feedback do paciente, orientações dadas..."></textarea>
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                    <i class="bi bi-chat-dots-fill me-2"></i>
+                    Registrar Contato - <span id="contact-patient-name" class="fw-bold"></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+                <div class="modal-body p-4">
+                    <form id="contact-form">
+                    <input type="hidden" id="contact-patient-id">
+                    <input type="hidden" id="contact-type">
 
-                <div class="mb-3">
-                    <label class="form-label">Materiais Entregues</label>
-                    
-                    <!-- Chips selecionados -->
-                    <div id="selected-materials" class="d-flex flex-wrap gap-2 mb-2"></div>
-                    
-                    <!-- Input + botão de adicionar -->
-                    <div class="input-group mb-2">
-                    <input type="text" class="form-control" id="new-material" placeholder="Ex: Ebook sobre alimentação, Lista de compras...">
+                    <!-- Contact Notes Section -->
+                    <div class="mb-4">
+                        <label for="contact-notes" class="form-label fw-bold">
+                        <i class="bi bi-journal-text me-2"></i>Anotações do Contato
+                        </label>
+                        <textarea 
+                        class="form-control border border-2" 
+                        id="contact-notes" 
+                        rows="5" 
+                        placeholder="Descreva como foi o contato, feedback do paciente, orientações dadas..."
+                        ></textarea>
                     </div>
 
-                    <div id="materials-container" class="d-flex flex-wrap gap-2 mt-2"></div>
+                    <!-- Materials Section -->
+                    <div class="mb-4 p-3 bg-light rounded">
+                        <label class="form-label fw-bold">
+                        <i class="bi bi-file-earmark-text me-2"></i>Materiais Entregues
+                        </label>
+                        
+                        <!-- Selected Materials -->
+                        <div id="selected-materials" class="d-flex flex-wrap gap-2 mb-3 p-2 border rounded bg-white min-height-50"></div>
+                        
+                        <!-- Material Suggestions -->
+                        <div>
+                        <p class="text-muted small mb-2">Sugestões de materiais:</p>
+                        <div id="material-suggestions" class="d-flex flex-wrap gap-2"></div>
+                        </div>
+                    </div>
 
-                    <!-- Sugestões -->
-                    <div id="material-suggestions" class="d-flex flex-wrap gap-2"></div>
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-3 pt-3 border-top">
+                        <button type="submit" class="btn btn-primary flex-grow-1 py-2" id="btn-registrar-contato">
+                        <i class="bi bi-check-circle me-2"></i>Registrar Contato
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary py-2" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-2"></i>Cancelar
+                        </button>
+                    </div>
+                    </form>
                 </div>
-
-                <div class="d-flex gap-2 pt-3">
-                    <button type="submit" class="btn btn-primary flex-grow-1">Registrar Contato</button>
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                </div>
-                </form>
-            </div>
             </div>
         </div>
     </div>

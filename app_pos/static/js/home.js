@@ -192,7 +192,7 @@ function openContactModal(patient) {
   contactTypeEl.value = status.type;
 
   document.getElementById("contact-notes").value = "";
-  materialsContainer.innerHTML = "";
+  // materialsContainer.innerHTML = "";
 
   contactModal.show();
 }
@@ -262,59 +262,47 @@ function getCookie(name) {
   return cookieValue;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const input = document.getElementById('new-material');
-  const suggestionsContainer = document.getElementById('material-suggestions');
-  const selectedContainer = document.getElementById('selected-materials');
-  const selectedMaterials = new Set();
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("new-material")
+  const suggestionsContainer = document.getElementById("material-suggestions")
+  const selectedContainer = document.getElementById("selected-materials")
+  const selectedMaterials = new Set()
 
   // Carrega sugestões
-  fetch('/api/materiais/')
-    .then(res => res.json())
-    .then(data => {
-      data.materiais.forEach(nome => {
-        const chip = document.createElement('div');
-        chip.className = 'material-chip';
-        chip.textContent = nome;
-        chip.addEventListener('click', () => addMaterial(nome));
-        suggestionsContainer.appendChild(chip);
-      });
-    });
+  fetch("/api/materiais/")
+    .then((res) => res.json())
+    .then((data) => {
+      data.materiais.forEach((nome) => {
+        const chip = document.createElement("div")
+        chip.className = "material-chip"
+        chip.textContent = nome
+        chip.addEventListener("click", () => addMaterial(nome))
+        suggestionsContainer.appendChild(chip)
+      })
+    })
 
   // Adiciona ao input visual
   function addMaterial(nome) {
-    if (selectedMaterials.has(nome)) return;
+    if (selectedMaterials.has(nome)) return
 
-    selectedMaterials.add(nome);
-    renderSelected();
+    selectedMaterials.add(nome)
+    renderSelected()
   }
 
   // Renderiza os selecionados
   function renderSelected() {
-    selectedContainer.innerHTML = '';
-    selectedMaterials.forEach(nome => {
-      const pill = document.createElement('div');
-      pill.className = 'material-pill';
-      pill.innerHTML = `${nome} <i class="bi bi-x-circle-fill" title="Remover"></i>`;
+    selectedContainer.innerHTML = ""
+    selectedMaterials.forEach((nome) => {
+      const pill = document.createElement("div")
+      pill.className = "material-pill"
+      pill.innerHTML = `${nome} <i class="bi bi-x-circle-fill" title="Remover"></i>`
 
-      pill.querySelector('i').addEventListener('click', () => {
-        selectedMaterials.delete(nome);
-        renderSelected();
-      });
+      pill.querySelector("i").addEventListener("click", () => {
+        selectedMaterials.delete(nome)
+        renderSelected()
+      })
 
-      selectedContainer.appendChild(pill);
-    });
-
-    // Atualiza valor oculto (caso precise)
-    input.value = [...selectedMaterials].join(', ');
+      selectedContainer.appendChild(pill)
+    })
   }
-
-  // Também permite adicionar digitando manualmente e pressionando Enter
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && input.value.trim()) {
-      e.preventDefault();
-      addMaterial(input.value.trim());
-      input.value = '';
-    }
-  });
-});
+})
