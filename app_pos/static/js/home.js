@@ -14,6 +14,8 @@ function listarPacientes() {
       const listSection = document.getElementById('patients-list');
       const emptyState = document.getElementById('empty-state');
 
+      container.innerHTML = ''; // Limpa o container antes de renderizar
+
       if (lista.length === 0) {
         emptyState.classList.remove('d-none');
         listSection.classList.add('d-none');
@@ -202,6 +204,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
 
     const nome = document.getElementById('name').value.trim();
     const telefone = document.getElementById('phone').value.trim();
@@ -227,9 +231,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (response.ok) {
         // Fecha modal, limpa formulário e recarrega lista
-        document.getElementById('newPatientModal').classList.remove('show');
-        document.body.classList.remove('modal-open');
-        document.querySelector('.modal-backdrop').remove();
+        const modalInstance = bootstrap.Modal.getInstance(document.getElementById('newPatientModal')) 
+                            || new bootstrap.Modal(document.getElementById('newPatientModal'));
+        modalInstance.hide();
         form.reset();
         
         listarPacientes();
@@ -241,7 +245,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (err) {
       showToast('Erro inesperado ao cadastrar paciente.', 'error');
+    } finally {
+      submitBtn.disabled = false;
     }
+
   });
 
 });

@@ -1,11 +1,12 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from datetime import date
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseNotAllowed
 from django.db.models import Max, Min
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.dateparse import parse_date
 from django.utils.timezone import now
+from django.views.decorators.http import require_http_methods
 
 from .models import (
     Paciente, Lembrete, ContatoNutricionista,
@@ -55,6 +56,11 @@ def listar_pacientes_com_consultas(request):
 @login_required
 def cadastrar_paciente(request):
     if request.method == 'POST':
+
+        # Buscar a primeira regra de lembrete
+        if not RegraLembrete.objects.filter(nutricionista=request.user).exists():
+            return JsonResponse({'erro': 'Nenhuma regra de lembrete encontrada'}, status=400)
+
         data = json.loads(request.body)
 
         nome = data.get('nome')
@@ -78,18 +84,18 @@ def cadastrar_paciente(request):
             data_consulta=data_consulta
         )
 
-        # Buscar regras da primeira consulta
-        regras = RegraLembrete.objects.filter(nutricionista=request.user, ordem=0)
+        # Obter a primeira regra de lembrete
+        regra = RegraLembrete.objects.filter(nutricionista=request.user).order_by('ordem').first()
 
         # Criar lembretes com base nas regras
-        for regra in regras:
-            data_lembrete = data_consulta + timedelta(days=regra.dias_apos)
-            Lembrete.objects.create(
-                paciente=paciente,
-                data_lembrete=data_lembrete,
-                texto=regra.descricao,
-                regra=regra
-            )
+        # for regra in regras:
+        data_lembrete = data_consulta + timedelta(days=regra.dias_apos)
+        Lembrete.objects.create(
+            paciente=paciente,
+            data_lembrete=data_lembrete,
+            texto=regra.descricao,
+            regra=regra
+        )
 
         return JsonResponse({'mensagem': 'Paciente cadastrado com sucesso'})
     
@@ -214,3 +220,104 @@ def paciente_detalhe(request, pk):
     }
 
     return JsonResponse(data)
+
+@csrf_exempt
+@login_required
+def regras_list_create(request):
+    if request.method == 'GET':
+        regras = RegraLembrete.objects.filter(nutricionista=request.user).order_by('ordem')
+        data = [{
+            'id': r.id,
+            'nome': r.nome,
+            'dias_apos': r.dias_apos,
+            'descricao': r.descricao,
+            'ordem': r.ordem,
+        } for r in regras]
+        return JsonResponse({'regras': data})
+
+    elif request.method == 'POST':
+        data = json.loads(request.body)
+
+        # busca a ordem da ultima regra
+        ultima_ordem = RegraLembrete.objects.filter(nutricionista=request.user).aggregate(Max('ordem'))['ordem__max']
+
+        regra = RegraLembrete.objects.create(
+            nutricionista=request.user,
+            nome=data.get('nome'),
+            dias_apos=data.get('dias_apos'),
+            descricao=data.get('descricao', ''),
+            ordem=ultima_ordem + 1 if ultima_ordem is not None else 0,
+        )
+        return JsonResponse({'id': regra.id, 'mensagem': 'Regra criada com sucesso'})
+
+    return HttpResponseNotAllowed(['GET', 'POST'])
+
+@csrf_exempt
+@require_http_methods(["GET", "PUT", "DELETE"])
+@login_required
+def regras_detail_update(request, pk):
+    try:
+        regra = RegraLembrete.objects.get(pk=pk, nutricionista=request.user)
+    except RegraLembrete.DoesNotExist:
+        return JsonResponse({'erro': 'Regra não encontrada'}, status=404)
+
+    if request.method == 'GET':
+        return JsonResponse({
+            'id': regra.id,
+            'nome': regra.nome,
+            'dias_apos': regra.dias_apos,
+            'descricao': regra.descricao,
+            'ordem': regra.ordem
+        })
+
+    elif request.method == 'PUT':
+        data = json.loads(request.body)
+        regra.nome = data.get('nome', regra.nome)
+        regra.dias_apos = data.get('dias_apos', regra.dias_apos)
+        regra.descricao = data.get('descricao', regra.descricao)
+        regra.save()
+        return JsonResponse({'mensagem': 'Regra atualizada'})
+
+    elif request.method == 'DELETE':
+        regra.delete()
+        return JsonResponse({'mensagem': 'Regra excluída'})
+
+@csrf_exempt
+@login_required
+def regra_mover_up(request, pk):
+    try:
+        regra = RegraLembrete.objects.get(pk=pk, nutricionista=request.user)
+    except RegraLembrete.DoesNotExist:
+        return JsonResponse({'erro': 'Regra não encontrada'}, status=404)
+
+    anterior = RegraLembrete.objects.filter(
+        nutricionista=request.user,
+        ordem__lt=regra.ordem
+    ).order_by('-ordem').first()
+
+    if anterior:
+        regra.ordem, anterior.ordem = anterior.ordem, regra.ordem
+        regra.save()
+        anterior.save()
+
+    return JsonResponse({'mensagem': 'Movido para cima'})
+
+@csrf_exempt
+@login_required
+def regra_mover_down(request, pk):
+    try:
+        regra = RegraLembrete.objects.get(pk=pk, nutricionista=request.user)
+    except RegraLembrete.DoesNotExist:
+        return JsonResponse({'erro': 'Regra não encontrada'}, status=404)
+
+    posterior = RegraLembrete.objects.filter(
+        nutricionista=request.user,
+        ordem__gt=regra.ordem
+    ).order_by('ordem').first()
+
+    if posterior:
+        regra.ordem, posterior.ordem = posterior.ordem, regra.ordem
+        regra.save()
+        posterior.save()
+
+    return JsonResponse({'mensagem': 'Movido para baixo'})
