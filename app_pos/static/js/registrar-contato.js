@@ -30,9 +30,13 @@ document.getElementById('contact-form').addEventListener('submit', function (e) 
         })
     })
     .then(response => {
-        if (!response.ok) throw new Error('Erro ao registrar contato');
-            return response.json();
-        })
+        return response.json().then(data => {
+        if (!response.ok) {
+            throw new Error(data.erro);
+        }
+        return data;
+        });
+    })
     .then(data => {
         const contactModalEl = document.getElementById('contactModal');
         const contactModal = bootstrap.Modal.getInstance(contactModalEl);
@@ -57,7 +61,8 @@ document.getElementById('contact-form').addEventListener('submit', function (e) 
         });
     })
     .catch(err => {
-        showToast('Erro ao registrar contato: ' + err.erro, 'error');
+        showToast(err.message, 'error');
+        console.error(err);
     })
     .finally(() => {
         submitBtn.disabled = false;

@@ -121,6 +121,10 @@ def registrar_contato(request):
     if not paciente_id or not tipo_contato:
         return JsonResponse({'erro': 'Paciente e tipo de contato são obrigatórios'}, status=400)
 
+    # verificar se existe alguma regra de lembrete
+    if not RegraLembrete.objects.filter(nutricionista=request.user).exists():
+        return JsonResponse({'erro': 'Crie uma regra para registrar contato.'}, status=400)
+
     try:
         paciente = Paciente.objects.get(id=paciente_id, dono=request.user)
     except Paciente.DoesNotExist:
