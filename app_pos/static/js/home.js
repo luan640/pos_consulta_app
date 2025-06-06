@@ -103,13 +103,13 @@ export function renderizarCardPaciente(paciente) {
   card.appendChild(header);
 
   const body = document.createElement('div');
-  body.className = 'card-body pt-0';
+  body.className = 'card-body';
 
   const topRow = document.createElement('div');
   topRow.className = 'd-flex justify-content-between align-items-center mb-3';
 
   const contato = document.createElement('div');
-  contato.className = 'd-flex gap-2 align-items-center text-secondary';
+  contato.className = 'whatsapp-contact d-flex gap-2 align-items-center text-secondary';
 
   // Garante que o telefone esteja em formato apenas números
   const telefoneLimpo = paciente.telefone?.replace(/\D/g, '');
