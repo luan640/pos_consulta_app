@@ -211,6 +211,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const telefone = document.getElementById('phone').value.trim();
     const dataConsulta = document.getElementById('lastConsultation').value;
 
+    const hoje = new Date();
+
+    if (new Date(dataConsulta) > hoje) {
+      showToast('A data da última consulta não pode ser no futuro.', 'error');
+      submitBtn.disabled = false;
+      return;
+    } 
+
     const payload = {
       nome: nome,
       telefone: telefone,
