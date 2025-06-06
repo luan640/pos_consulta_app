@@ -2,6 +2,7 @@ import { showToast } from './message.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   listarPacientes();
+  atualizarCards();
 });
 
 function listarPacientes() {
@@ -321,3 +322,23 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   }
 })
+
+function atualizarCards() {
+
+  const cardTotalPatientes = document.getElementById('total-patients');
+  const cardTotalLembretes = document.getElementById('active-alerts');
+  const cardLembreteAtrasado = document.getElementById('lembrete-atrasado');
+
+  fetch('/api/cards-home/')
+    .then(response => response.json())
+    .then(data => {
+      cardTotalPatientes.textContent = data.total_pacientes;
+      cardTotalLembretes.textContent = data.alertas_ativos;
+      cardLembreteAtrasado.textContent = data.lembretes_atrasados;
+    })
+    .catch(err => {
+      showToast('Erro ao carregar estatísticas', 'error');
+    });
+
+
+}

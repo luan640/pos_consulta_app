@@ -325,3 +325,29 @@ def regra_mover_down(request, pk):
         posterior.save()
 
     return JsonResponse({'mensagem': 'Movido para baixo'})
+
+@login_required
+def atualizar_cards(request):
+    
+    """
+    Atualiza cards de contagens:
+    Total de Pacientes
+    Alertas Ativos
+    Pacientes Ativos
+    Lembretes em atraso
+    """
+
+    total_pacientes = Paciente.objects.filter(dono=request.user).count()
+    alertas_ativos = Paciente.objects.filter(dono=request.user, lembretes_ativos=True).count()
+    
+    lembretes_atrasados = Lembrete.objects.filter(
+        paciente__dono=request.user,
+        concluido=False,
+        data_lembrete__lt=date.today()
+    ).count()
+
+    return JsonResponse({
+        'total_pacientes': total_pacientes,
+        'alertas_ativos': alertas_ativos,
+        'lembretes_atrasados': lembretes_atrasados
+    })
