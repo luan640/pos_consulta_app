@@ -10,6 +10,7 @@ class Paciente(models.Model):
     telefone = models.CharField(max_length=20, null=True, blank=True)
     dono = models.ForeignKey(User, on_delete=models.CASCADE)
     lembretes_ativos = models.BooleanField(default=True)
+    ativo = models.BooleanField(default=True)
 
     def __str__(self):
         return self.nome
