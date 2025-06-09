@@ -71,6 +71,18 @@ body {
     border: none;
 }
 
+.badge-warning {
+    background: linear-gradient(135deg, #ffc107, #fd7e14);
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: none;
+    /* Texto padrão para badge-warning */
+    content: "Reative paciente";
+}
+
 .badge-overdue {
     background: linear-gradient(135deg, #dc3545, #fd7e14);
     color: white;
@@ -141,6 +153,88 @@ body {
     transform: translateY(-1px);
 }
 
+.btn-disable-reminder {
+    background: linear-gradient(135deg, #adb5bd, #ced4da);
+    color: #495057;
+    border: 1px solid #adb5bd;
+    position: relative;
+    padding-left: 2.2rem;
+}
+
+.btn-disable-reminder::before {
+    content: "\1F514";
+    /* Unicode bell symbol */
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+    opacity: 0.7;
+}
+
+.btn-disable-reminder:hover {
+    background: linear-gradient(135deg, #868e96, #adb5bd);
+    color: #212529;
+    border-color: #868e96;
+}
+
+.btn-enable-reminder {
+    background: linear-gradient(135deg, #20c997, #28a745);
+    color: #fff;
+    border: 1px solid #20c997;
+    position: relative;
+    padding-left: 2.2rem;
+}
+
+.btn-enable-reminder::before {
+    content: "\1F514";
+    /* Unicode bell symbol */
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+    opacity: 1;
+    color: #fff700;
+    filter: drop-shadow(0 0 2px #28a745);
+}
+
+.btn-enable:hover {
+    background: linear-gradient(135deg, #17a589, #218838);
+    color: #fff;
+    border-color: #17a589;
+}
+
+.btn-disable-paciente {
+    background: linear-gradient(135deg, #adb5bd, #ced4da);
+    color: #495057;
+    border: 1px solid #adb5bd;
+    font-weight: 500;
+    border-radius: 8px;
+    position: relative;
+}
+
+.btn-disable-paciente:hover {
+    background: linear-gradient(135deg, #868e96, #adb5bd);
+    color: #212529;
+    border-color: #868e96;
+}
+
+.btn-enable-paciente {
+    background: linear-gradient(135deg, #20c997, #28a745);
+    color: #fff;
+    border: 1px solid #20c997;
+    font-weight: 500;
+    border-radius: 8px;
+    position: relative;
+}
+
+.btn-enable-paciente:hover {
+    background: linear-gradient(135deg, #17a589, #218838);
+    color: #fff;
+    border-color: #17a589;
+}
+
 .btn-outline-danger {
     border: 1px solid #dc3545;
     color: #dc3545;
@@ -149,6 +243,25 @@ body {
 .btn-outline-danger:hover {
     background: #dc3545;
     transform: translateY(-1px);
+}
+
+.btn-registrar-consulta {
+    background: linear-gradient(135deg, #007bff, #20c997);
+    color: #fff;
+    border: 1px solid #007bff;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 0.5rem 1.25rem;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+    transition: all 0.2s ease;
+}
+
+.btn-registrar-consulta:hover {
+    background: linear-gradient(135deg, #0056b3, #17a589);
+    color: #fff;
+    border-color: #0056b3;
+    transform: translateY(-1px) scale(1.03);
+    box-shadow: 0 4px 16px rgba(0, 123, 255, 0.22);
 }
 
 .alert-box {

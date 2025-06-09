@@ -67,7 +67,7 @@ class MaterialEnviado(models.Model):
 class ContatoNutricionista(models.Model):
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='contatos')
     data_contato = models.DateField()
-    tipo = models.CharField(max_length=255, help_text="Ex: Whatsapp, Email, Telefone")
+    tipo = models.CharField(max_length=255, help_text="Ex: Whatsapp, Email, Telefone", blank=True, null=True)
     criado_em = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

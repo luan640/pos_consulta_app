@@ -16,5 +16,7 @@ urlpatterns += [
     path('api/regras/<int:pk>/mover-up/', views.regra_mover_up, name='regra_mover_up'),
     path('api/regras/<int:pk>/mover-down/', views.regra_mover_down, name='regra_mover_down'),
     path('api/cards-home/', views.atualizar_cards, name='atualizar_cards'),
+    path('api/status-lembrete/<int:pk>/', views.status_lembrete, name='status_lembrete'),
+    path('api/status-paciente/<int:pk>/', views.status_paciente, name='status_paciente')
 
 ]

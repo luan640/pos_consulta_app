@@ -47,7 +47,8 @@ def listar_pacientes_com_consultas(request):
             'proximo_lembrete': lembrete.data_lembrete if lembrete else None,
             'texto_lembrete': lembrete.regra.descricao if lembrete and lembrete.regra else lembrete.texto if lembrete else None,
             'nome_lembrete': None,
-            'lembretes_ativos': True
+            'lembretes_ativos': paciente.lembretes_ativos,
+            'paciente_ativo': paciente.ativo
         })
 
     return JsonResponse({'pacientes': dados})
@@ -114,12 +115,12 @@ def registrar_contato(request):
 
     data = json.loads(request.body)
     paciente_id = data.get('paciente_id')
-    tipo_contato = data.get('tipo')  # ex: "first" ou "followup"
+    tipo_contato = data.get('tipo', None)  # ex: "first" ou "followup"
     anotacao_texto = data.get('anotacao', '')
     materiais = data.get('materiais', [])  # lista de strings
 
-    if not paciente_id or not tipo_contato:
-        return JsonResponse({'erro': 'Paciente e tipo de contato são obrigatórios'}, status=400)
+    if not paciente_id:
+        return JsonResponse({'erro': 'Paciente é obrigatório'}, status=400)
 
     # verificar se existe alguma regra de lembrete
     if not RegraLembrete.objects.filter(nutricionista=request.user).exists():
@@ -198,11 +199,12 @@ def paciente_detalhe(request, pk):
 
     # Última consulta
     ultima_consulta = (
-        ContatoNutricionista.objects
+        Consulta.objects
         .filter(paciente=paciente)
-        .order_by('-data_contato')
-        .first()
+        .values('paciente_id')
+        .annotate(ultima=Max('data_consulta'))
     )
+    ultima_data = ultima_consulta[0]['ultima'] if ultima_consulta else None
 
     # Próximo lembrete
     lembrete = (
@@ -216,11 +218,14 @@ def paciente_detalhe(request, pk):
         'id': paciente.id,
         'nome': paciente.nome,
         'telefone': paciente.telefone,
-        'ultima_consulta': ultima_consulta.data_contato.isoformat() if ultima_consulta else None,
+        'ultima_consulta': ultima_data.isoformat() if ultima_data else None,
         'proximo_lembrete': lembrete.data_lembrete.isoformat() if lembrete else None,
         'texto_lembrete': lembrete.texto if lembrete else None,
         'nome_lembrete': lembrete.regra.nome if lembrete and lembrete.regra else None,
+        'nome_lembrete': lembrete.regra.nome if lembrete and lembrete.regra else None,
         'lembretes_ativos': lembrete is not None,
+        'paciente_ativo': paciente.ativo
+
     }
 
     return JsonResponse(data)
@@ -351,3 +356,101 @@ def atualizar_cards(request):
         'alertas_ativos': alertas_ativos,
         'lembretes_atrasados': lembretes_atrasados
     })
+
+@login_required
+def status_lembrete(request, pk):
+    
+    if request.method != 'POST':
+        return JsonResponse({'erro': 'Método não permitido'}, status=405)
+    
+    try:
+        paciente = Paciente.objects.get(pk=pk, dono=request.user)
+    except Paciente.DoesNotExist:
+        return JsonResponse({'erro': 'Paciente não encontrado'}, status=404)
+
+    try:
+        req = json.loads(request.body).get('estado')
+    except json.JSONDecodeError:
+        return JsonResponse({'erro': 'Estado inválido'}, status=400)
+    
+    if req not in ['habilitar', 'desabilitar']:
+        return JsonResponse({'erro': 'Estado deve ser "habilitar" ou "desabilitar"'}, status=400)
+    
+    if req == 'habilitar':
+        # empurar para a primeira regra existente
+        regra = RegraLembrete.objects.filter(nutricionista=request.user).order_by('ordem').first()
+        if not regra:
+            return JsonResponse({'erro': 'Nenhuma regra de lembrete encontrada'}, status=400)
+
+        data_lembrete = now().date() + timedelta(days=regra.dias_apos)
+        Lembrete.objects.create(
+            paciente=paciente,
+            regra=regra,
+            data_lembrete=data_lembrete,
+            texto=regra.descricao
+        )
+            
+        estado = True
+    else:
+        # excluir lembretes futuros ou ativo
+        Lembrete.objects.filter(paciente=paciente, concluido=False).delete()
+        
+        estado = False
+
+    paciente.lembretes_ativos = estado
+    paciente.save()
+
+    if estado:
+        return JsonResponse({'mensagem': 'Lembretes ativados com sucesso'})
+    else:
+        return JsonResponse({'mensagem': 'Lembretes desativados com sucesso'})
+    
+@login_required
+def status_paciente(request, pk):
+    
+    if request.method != 'POST':
+        return JsonResponse({'erro': 'Método não permitido'}, status=405)
+    
+    try:
+        paciente = Paciente.objects.get(pk=pk, dono=request.user)
+    except Paciente.DoesNotExist:
+        return JsonResponse({'erro': 'Paciente não encontrado'}, status=404)
+
+    try:
+        req = json.loads(request.body).get('estado')
+    except json.JSONDecodeError:
+        return JsonResponse({'erro': 'Estado inválido'}, status=400)
+    
+    if req not in ['habilitar', 'desabilitar']:
+        return JsonResponse({'erro': 'Estado deve ser "habilitar" ou "desabilitar"'}, status=400)
+    
+    if req == 'habilitar':
+        # empurar para a primeira regra existente
+        regra = RegraLembrete.objects.filter(nutricionista=request.user).order_by('ordem').first()
+        if not regra:
+            return JsonResponse({'erro': 'Nenhuma regra de lembrete encontrada'}, status=400)
+
+        data_lembrete = now().date() + timedelta(days=regra.dias_apos)
+        Lembrete.objects.create(
+            paciente=paciente,
+            regra=regra,
+            data_lembrete=data_lembrete,
+            texto=regra.descricao
+        )
+
+        paciente.ativo = True
+        estado = True
+    else:
+        # excluir lembretes futuros ou ativo
+        Lembrete.objects.filter(paciente=paciente, concluido=False).delete()
+        
+        paciente.ativo = False
+        estado = False
+
+    paciente.lembretes_ativos = estado
+    paciente.save()
+
+    if estado:
+        return JsonResponse({'mensagem': 'Lembretes ativados com sucesso'})
+    else:
+        return JsonResponse({'mensagem': 'Lembretes desativados com sucesso'})

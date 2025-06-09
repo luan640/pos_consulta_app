@@ -1,3 +1,5 @@
+import { showToast } from './message.js';
+
 document.addEventListener('DOMContentLoaded', () => {
   const regraModal = new bootstrap.Modal(document.getElementById('regraModal'));
   const form = document.getElementById('regra-form');
@@ -87,7 +89,10 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch(`/api/regras/${id}/`, {
           method: 'DELETE',
           headers: { 'X-CSRFToken': csrfToken }
-        }).then(() => carregarRegras());
+        }).then(() => {
+          showToast('Regra excluída com sucesso!', 'success');
+          carregarRegras()
+        });
       }
     }
 
@@ -98,7 +103,10 @@ document.addEventListener('DOMContentLoaded', () => {
       fetch(`/api/regras/${id}/mover-${direction}/`, {
         method: 'POST',
         headers: { 'X-CSRFToken': csrfToken }
-      }).then(() => carregarRegras());
+      }).then(() => {
+        showToast('Salvo', 'success');
+        carregarRegras()
+      });
     }
   });
 
@@ -123,7 +131,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!res.ok) throw new Error('Erro ao salvar');
         return res.json();
       })
-      .then(() => carregarRegras())
+      .then(() => {
+        showToast('Regra editada com sucesso!', 'success');
+        carregarRegras();
+      })
       .catch(err => {
         alert('Erro ao salvar edição');
         console.error(err);
@@ -160,6 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(() => {
         document.getElementById('nova-regra-form').reset();
         novaRegraModal.hide(); // Ao esconder, o evento 'hidden.bs.modal' reabrirá regraModal
+        showToast('Regra criada com sucesso!', 'success');
         carregarRegras(); // Atualiza tabela
       });
   });

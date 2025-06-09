@@ -39,9 +39,9 @@ function listarPacientes() {
 }
 
 export function renderizarCardPaciente(paciente) {
+
   const ultimaRaw = paciente.ultima_consulta;
   const proximoRaw = paciente.proximo_lembrete;
-  const textoLembrete = paciente.texto_lembrete;
 
   const ultima = ultimaRaw ? new Date(ultimaRaw + 'T00:00:00') : null;
   const proximo = proximoRaw ? new Date(proximoRaw + 'T00:00:00') : null;
@@ -60,10 +60,21 @@ export function renderizarCardPaciente(paciente) {
   const proximoStr = proximo ? proximo.toISOString().split('T')[0] : '---';
   const diasAtrasStr = diasAtras !== null ? `${diasAtras} dias atrás` : '---';
 
-  const badgeClass = atrasado ? 'badge-overdue' : 'badge-waiting';
-  const badgeText = atrasado
-    ? `Atrasado ${Math.abs(diasParaProximo)} dias`
-    : `Próximo contato em ${diasParaProximo} dias`;
+  let badgeClass, badgeText;
+
+  if (!paciente.paciente_ativo) {
+    badgeClass = 'badge-warning';
+    badgeText = 'Paciente desativado';
+  } else if (!paciente.lembretes_ativos) {
+    badgeClass = 'badge-warning';
+    badgeText = 'Habilite lembretes';
+  } else if (atrasado) {
+    badgeClass = 'badge-overdue';
+    badgeText = `Atrasado ${Math.abs(diasParaProximo)} dias`;
+  } else {
+    badgeClass = 'badge-waiting';
+    badgeText = `Próximo contato em ${diasParaProximo} dias`;
+  }
 
   const card = document.createElement('div');
   card.className = 'card patient-card mb-3' + (atrasado ? ' alert-active' : '');
@@ -109,17 +120,17 @@ export function renderizarCardPaciente(paciente) {
   topRow.className = 'd-flex justify-content-between align-items-center mb-3';
 
   const contato = document.createElement('div');
-  contato.className = 'whatsapp-contact d-flex gap-2 align-items-center text-secondary';
+  contato.className = 'text-decoration-none'; // Garante que o link não tenha sublinhado
 
   // Garante que o telefone esteja em formato apenas números
   const telefoneLimpo = paciente.telefone?.replace(/\D/g, '');
 
   if (telefoneLimpo) {
     contato.innerHTML = `
-      <a href="https://wa.me/55${telefoneLimpo}" target="_blank" class="text-success" style="text-decoration: none;">
+      <a href="https://wa.me/55${telefoneLimpo}" target="_blank" class="whatsapp-contact d-flex gap-2 align-items-center text-success text-decoration-none">
         <i class="bi bi-whatsapp" style="font-size: 1.2rem;"></i>
+        <span>${paciente.telefone}</span>
       </a>
-      <span>${paciente.telefone}</span>
     `;
   } else {
     contato.innerHTML = `<i class="bi bi-whatsapp"></i> ---`;
@@ -128,27 +139,71 @@ export function renderizarCardPaciente(paciente) {
   const botoesContainer = document.createElement('div');
   botoesContainer.className = 'd-flex gap-2';
 
-  if (paciente.lembretes_ativos && paciente.proximo_lembrete) {
+  const togglePatientBtn = document.createElement('button');
+  togglePatientBtn.className = paciente.paciente_ativo
+    ? 'btn btn-sm btn-disable-paciente'
+    : 'btn btn-sm btn-enable-paciente';
+
+  if (paciente.paciente_ativo) {
+
+    if (paciente.lembretes_ativos) {
+      const contactBtn = document.createElement('button');
+      contactBtn.className = 'btn btn-sm btn-success';
+      contactBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Registrar Contato';
+      contactBtn.addEventListener('click', () => openContactModal({
+        id: paciente.id,
+        name: paciente.nome,
+        type: paciente.nome_lembrete
+      }));
+      botoesContainer.appendChild(contactBtn);
+
+      const disableBtn = document.createElement('button');
+      disableBtn.className = 'btn btn-sm btn-disable-reminder';
+      disableBtn.addEventListener('click', () => openDisableLembreteModal({
+          id: paciente.id,
+          name: paciente.nome,
+      }));
+      botoesContainer.appendChild(disableBtn);
+    } else {
+
+      const enableBtn = document.createElement('button');
+      enableBtn.className = 'btn btn-sm btn-enable-reminder';
+      enableBtn.innerHTML = 'Habilitar';
+      enableBtn.addEventListener('click', () => openEnableLembreteModal({
+          id: paciente.id,
+          name: paciente.nome,
+      }));
+
+      botoesContainer.appendChild(enableBtn);
+    }
+
     const contactBtn = document.createElement('button');
-    contactBtn.className = 'btn btn-sm btn-success';
-    contactBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Registrar Contato';
-    contactBtn.addEventListener('click', () => openContactModal({
-      id: paciente.id,
-      name: paciente.nome,
-      type: paciente.nome_lembrete?.toLowerCase().includes("primeiro") ? "first" : "followup"
-    }));
+    contactBtn.className = 'btn btn-sm btn-registrar-consulta';
+    contactBtn.innerHTML = '<i class="bi bi-calendar-check me-1"></i> Registrar Consulta';
     botoesContainer.appendChild(contactBtn);
+
+    togglePatientBtn.innerHTML = 'Desativar paciente';
+    togglePatientBtn.title = 'Desativar paciente';
+  } else {
+    togglePatientBtn.innerHTML = 'Reativar paciente';
+    togglePatientBtn.title = 'Ativar paciente';
   }
 
-  const disableBtn = document.createElement('button');
-  disableBtn.className = 'btn btn-sm btn-outline-secondary';
-  disableBtn.innerHTML = '<i class="bi bi-bell-slash me-1"></i> Desabilitar';
-  botoesContainer.appendChild(disableBtn);
+  togglePatientBtn.addEventListener('click', () => {
+    if (paciente.paciente_ativo) {
+      openDeactivatePatientModal({
+        id: paciente.id,
+        name: paciente.nome,
+      });
+    } else {
+      openActivatePatientModal({
+        id: paciente.id,
+        name: paciente.nome,
+      });
+    }
+  });
 
-  const deleteBtn = document.createElement('button');
-  deleteBtn.className = 'btn btn-sm btn-outline-danger';
-  deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
-  botoesContainer.appendChild(deleteBtn);
+  botoesContainer.appendChild(togglePatientBtn);
 
   topRow.appendChild(contato);
   topRow.appendChild(botoesContainer);
@@ -177,28 +232,193 @@ export function renderizarCardPaciente(paciente) {
 const contactModal = new bootstrap.Modal(document.getElementById('contactModal'));
 const contactPatientNameEl = document.getElementById('contact-patient-name');
 const contactPatientIdEl = document.getElementById('contact-patient-id');
-const contactTypeBadgeEl = document.getElementById('contact-type-badge');
-const contactTypeEl = document.getElementById('contact-type');
-const materialsContainer = document.getElementById('materials-container');
-
-function getContactStatus(patient) {
-  return {
-    type: patient.nome_lembrete?.toLowerCase().includes("primeiro") ? "first" : "followup"
-  };
-}
 
 function openContactModal(patient) {
   contactPatientNameEl.textContent = patient.name;
   contactPatientIdEl.value = patient.id;
 
-  const status = getContactStatus(patient);
-  contactTypeEl.value = status.type;
-
-  document.getElementById("contact-notes").value = "";
-  // materialsContainer.innerHTML = "";
-
   contactModal.show();
 }
+
+function openDisableLembreteModal(patient) {
+
+  const disableLembreteModal = new bootstrap.Modal(document.getElementById('desabilitarLembrete'));
+  const nomePaciente = document.getElementById('patient-name-disable');
+  const idPaciente = document.getElementById('disable-patient-id');
+
+  nomePaciente.textContent = patient.name;
+  idPaciente.value = patient.id;
+
+  disableLembreteModal.show();
+}
+
+function openEnableLembreteModal(patient) {
+
+  const enableLembreteModal = new bootstrap.Modal(document.getElementById('habilitarLembrete'));
+  const nomePaciente = document.getElementById('patient-name-enable');
+  const idPaciente = document.getElementById('enable-patient-id');
+
+  nomePaciente.textContent = patient.name;
+  idPaciente.value = patient.id;
+
+  enableLembreteModal.show();
+}
+
+function openDeactivatePatientModal(patient) {
+
+  const deactivatePatientModal = new bootstrap.Modal(document.getElementById('desativarPacienteModal'));
+  const nomePaciente = document.getElementById('patient-name-deactivate');
+  const idPaciente = document.getElementById('deactivate-patient-id');
+
+  nomePaciente.textContent = patient.name;
+  idPaciente.value = patient.id;
+
+  deactivatePatientModal.show();
+}
+
+function openActivatePatientModal(patient) {
+
+  const reativarPatientModal = new bootstrap.Modal(document.getElementById('reativarPacienteModal'));
+  const nomePaciente = document.getElementById('patient-name-reactivate');
+  const idPaciente = document.getElementById('reactivate-patient-id');
+
+  nomePaciente.textContent = patient.name;
+  idPaciente.value = patient.id;
+
+  reativarPatientModal.show();
+}
+
+// ao clicar no botão confirm-reactivate-patient deve enviar uma requisição post para o servidor
+document.getElementById('confirm-reactivate-patient').addEventListener('click', async () => {
+  const idPaciente = document.getElementById('reactivate-patient-id').value;
+  const submitBtn = document.getElementById('confirm-reactivate-patient');
+  submitBtn.disabled = true;
+
+  try {
+    const response = await fetch(`/api/status-paciente/${idPaciente}/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+      body: JSON.stringify({ estado: 'habilitar' }),
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      const modalInstance = bootstrap.Modal.getInstance(document.getElementById('reativarPacienteModal'));
+      modalInstance?.hide();
+      listarPacientes();
+      showToast(result.mensagem, 'success');
+    } else {
+      showToast(result.erro || 'Erro ao desativar paciente.', 'error');
+    }
+  } catch (err) {
+    showToast('Erro inesperado ao desativar paciente.', 'error');
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+// ao clicar no botão confirm-deactivate-patient deve enviar uma requisição post para o servidor
+document.getElementById('confirm-deactivate-patient').addEventListener('click', async () => {
+  const idPaciente = document.getElementById('deactivate-patient-id').value;
+  const submitBtn = document.getElementById('confirm-deactivate-patient');
+  submitBtn.disabled = true;
+
+  try {
+    const response = await fetch(`/api/status-paciente/${idPaciente}/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+      body: JSON.stringify({ estado: 'desabilitar' }),
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      const modalInstance = bootstrap.Modal.getInstance(document.getElementById('desativarPacienteModal'));
+      modalInstance?.hide();
+      listarPacientes();
+      showToast(result.mensagem, 'success');
+    } else {
+      showToast(result.erro || 'Erro ao desativar paciente.', 'error');
+    }
+  } catch (err) {
+    showToast('Erro inesperado ao desativar paciente.', 'error');
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+// ao clicar no botão confirm-disable-reminder deve enviar uma requisição post para o servidor
+document.getElementById('confirm-disable-reminder').addEventListener('click', async () => {
+  const idPaciente = document.getElementById('disable-patient-id').value;
+  const submitBtn = document.getElementById('confirm-disable-reminder');
+  submitBtn.disabled = true;
+
+  try {
+    const response = await fetch(`/api/status-lembrete/${idPaciente}/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+      body: JSON.stringify({ estado: 'desabilitar' }),
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      const modalInstance = bootstrap.Modal.getInstance(document.getElementById('desabilitarLembrete'));
+      modalInstance?.hide();
+      listarPacientes();
+      showToast(result.mensagem, 'success');
+    } else {
+      showToast(result.erro || 'Erro ao desabilitar lembrete.', 'error');
+    }
+  } catch (err) {
+    showToast('Erro inesperado ao desabilitar lembrete.', 'error');
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+// ao clicar no botão confirm-enable-reminder deve enviar uma requisição post para o servidor
+document.getElementById('confirm-enable-reminder').addEventListener('click', async () => {
+  const idPaciente = document.getElementById('enable-patient-id').value;
+  const submitBtn = document.getElementById('confirm-enable-reminder');
+  submitBtn.disabled = true;
+
+  try {
+    const response = await fetch(`/api/status-lembrete/${idPaciente}/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+      body: JSON.stringify({ estado: 'habilitar' }),
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      const modalInstance = bootstrap.Modal.getInstance(document.getElementById('habilitarLembrete'));
+      modalInstance?.hide();
+      listarPacientes();
+      showToast(result.mensagem, 'success');
+    } else {
+      showToast(result.erro || 'Erro ao habilitar lembrete.', 'error');
+    }
+  } catch (err) {
+    showToast('Erro inesperado ao habilitar lembrete.', 'error');
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
 
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('patient-form');
