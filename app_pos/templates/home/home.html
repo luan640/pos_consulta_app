@@ -219,7 +219,7 @@
             </div>
         </div>
 
-        <!-- Modal: Criar/Editar Regra -->
+        <!-- Modal: Grupos de Regras -->
         <div class="modal fade" id="regraModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-xl">
                 <div class="modal-content">
@@ -228,32 +228,97 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                     </div>
 
-                    <div class="modal-body">
-                        <div class="d-flex justify-content-end mb-3">
-                            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#novaRegraModal">
-                                <i class="bi bi-plus-circle me-1"></i> Nova Regra
-                            </button>
-                        </div>
+                    <div class="modal-body p-0">
+                        <div class="row g-0">
+                            <!-- Painel Lateral - Grupos -->
+                            <div class="col-md-3 border-end">
+                                <div class="p-3 d-flex justify-content-between align-items-center border-bottom">
+                                    <h6 class="fw-bold mb-0">Grupos</h6>
+                                    <button class="btn btn-outline-primary btn-sm" id="novoGrupoBtn">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </button>
+                                </div>
+                                <div class="list-group list-group-flush" id="grupos-lista">
+                                </div>
+                            </div>
 
-                        <!-- Tabela de Regras Existentes -->
-                        <div class="mb-4">
-                            <h6 class="fw-bold">Regras Cadastradas</h6>
-                            <div id="regras-lista" class="table-responsive">
-                                <table class="table table-bordered table-sm">
-                                <thead class="table-light">
-                                    <tr>
-                                    <th>Nome</th>
-                                    <th>Dias Após</th>
-                                    <th>Descrição</th>
-                                    <th>Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="regras-tbody">
-                                    <!-- preenchido via JS -->
-                                </tbody>
-                                </table>
+                            <!-- Conteúdo Principal - Regras do Grupo -->
+                            <div class="col-md-9">
+                                <div class="p-3">
+                                    <!-- Cabeçalho do Grupo -->
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="fw-bold" id="grupo-selecionado-titulo">Primeiro Contato</h6>
+                                        <div>
+                                            <button class="btn btn-outline-secondary btn-sm me-2" id="editarGrupoBtn">
+                                                <i class="bi bi-pencil me-1"></i> Editar Grupo
+                                            </button>
+                                            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#novaRegraModal">
+                                                <i class="bi bi-plus-circle me-1"></i> Nova Regra
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Descrição do Grupo -->
+                                    <div class="alert alert-light mb-3" id="grupo-descricao">
+                                        Regras aplicadas no primeiro contato após a consulta inicial.
+                                    </div>
+
+                                    <!-- Tabela de Regras do Grupo -->
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-sm">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Nome</th>
+                                                    <th>Dias Após</th>
+                                                    <th>Descrição</th>
+                                                    <th>Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="regras-tbody">
+
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <!-- Mensagem quando não há regras -->
+                                    <div id="sem-regras" class="text-center p-4 d-none">
+                                        <i class="bi bi-exclamation-circle text-secondary fs-3"></i>
+                                        <p class="mt-2 text-secondary">Nenhuma regra cadastrada neste grupo.</p>
+                                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#novaRegraModal">
+                                            <i class="bi bi-plus-circle me-1"></i> Adicionar Regra
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Novo Grupo -->
+        <div class="modal fade" id="novoGrupoModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="grupoModalLabel">Novo Grupo de Regras</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="grupoForm">
+                            <div class="mb-3">
+                                <label for="grupoNome" class="form-label">Nome do Grupo</label>
+                                <input type="text" class="form-control" id="grupoNome" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="grupoDescricao" class="form-label">Descrição</label>
+                                <textarea class="form-control" id="grupoDescricao" rows="3"></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="salvarGrupoBtn">Salvar</button>
                     </div>
                 </div>
             </div>
@@ -263,32 +328,33 @@
         <div class="modal fade" id="novaRegraModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
-                    <form id="nova-regra-form">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Criar Nova Regra</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                        </div>
-                        <div class="modal-body">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Nova Regra</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="nova-regra-form">
+                            
+                            <input type="hidden" id="regra-grupo-id">
+
                             <div class="mb-3">
-                                <label for="nova-regra-nome" class="form-label">Nome</label>
+                                <label for="nova-regra-nome" class="form-label">Nome da Regra</label>
                                 <input type="text" class="form-control" id="nova-regra-nome" required>
                             </div>
-
                             <div class="mb-3">
                                 <label for="nova-regra-dias" class="form-label">Dias Após</label>
-                                <input type="number" class="form-control" id="nova-regra-dias" required>
+                                <input type="number" class="form-control" id="nova-regra-dias" min="1" required>
                             </div>
-
                             <div class="mb-3">
                                 <label for="nova-regra-descricao" class="form-label">Descrição</label>
-                                <textarea class="form-control" id="nova-regra-descricao" rows="2"></textarea>
+                                <textarea class="form-control" id="nova-regra-descricao" rows="3"></textarea>
                             </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="submit" class="btn btn-primary">Salvar Regra</button>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        </div>
-                    </form>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary" id="salvarRegraBtn">Salvar</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -412,6 +478,40 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal: Registrar consulta de paciente, pode ser uma consulta ou retorno -->
+        <div class="modal fade" id="registrarConsultaModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="registrar-consulta-form">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Registrar Consulta para <span id="consulta-patient-name" class="fw-bold text-primary"></span></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="consulta-patient-id">
+                        <div class="mb-3">
+                            <label for="consulta-tipo" class="form-label">Tipo de Consulta</label>
+                            <select class="form-select" id="consulta-tipo" required>
+                                <option value="" disabled selected>Selecione</option>
+                                <option value="consulta">Consulta</option>
+                                <option value="retorno">Retorno</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="consulta-data" class="form-label">Data</label>
+                            <input type="date" class="form-control" id="consulta-data" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary" id="btn-registrar-consulta">Registrar</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
     </div>
 
 

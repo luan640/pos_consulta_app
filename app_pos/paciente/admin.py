@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Paciente, Consulta, ContatoNutricionista, AnotacaoContato, RegraLembrete, Lembrete, Material
+from .models import Paciente, Consulta, ContatoNutricionista, AnotacaoContato, RegraLembrete, Lembrete, Material, GrupoLembrete
 from django import forms
 from datetime import timedelta
 from django.utils import timezone
@@ -56,3 +56,4 @@ admin.site.register(Consulta)
 admin.site.register(ContatoNutricionista)
 admin.site.register(AnotacaoContato)
 admin.site.register(Material)
+admin.site.register(GrupoLembrete)

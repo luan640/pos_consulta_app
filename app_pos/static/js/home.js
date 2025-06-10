@@ -180,6 +180,10 @@ export function renderizarCardPaciente(paciente) {
     const contactBtn = document.createElement('button');
     contactBtn.className = 'btn btn-sm btn-registrar-consulta';
     contactBtn.innerHTML = '<i class="bi bi-calendar-check me-1"></i> Registrar Consulta';
+    contactBtn.addEventListener('click', () => openRegistrarConsultaModal({
+      id: paciente.id,
+      name: paciente.nome,
+    }));
     botoesContainer.appendChild(contactBtn);
 
     togglePatientBtn.innerHTML = 'Desativar paciente';
@@ -252,6 +256,18 @@ function openDisableLembreteModal(patient) {
   disableLembreteModal.show();
 }
 
+function openRegistrarConsultaModal(patient) {
+
+  const disableLembreteModal = new bootstrap.Modal(document.getElementById('registrarConsultaModal'));
+  const nomePaciente = document.getElementById('consulta-patient-name');
+  const idPaciente = document.getElementById('consulta-patient-id');
+
+  nomePaciente.textContent = patient.name;
+  idPaciente.value = patient.id;
+
+  disableLembreteModal.show();
+}
+
 function openEnableLembreteModal(patient) {
 
   const enableLembreteModal = new bootstrap.Modal(document.getElementById('habilitarLembrete'));
@@ -287,6 +303,46 @@ function openActivatePatientModal(patient) {
 
   reativarPatientModal.show();
 }
+
+// ao clicar no botão registrar-contato deve enviar uma requisição post para o servidor
+document.getElementById('btn-registrar-consulta').addEventListener('click', async () => {
+  
+  const idPaciente = document.getElementById('consulta-patient-id').value;
+  const tipoConsulta = document.getElementById('consulta-tipo').value;
+  const dataConsulta = document.getElementById('consulta-data').value;
+  const submitBtn = document.getElementById('btn-registrar-consulta');
+
+  submitBtn.disabled = true;
+
+  try {
+    const response = await fetch(`/api/registrar-consulta-retorno/${idPaciente}/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+      body: JSON.stringify({
+        tipoConsulta: tipoConsulta,
+        dataConsulta: dataConsulta
+      }),
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      const modalInstance = bootstrap.Modal.getInstance(document.getElementById('registrarConsultaModal'));
+      modalInstance?.hide();
+      listarPacientes();
+      showToast(result.mensagem, 'success');
+    } else {
+      showToast(result.erro || 'Erro ao registrar consulta.', 'error');
+    }
+  } catch (err) {
+    showToast('Erro inesperado ao registrar consulta.', 'error');
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
 
 // ao clicar no botão confirm-reactivate-patient deve enviar uma requisição post para o servidor
 document.getElementById('confirm-reactivate-patient').addEventListener('click', async () => {

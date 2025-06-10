@@ -20,6 +20,7 @@ class Paciente(models.Model):
 class Consulta(models.Model):
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='consultas')
     data_consulta = models.DateField()
+    tipo_consulta = models.CharField(max_length=100, help_text="Ex: Consulta, Retorno", default='consulta')
 
     def __str__(self):
         return f"Consulta de {self.paciente.nome} em {self.data_consulta}"
@@ -33,13 +34,23 @@ class Material(models.Model):
 
     def __str__(self):
         return f"{self.descricao or 'Sem descrição'}"
-    
+
+class GrupoLembrete(models.Model):
+    dono = models.ForeignKey(User, on_delete=models.CASCADE, related_name='grupos_lembrete')
+    nome = models.CharField(max_length=100)
+    descricao = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
+    def __str__(self):
+        return self.nome
+
 class RegraLembrete(models.Model):
     nutricionista = models.ForeignKey(User, on_delete=models.CASCADE)
     nome = models.CharField(max_length=100)
     dias_apos = models.IntegerField(help_text="Dias após o evento para criar o lembrete")
     descricao = models.TextField()
     ordem = models.IntegerField(help_text="Ordem de prioridade para a regra")
+    grupo = models.ForeignKey(GrupoLembrete, on_delete=models.CASCADE, related_name='regras')
 
     def __str__(self):
         return f"{self.nome} ({self.dias_apos} dias)"

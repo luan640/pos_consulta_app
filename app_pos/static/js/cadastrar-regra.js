@@ -13,8 +13,66 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
 
-  function carregarRegras() {
-    fetch('/api/regras/')
+  function carregarGrupoRegras() {
+    fetch('/api/grupo-regras/')
+      .then(res => res.json())
+      .then(data => {
+        // Preenche o <select> dropdown (se existir)
+        const grupoSelect = document.getElementById('grupo-regras');
+        if (grupoSelect) {
+          grupoSelect.innerHTML = '';
+          data.grupos.forEach(grupo => {
+            const option = document.createElement('option');
+            option.value = grupo.id;
+            option.textContent = grupo.nome;
+            grupoSelect.appendChild(option);
+          });
+        }
+
+        // Preenche o painel lateral
+        const gruposLista = document.getElementById('grupos-lista');
+        gruposLista.innerHTML = '';
+
+        data.grupos.forEach((grupo, index) => {
+          const a = document.createElement('a');
+          a.href = '#';
+          a.className = 'list-group-item list-group-item-action' + (index === 0 ? ' active' : '');
+          a.dataset.grupoId = grupo.id;
+
+          a.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+              <span>${grupo.nome}</span>
+              <span class="badge bg-primary rounded-pill">${grupo.qtd_regras || 0}</span>
+            </div>
+          `;
+
+          // Adiciona evento de clique
+          a.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            // Remove classe active dos outros
+            gruposLista.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('active'));
+            a.classList.add('active');
+
+            // Define ID do grupo no campo oculto
+            document.getElementById('regra-grupo-id').value = grupo.id;
+
+            // Carrega regras do grupo
+            carregarRegras(grupo.id);
+          });
+
+          gruposLista.appendChild(a);
+        });
+
+        // Força o clique no primeiro item após preencher
+        const primeiroGrupo = gruposLista.querySelector('.list-group-item');
+        if (primeiroGrupo) primeiroGrupo.click();
+      })
+      .catch(err => console.error('Erro ao carregar grupos de regras:', err));
+  }
+
+  function carregarRegras(idGrupo) {
+    fetch(`/api/regras/${idGrupo}/`)
       .then(res => res.json())
       .then(data => {
         const tbody = document.getElementById('regras-tbody');
@@ -82,16 +140,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const upBtn = e.target.closest('[data-up]');
     const downBtn = e.target.closest('[data-down]');
     const excluirBtn = e.target.closest('[data-excluir]');
+    const grupoId = document.getElementById('regra-grupo-id').value;
 
     if (excluirBtn) {
       const id = excluirBtn.getAttribute('data-excluir');
+
       if (confirm('Tem certeza que deseja excluir esta regra?')) {
         fetch(`/api/regras/${id}/`, {
           method: 'DELETE',
           headers: { 'X-CSRFToken': csrfToken }
         }).then(() => {
           showToast('Regra excluída com sucesso!', 'success');
-          carregarRegras()
+          carregarRegras(grupoId)
         });
       }
     }
@@ -105,12 +165,12 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: { 'X-CSRFToken': csrfToken }
       }).then(() => {
         showToast('Salvo', 'success');
-        carregarRegras()
+        carregarRegras(grupoId)
       });
     }
   });
 
-  carregarRegras();
+  carregarGrupoRegras();
 
   function salvarEdicao(id, row) {
     const payload = {
@@ -146,20 +206,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Reabrir regraModal após fechar novaRegraModal
   novaRegraModalEl.addEventListener('hidden.bs.modal', function () {
+    
     regraModal.show();
   });
 
   // Submissão do formulário
   document.getElementById('nova-regra-form').addEventListener('submit', function (e) {
+    
     e.preventDefault();
+    const grupoId = document.getElementById('regra-grupo-id').value
 
     const payload = {
       nome: document.getElementById('nova-regra-nome').value,
       dias_apos: document.getElementById('nova-regra-dias').value,
       descricao: document.getElementById('nova-regra-descricao').value,
+      grupo: grupoId
     };
 
-    fetch('/api/regras/', {
+    fetch(`/api/regras/${grupoId}/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -172,8 +236,24 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('nova-regra-form').reset();
         novaRegraModal.hide(); // Ao esconder, o evento 'hidden.bs.modal' reabrirá regraModal
         showToast('Regra criada com sucesso!', 'success');
-        carregarRegras(); // Atualiza tabela
+        carregarRegras(grupoId); // Atualiza tabela
       });
+  });
+
+  document.getElementById('grupos-lista').addEventListener('click', function (e) {
+    const link = e.target.closest('a[data-grupo-id]');
+    if (!link) return;
+
+    // Remove .active de todos os itens e aplica ao clicado
+    document.querySelectorAll('#grupos-lista .list-group-item').forEach(el => el.classList.remove('active'));
+    link.classList.add('active');
+
+    const grupoId = link.dataset.grupoId;
+    
+    // Salva o ID no input escondido do modal
+    document.getElementById('regra-grupo-id').value = grupoId;
+
+    carregarRegras(grupoId);
   });
 
   // Função para pegar o CSRF token do cookie

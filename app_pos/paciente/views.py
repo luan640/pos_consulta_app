@@ -7,11 +7,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.dateparse import parse_date
 from django.utils.timezone import now
 from django.views.decorators.http import require_http_methods
+from django.shortcuts import get_object_or_404
 
 from .models import (
     Paciente, Lembrete, ContatoNutricionista,
     AnotacaoContato, Material, MaterialEnviado,
-    RegraLembrete, Consulta
+    RegraLembrete, Consulta, GrupoLembrete
 )
 
 import json
@@ -232,9 +233,43 @@ def paciente_detalhe(request, pk):
 
 @csrf_exempt
 @login_required
-def regras_list_create(request):
+def grupo_regras_list_create(request):
+
     if request.method == 'GET':
-        regras = RegraLembrete.objects.filter(nutricionista=request.user).order_by('ordem')
+        grupo_regras = GrupoLembrete.objects.filter(dono=request.user)
+        data = [{
+            'id': r.id,
+            'nome': r.nome,
+        } for r in grupo_regras]
+        return JsonResponse({'grupos': data})
+    
+    elif request.method == 'POST':
+        data = json.loads(request.body)
+
+        nome = data.get('nome')
+        if not nome:
+            return JsonResponse({'erro': 'Nome do grupo é obrigatório'}, status=400)
+        
+        descricao = data.get('descricao', '')
+        grupo = GrupoLembrete.objects.create(
+            dono=request.user,
+            nome=nome,
+            descricao=descricao
+        )
+
+        return JsonResponse({'id': grupo.id, 'mensagem': 'Grupo de regras criada com sucesso'})
+
+    return HttpResponseNotAllowed(['GET', 'POST'])
+
+@csrf_exempt
+@login_required
+def regras_list_create(request, pk):
+
+    if not pk:
+        return JsonResponse({'erro': 'Grupo de regras não especificado'}, status=400)
+    
+    if request.method == 'GET':
+        regras = RegraLembrete.objects.filter(nutricionista=request.user, grupo=pk).order_by('ordem')
         data = [{
             'id': r.id,
             'nome': r.nome,
@@ -247,8 +282,10 @@ def regras_list_create(request):
     elif request.method == 'POST':
         data = json.loads(request.body)
 
+        grupo_lembrete = get_object_or_404(GrupoLembrete, pk=pk)
+
         # busca a ordem da ultima regra
-        ultima_ordem = RegraLembrete.objects.filter(nutricionista=request.user).aggregate(Max('ordem'))['ordem__max']
+        ultima_ordem = RegraLembrete.objects.filter(nutricionista=request.user, grupo=grupo_lembrete).aggregate(Max('ordem'))['ordem__max']
 
         regra = RegraLembrete.objects.create(
             nutricionista=request.user,
@@ -256,14 +293,15 @@ def regras_list_create(request):
             dias_apos=data.get('dias_apos'),
             descricao=data.get('descricao', ''),
             ordem=ultima_ordem + 1 if ultima_ordem is not None else 0,
+            grupo=grupo_lembrete  
         )
         return JsonResponse({'id': regra.id, 'mensagem': 'Regra criada com sucesso'})
 
     return HttpResponseNotAllowed(['GET', 'POST'])
 
-@csrf_exempt
-@require_http_methods(["GET", "PUT", "DELETE"])
 @login_required
+@require_http_methods(["GET", "PUT", "DELETE"])
+@csrf_exempt
 def regras_detail_update(request, pk):
     try:
         regra = RegraLembrete.objects.get(pk=pk, nutricionista=request.user)
@@ -454,3 +492,29 @@ def status_paciente(request, pk):
         return JsonResponse({'mensagem': 'Lembretes ativados com sucesso'})
     else:
         return JsonResponse({'mensagem': 'Lembretes desativados com sucesso'})
+
+@csrf_exempt   
+@login_required
+def registrar_consulta_retorno(request, pk):
+    if request.method != 'POST':
+        return JsonResponse({'erro': 'Método não permitido'}, status=405)
+
+    try:
+        paciente = Paciente.objects.get(pk=pk, dono=request.user)
+    except Paciente.DoesNotExist:
+        return JsonResponse({'erro': 'Paciente não encontrado'}, status=404)
+
+    data = json.loads(request.body)
+    data_consulta = data.get('dataConsulta')
+
+    if not data_consulta:
+        return JsonResponse({'erro': 'Data da consulta é obrigatória'}, status=400)
+
+    # Criar nova consulta
+    Consulta.objects.create(
+        paciente=paciente,
+        data_consulta=parse_date(data_consulta),
+        tipo_consulta=data.get('tipoConsulta')
+    )
+
+    return JsonResponse({'mensagem': 'Consulta registrada com sucesso'})
