@@ -232,16 +232,19 @@ def paciente_detalhe(request, pk):
     return JsonResponse(data)
 
 @csrf_exempt
+@require_http_methods(["GET", "POST"])
 @login_required
 def grupo_regras_list_create(request):
 
     if request.method == 'GET':
-        grupo_regras = GrupoLembrete.objects.filter(dono=request.user)
+        grupo_regras = GrupoLembrete.objects.filter(dono=request.user).prefetch_related('regras')
         data = [{
             'id': r.id,
             'nome': r.nome,
+            'descricao': r.descricao,
+            'tamanho_grupo': r.regras.count()
         } for r in grupo_regras]
-        return JsonResponse({'grupos': data})
+        return JsonResponse({'grupos': data })
     
     elif request.method == 'POST':
         data = json.loads(request.body)
@@ -258,6 +261,29 @@ def grupo_regras_list_create(request):
         )
 
         return JsonResponse({'id': grupo.id, 'mensagem': 'Grupo de regras criada com sucesso'})
+
+    return HttpResponseNotAllowed(['GET', 'POST'])
+
+@csrf_exempt
+@require_http_methods(["PUT", "DELETE"])
+@login_required
+def grupo_regras_update(request, pk):
+
+    try:
+        grupo = GrupoLembrete.objects.get(pk=pk, dono=request.user)
+    except RegraLembrete.DoesNotExist:
+        return JsonResponse({'erro': 'Grupo não encontrado'}, status=404)
+
+    if request.method == 'PUT':
+        data = json.loads(request.body)
+        grupo.nome = data.get('nome', grupo.nome)
+        grupo.descricao = data.get('descricao', grupo.descricao)
+        grupo.save()
+        return JsonResponse({'mensagem': 'Grupo atualizado'})
+
+    elif request.method == 'DELETE':
+        grupo.delete()
+        return JsonResponse({'mensagem': 'Grupo excluído'})
 
     return HttpResponseNotAllowed(['GET', 'POST'])
 

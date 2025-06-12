@@ -2,13 +2,6 @@ import { showToast } from './message.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const regraModal = new bootstrap.Modal(document.getElementById('regraModal'));
-  const form = document.getElementById('regra-form');
-
-  const idInput = document.getElementById('regra-id');
-  const nomeInput = document.getElementById('regra-nome');
-  const diasInput = document.getElementById('regra-dias');
-  const descInput = document.getElementById('regra-descricao');
-  const ordemInput = document.getElementById('regra-ordem');
   const tbody = document.getElementById('regras-tbody');
 
   const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
@@ -32,17 +25,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Preenche o painel lateral
         const gruposLista = document.getElementById('grupos-lista');
         gruposLista.innerHTML = '';
-
+        
         data.grupos.forEach((grupo, index) => {
+          
           const a = document.createElement('a');
           a.href = '#';
           a.className = 'list-group-item list-group-item-action' + (index === 0 ? ' active' : '');
           a.dataset.grupoId = grupo.id;
-
+          a.dataset.nomeGrupo = grupo.nome;
+          a.dataset.descricaoGrupo = grupo.descricao;
+          
           a.innerHTML = `
             <div class="d-flex justify-content-between align-items-center">
               <span>${grupo.nome}</span>
-              <span class="badge bg-primary rounded-pill">${grupo.qtd_regras || 0}</span>
+              <span class="badge bg-primary rounded-pill">${grupo.tamanho_grupo || 0}</span>
             </div>
           `;
 
@@ -56,6 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Define ID do grupo no campo oculto
             document.getElementById('regra-grupo-id').value = grupo.id;
+            document.getElementById('nome-grupo').value = grupo.nome;
+            document.getElementById('descricao-grupo').value = grupo.descricao;
 
             // Carrega regras do grupo
             carregarRegras(grupo.id);
@@ -71,7 +69,10 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(err => console.error('Erro ao carregar grupos de regras:', err));
   }
 
-  function carregarRegras(idGrupo) {
+  function carregarRegras() {
+
+    const idGrupo = document.getElementById('regra-grupo-id').value
+
     fetch(`/api/regras/${idGrupo}/`)
       .then(res => res.json())
       .then(data => {
@@ -146,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const id = excluirBtn.getAttribute('data-excluir');
 
       if (confirm('Tem certeza que deseja excluir esta regra?')) {
-        fetch(`/api/regras/${id}/`, {
+        fetch(`/api/regras/update/${id}/`, {
           method: 'DELETE',
           headers: { 'X-CSRFToken': csrfToken }
         }).then(() => {
@@ -179,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
       descricao: row.querySelector('.descricao-input').value,
     };
 
-    fetch(`/api/regras/${id}/`, {
+    fetch(`/api/regras/update/${id}/`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -237,6 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
         novaRegraModal.hide(); // Ao esconder, o evento 'hidden.bs.modal' reabrirá regraModal
         showToast('Regra criada com sucesso!', 'success');
         carregarRegras(grupoId); // Atualiza tabela
+        carregarGrupoRegras();
       });
   });
 
@@ -249,9 +251,13 @@ document.addEventListener('DOMContentLoaded', () => {
     link.classList.add('active');
 
     const grupoId = link.dataset.grupoId;
-    
+    const nomeGrupo = link.dataset.nomeGrupo;
+    const descricaoGrupo = link.dataset.descricaoGrupo;
+
     // Salva o ID no input escondido do modal
     document.getElementById('regra-grupo-id').value = grupoId;
+    document.getElementById('grupo-selecionado-titulo').innerHTML = nomeGrupo;
+    document.getElementById('grupo-descricao').innerHTML = descricaoGrupo || 'Sem descrição';
 
     carregarRegras(grupoId);
   });
@@ -271,6 +277,138 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     return cookieValue;
   }
+
+  // abre modal para criar nome para novo grupo
+  document.getElementById('novoGrupoBtn').addEventListener('click', function () {
+    const regraModalEl = document.getElementById('regraModal');
+    const novoGrupoModalEl = document.getElementById('novoGrupoModal');
+
+    const regraModal = bootstrap.Modal.getInstance(regraModalEl) || new bootstrap.Modal(regraModalEl);
+    const novoGrupoModal = new bootstrap.Modal(novoGrupoModalEl);
+
+    // Oculta o modal antigo
+    regraModal.hide();
+
+    // Mostra o novo modal
+    novoGrupoModal.show();
+
+    // Quando o novo modal for fechado (por qualquer motivo: cancelar, clicar fora, etc.)
+    novoGrupoModalEl.addEventListener('hidden.bs.modal', function handler() {
+      // Reabre o modal antigo
+      regraModal.show();
+
+      // Remove o listener para evitar múltiplos disparos
+      novoGrupoModalEl.removeEventListener('hidden.bs.modal', handler);
+    });
+  });
+
+  // botão para salvar grupo salvarGrupoBtn
+  document.getElementById('grupoForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const novoGrupoModalEl = document.getElementById('novoGrupoModal');
+    const novoGrupoModal = bootstrap.Modal.getInstance(novoGrupoModalEl);
+
+    const regraModalEl = document.getElementById('regraModal');
+    const regraModal = bootstrap.Modal.getInstance(regraModalEl) || new bootstrap.Modal(regraModalEl);
+
+    const payload = {
+      nome: document.getElementById('grupoNome').value,
+      descricao: document.getElementById('descricao').value
+    };
+
+    fetch(`/api/grupo-regras/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify(payload)
+    })
+      .then(res => res.json())
+      .then(() => {
+        document.getElementById('grupoForm').reset();
+
+        // Adiciona listener para reabrir o modal antigo após fechar este
+        novoGrupoModalEl.addEventListener('hidden.bs.modal', function handler() {
+          regraModal.show();
+          novoGrupoModalEl.removeEventListener('hidden.bs.modal', handler);
+        });
+        carregarGrupoRegras();
+        novoGrupoModal.hide(); // Vai disparar o evento e reabrir o antigo
+        showToast('Grupo de regra criado com sucesso!', 'success');
+      });
+  });
+
+  // botao para editar grupo (nome e descrição)
+  document.getElementById('modalEditarGrupoBtn').addEventListener('click', function () {
+    const regraModalEl = document.getElementById('regraModal');
+    const novoGrupoModalEl = document.getElementById('editarGrupo');
+
+    const regraModal = bootstrap.Modal.getInstance(regraModalEl) || new bootstrap.Modal(regraModalEl);
+    const novoGrupoModal = new bootstrap.Modal(novoGrupoModalEl);
+
+    // Oculta o modal antigo
+    regraModal.hide();
+
+    const nomeGrupo = document.getElementById('nome-grupo').value;
+    const descricaoGrupo = document.getElementById('descricao-grupo').value;
+
+    // Mostra o novo modal
+    novoGrupoModal.show();
+
+    document.getElementById('editarGrupoNome').value = nomeGrupo;
+    document.getElementById('editarGrupoDescricao').value = descricaoGrupo;
+
+    // Quando o novo modal for fechado (por qualquer motivo: cancelar, clicar fora, etc.)
+    novoGrupoModalEl.addEventListener('hidden.bs.modal', function handler() {
+      // Reabre o modal antigo
+      regraModal.show();
+
+      // Remove o listener para evitar múltiplos disparos
+      novoGrupoModalEl.removeEventListener('hidden.bs.modal', handler);
+    });
+  });
+
+  // botão para salvar grupo salvarGrupoBtn
+  document.getElementById('editarGrupoForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const novoGrupoModalEl = document.getElementById('editarGrupo');
+    const novoGrupoModal = bootstrap.Modal.getInstance(novoGrupoModalEl);
+
+    const regraModalEl = document.getElementById('regraModal');
+    const regraModal = bootstrap.Modal.getInstance(regraModalEl) || new bootstrap.Modal(regraModalEl);
+
+    const grupoId = document.getElementById('regra-grupo-id').value;
+
+    const payload = {
+      nome: document.getElementById('editarGrupoNome').value,
+      descricao: document.getElementById('editarGrupoDescricao').value
+    };
+
+    fetch(`/api/grupo-regras/update/${grupoId}/`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify(payload)
+    })
+      .then(res => res.json())
+      .then(() => {
+        document.getElementById('editarGrupoForm').reset();
+
+        // Adiciona listener para reabrir o modal antigo após fechar este
+        novoGrupoModalEl.addEventListener('hidden.bs.modal', function handler() {
+          regraModal.show();
+          novoGrupoModalEl.removeEventListener('hidden.bs.modal', handler);
+        });
+        carregarGrupoRegras();
+        novoGrupoModal.hide(); // Vai disparar o evento e reabrir o antigo
+        showToast('Grupo de regra editado com sucesso!', 'success');
+      });
+  });
 
 });
 

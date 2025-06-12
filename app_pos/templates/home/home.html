@@ -19,6 +19,11 @@
 </head>
 <body class="bg-light">
     <div class="container py-4">
+
+        <input type="hidden" id="regra-grupo-id">
+        <input type="hidden" id="nome-grupo">
+        <input type="hidden" id="descricao-grupo">
+    
         <!-- Header -->
         <div class="mb-4">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
@@ -249,7 +254,7 @@
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <h6 class="fw-bold" id="grupo-selecionado-titulo">Primeiro Contato</h6>
                                         <div>
-                                            <button class="btn btn-outline-secondary btn-sm me-2" id="editarGrupoBtn">
+                                            <button class="btn btn-outline-secondary btn-sm me-2" id="modalEditarGrupoBtn">
                                                 <i class="bi bi-pencil me-1"></i> Editar Grupo
                                             </button>
                                             <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#novaRegraModal">
@@ -311,14 +316,42 @@
                                 <input type="text" class="form-control" id="grupoNome" required>
                             </div>
                             <div class="mb-3">
-                                <label for="grupoDescricao" class="form-label">Descrição</label>
-                                <textarea class="form-control" id="grupoDescricao" rows="3"></textarea>
+                                <label for="grupoDescricao">Descrição</label>
+                                <textarea class="form-control" name="grupoDescricao" id="grupoDescricao"></textarea>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary btn-cancelar-grupo" data-bs-dismiss="modal">Voltar</button>
+                                <button type="submit" class="btn btn-primary" id="salvarGrupoBtn">Salvar</button>
                             </div>
                         </form>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-primary" id="salvarGrupoBtn">Salvar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Editar Grupo -->
+        <div class="modal fade" id="editarGrupo" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="grupoModalLabel">Editar Grupo de Regras</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editarGrupoForm">
+                            <div class="mb-3">
+                                <label for="editarGrupoNome" class="form-label">Nome do Grupo</label>
+                                <input type="text" class="form-control" id="editarGrupoNome" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editarGrupoDescricao">Descrição</label>
+                                <textarea class="form-control" id="editarGrupoDescricao"></textarea>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary btn-cancelar-grupo" data-bs-dismiss="modal">Voltar</button>
+                                <button type="submit" class="btn btn-primary" id="editarGrupoBtn">Salvar</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -335,7 +368,6 @@
                     <div class="modal-body">
                         <form id="nova-regra-form">
                             
-                            <input type="hidden" id="regra-grupo-id">
 
                             <div class="mb-3">
                                 <label for="nova-regra-nome" class="form-label">Nome da Regra</label>
@@ -513,7 +545,6 @@
         </div>
 
     </div>
-
 
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
