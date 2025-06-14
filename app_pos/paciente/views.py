@@ -36,6 +36,16 @@ def listar_pacientes_com_consultas(request):
     )
     consulta_map = {uc['paciente_id']: uc['ultima'] for uc in ultimas_consultas}
 
+    # Buscar todas as consultas dos pacientes para trazer tipo_consulta
+    consultas = Consulta.objects.filter(paciente__in=pacientes).order_by('-data_consulta')
+    consultas_por_paciente = {}
+    for consulta in consultas:
+        consultas_por_paciente.setdefault(consulta.paciente_id, []).append({
+            'id': consulta.id,
+            'data_consulta': consulta.data_consulta,
+            'tipo_consulta': consulta.tipo_consulta,
+        })
+
     dados = []
     for paciente in pacientes:
         lembrete = paciente.lembretes.filter(concluido=False).select_related('regra').order_by('data_lembrete').first()
@@ -49,7 +59,9 @@ def listar_pacientes_com_consultas(request):
             'texto_lembrete': lembrete.regra.descricao if lembrete and lembrete.regra else lembrete.texto if lembrete else None,
             'nome_lembrete': None,
             'lembretes_ativos': paciente.lembretes_ativos,
-            'paciente_ativo': paciente.ativo
+            'paciente_ativo': paciente.ativo,
+            'grupo_regra_atual': paciente.grupo_lembrete.nome if paciente.grupo_lembrete else None,
+            'consultas': consultas_por_paciente.get(paciente.id, [])
         })
 
     return JsonResponse({'pacientes': dados})
@@ -181,38 +193,48 @@ def paciente_detalhe(request, pk):
     except Paciente.DoesNotExist:
         return JsonResponse({'erro': 'Paciente não encontrado'}, status=404)
 
-    # Última consulta
+    # Última consulta do paciente
     ultima_consulta = (
         Consulta.objects
         .filter(paciente=paciente)
-        .values('paciente_id')
-        .annotate(ultima=Max('data_consulta'))
-    )
-    ultima_data = ultima_consulta[0]['ultima'] if ultima_consulta else None
+        .aggregate(ultima=Max('data_consulta'))
+    )['ultima']
+
+    # Todas as consultas do paciente
+    consultas = Consulta.objects.filter(paciente=paciente).order_by('-data_consulta')
+    consultas_list = [
+        {
+            'id': consulta.id,
+            'data_consulta': consulta.data_consulta,
+            'tipo_consulta': consulta.tipo_consulta,
+        }
+        for consulta in consultas
+    ]
 
     # Próximo lembrete
-    lembrete = (
-        Lembrete.objects
-        .filter(paciente=paciente, concluido=False)
-        .order_by('data_lembrete')
-        .first()
+    lembrete = paciente.lembretes.filter(concluido=False).select_related('regra').order_by('data_lembrete').first()
+    proximo_lembrete = lembrete.data_lembrete if lembrete else None
+    texto_lembrete = (
+        lembrete.regra.descricao if lembrete and lembrete.regra
+        else lembrete.texto if lembrete
+        else None
     )
 
-    data = {
+    dados = {
         'id': paciente.id,
         'nome': paciente.nome,
         'telefone': paciente.telefone,
-        'ultima_consulta': ultima_data.isoformat() if ultima_data else None,
-        'proximo_lembrete': lembrete.data_lembrete.isoformat() if lembrete else None,
-        'texto_lembrete': lembrete.texto if lembrete else None,
-        'nome_lembrete': lembrete.regra.nome if lembrete and lembrete.regra else None,
-        'nome_lembrete': lembrete.regra.nome if lembrete and lembrete.regra else None,
-        'lembretes_ativos': lembrete is not None,
-        'paciente_ativo': paciente.ativo
-
+        'ultima_consulta': ultima_consulta,
+        'proximo_lembrete': proximo_lembrete,
+        'texto_lembrete': texto_lembrete,
+        'nome_lembrete': None,
+        'lembretes_ativos': paciente.lembretes_ativos,
+        'paciente_ativo': paciente.ativo,
+        'grupo_regra_atual': paciente.grupo_lembrete.nome if paciente.grupo_lembrete else None,
+        'consultas': consultas_list
     }
 
-    return JsonResponse(data)
+    return JsonResponse(dados)
 
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
@@ -493,6 +515,8 @@ def status_paciente(request, pk):
         paciente.ativo = True
         estado = True
     else:
+        paciente.grupo_lembrete = None
+
         # excluir lembretes futuros ou ativo
         Lembrete.objects.filter(paciente=paciente, concluido=False).delete()
         
@@ -533,24 +557,43 @@ def registrar_consulta_retorno(request, pk):
 
     return JsonResponse({'mensagem': 'Consulta registrada com sucesso'})
 
+@csrf_exempt
+@login_required
 def atribuir_grupo(request, pk_grupo, pk_paciente):
+    if request.method != 'POST':
+        return JsonResponse({'erro': 'Método não permitido'}, status=405)
 
-    grupo_lembrete = GrupoLembrete.objects.get(pk=pk_grupo)
+    try:
+        grupo_lembrete = GrupoLembrete.objects.get(pk=pk_grupo, dono=request.user)
+    except GrupoLembrete.DoesNotExist:
+        return JsonResponse({'erro': 'Grupo de regras não encontrado'}, status=404)
 
-    paciente = Paciente.objects.get(pk=pk_paciente)
+    try:
+        paciente = Paciente.objects.get(pk=pk_paciente, dono=request.user)
+    except Paciente.DoesNotExist:
+        return JsonResponse({'erro': 'Paciente não encontrado'}, status=404)
+
     paciente.grupo_lembrete = grupo_lembrete
-
+    paciente.lembretes_ativos = True
     paciente.save()
 
-    regra_lembrete = RegraLembrete.objects.filter(grupo=grupo_lembrete).order_by('-ordem').first()
+    # Excluir lembretes em aberto para o paciente
+    Lembrete.objects.filter(paciente=paciente, concluido=False).delete()
+
+    # Buscar a primeira regra do grupo
+    regra_lembrete = RegraLembrete.objects.filter(grupo=grupo_lembrete, nutricionista=request.user).order_by('ordem').first()
+    if not regra_lembrete:
+        return JsonResponse({'erro': 'Nenhuma regra encontrada para o grupo'}, status=400)
+
     nova_data = now().date() + timedelta(days=regra_lembrete.dias_apos)
 
     Lembrete.objects.create(
         paciente=paciente,
         regra=regra_lembrete,
         data_lembrete=nova_data,
-        texto=regra_lembrete.descricao
+        texto=regra_lembrete.descricao,
+        
     )
 
-    return JsonResponse({'mensagem':'Grupo de regras atribuido com sucesso.'})
+    return JsonResponse({'mensagem': 'Grupo de regras atribuído com sucesso.'})
     

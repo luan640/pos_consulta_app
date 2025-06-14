@@ -40,6 +40,8 @@ function listarPacientes() {
 
 export function renderizarCardPaciente(paciente) {
 
+  console.log(paciente);
+
   const ultimaRaw = paciente.ultima_consulta;
   const proximoRaw = paciente.proximo_lembrete;
 
@@ -61,10 +63,13 @@ export function renderizarCardPaciente(paciente) {
   const diasAtrasStr = diasAtras !== null ? `${diasAtras} dias atrás` : '---';
 
   let badgeClass, badgeText;
-
+  
   if (!paciente.paciente_ativo) {
     badgeClass = 'badge-warning';
     badgeText = 'Paciente desativado';
+  } else if (!paciente.grupo_regra_atual) {
+    badgeClass = 'badge-warning';
+    badgeText = 'Atribua um grupo de regras';
   } else if (!paciente.lembretes_ativos) {
     badgeClass = 'badge-warning';
     badgeText = 'Habilite lembretes';
@@ -96,11 +101,29 @@ export function renderizarCardPaciente(paciente) {
   const infos = document.createElement('div');
   infos.className = 'd-flex flex-wrap gap-3 mt-2';
 
+  const tipoConsulta = paciente.consultas[0]?.tipo_consulta || 'consulta';
+  const textoUltimo = tipoConsulta === 'retorno' ? 'Último' : 'Última';
+
   infos.innerHTML = `
-    <div class="patient-info"><i class="bi bi-calendar"></i> Última consulta: ${ultimaStr}</div>
+    <div class="patient-info">
+      <i class="bi bi-calendar"></i> 
+      ${textoUltimo} ${tipoConsulta}: ${ultimaStr}
+    </div>
     <div class="patient-info"><i class="bi bi-clock"></i> ${diasAtrasStr}</div>
     <div class="patient-info"><i class="bi bi-calendar text-primary"></i> Próximo: ${proximoStr}</div>
+    <button class="btn btn-link p-0" id="btnAlterarGrupo" data-patient-id="${paciente.id}">
+      <div class="patient-info">
+        <i class="text-primary"></i>
+        ${paciente.grupo_regra_atual || 'Atribuir grupo'}
+      </div>
+    </button>
   `;
+
+  infos.addEventListener('click', function(e) {
+    if (e.target.closest('#btnAlterarGrupo')) {
+      openAtribuirGrupoModal(paciente.id);
+    }
+  });
 
   const badge = document.createElement('span');
   badge.className = `badge ${badgeClass} ms-2`;
@@ -146,7 +169,7 @@ export function renderizarCardPaciente(paciente) {
 
   if (paciente.paciente_ativo) {
 
-    if (paciente.lembretes_ativos) {
+    if (paciente.lembretes_ativos && paciente.grupo_regra_atual) {
       const contactBtn = document.createElement('button');
       contactBtn.className = 'btn btn-sm btn-success';
       contactBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Registrar Contato';
@@ -164,7 +187,7 @@ export function renderizarCardPaciente(paciente) {
           name: paciente.nome,
       }));
       botoesContainer.appendChild(disableBtn);
-    } else {
+    } else if (paciente.grupo_regra_atual && !paciente.lembretes_ativos) {
 
       const enableBtn = document.createElement('button');
       enableBtn.className = 'btn btn-sm btn-enable-reminder';
@@ -229,6 +252,17 @@ export function renderizarCardPaciente(paciente) {
     body.appendChild(alertBox);
   }
 
+  // if (!paciente.grupo_regra_atual) {
+    
+  //   const atribuirGrupo = document.createElement('button');
+  //   atribuirGrupo.className = 'btn btn-sm btn-enable-reminder';
+  //   atribuirGrupo.innerHTML = 'Atribuir grupo';
+  //   atribuirGrupo.addEventListener('click', () => openAtribuirGrupoModal(paciente.id));
+
+  //   botoesContainer.appendChild(atribuirGrupo);
+
+  // }
+
   card.appendChild(body);
   return card;
 }
@@ -280,6 +314,19 @@ function openEnableLembreteModal(patient) {
   enableLembreteModal.show();
 }
 
+function openAtribuirGrupoModal(patient) {
+
+  document.getElementById('paciente-id').value = patient;
+
+  const modalAtribuirGrupoEl = document.getElementById('atribuirGrupoModal');
+  const modalAtribuirGrupo = bootstrap.Modal.getInstance(modalAtribuirGrupoEl) || new bootstrap.Modal(modalAtribuirGrupoEl);
+  
+  modalAtribuirGrupo.show();
+
+  carregarGrupoRegras();
+
+}
+
 function openDeactivatePatientModal(patient) {
 
   const deactivatePatientModal = new bootstrap.Modal(document.getElementById('desativarPacienteModal'));
@@ -305,12 +352,22 @@ function openActivatePatientModal(patient) {
 }
 
 // ao clicar no botão registrar-contato deve enviar uma requisição post para o servidor
-document.getElementById('btn-registrar-consulta').addEventListener('click', async () => {
-  
+document.getElementById('btn-registrar-consulta').addEventListener('click', async (event) => {
+
+  event.preventDefault(); // Isso previne o refresh da página
+
   const idPaciente = document.getElementById('consulta-patient-id').value;
   const tipoConsulta = document.getElementById('consulta-tipo').value;
   const dataConsulta = document.getElementById('consulta-data').value;
   const submitBtn = document.getElementById('btn-registrar-consulta');
+
+  // verifica se a data escolhida é maior que hoje, se for não deixar enviar
+  const hoje = new Date();
+  const dataSelecionada = new Date(dataConsulta);
+  if (dataSelecionada > hoje) {
+    showToast('A data da consulta não pode ser no futuro.', 'error');
+    return;
+  }
 
   submitBtn.disabled = true;
 
