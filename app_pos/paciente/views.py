@@ -59,10 +59,6 @@ def listar_pacientes_com_consultas(request):
 def cadastrar_paciente(request):
     if request.method == 'POST':
 
-        # Buscar a primeira regra de lembrete
-        if not RegraLembrete.objects.filter(nutricionista=request.user).exists():
-            return JsonResponse({'erro': 'Nenhuma regra de lembrete encontrada'}, status=400)
-
         data = json.loads(request.body)
 
         nome = data.get('nome')
@@ -86,20 +82,7 @@ def cadastrar_paciente(request):
             data_consulta=data_consulta
         )
 
-        # Obter a primeira regra de lembrete
-        regra = RegraLembrete.objects.filter(nutricionista=request.user).order_by('ordem').first()
-
-        # Criar lembretes com base nas regras
-        # for regra in regras:
-        data_lembrete = data_consulta + timedelta(days=regra.dias_apos)
-        Lembrete.objects.create(
-            paciente=paciente,
-            data_lembrete=data_lembrete,
-            texto=regra.descricao,
-            regra=regra
-        )
-
-        return JsonResponse({'mensagem': 'Paciente cadastrado com sucesso'})
+        return JsonResponse({'mensagem': 'Paciente cadastrado com sucesso', 'id_paciente':paciente.id})
     
     return JsonResponse({'erro': 'Método não permitido'}, status=405)
 
@@ -163,7 +146,7 @@ def registrar_contato(request):
         nova_regra = None
 
         if regra_atual:
-            regras = list(RegraLembrete.objects.filter(nutricionista=request.user).order_by('ordem'))
+            regras = list(RegraLembrete.objects.filter(nutricionista=request.user, grupo=paciente.grupo_lembrete).order_by('ordem'))
             regras_ordenadas = {r.ordem: r for r in regras}
             proxima_ordem = regra_atual.ordem + 1
 
@@ -328,9 +311,10 @@ def regras_list_create(request, pk):
 @login_required
 @require_http_methods(["GET", "PUT", "DELETE"])
 @csrf_exempt
-def regras_detail_update(request, pk):
+def regras_detail_update(request, pk_regra, pk_grupo):
+    
     try:
-        regra = RegraLembrete.objects.get(pk=pk, nutricionista=request.user)
+        regra = RegraLembrete.objects.get(pk=pk_regra, nutricionista=request.user, grupo_id=pk_grupo)
     except RegraLembrete.DoesNotExist:
         return JsonResponse({'erro': 'Regra não encontrada'}, status=404)
 
@@ -357,14 +341,16 @@ def regras_detail_update(request, pk):
 
 @csrf_exempt
 @login_required
-def regra_mover_up(request, pk):
+def regra_mover_up(request, pk_regra, pk_grupo):
     try:
-        regra = RegraLembrete.objects.get(pk=pk, nutricionista=request.user)
+        regra = RegraLembrete.objects.get(pk=pk_regra, nutricionista=request.user, grupo_id=pk_grupo)
     except RegraLembrete.DoesNotExist:
         return JsonResponse({'erro': 'Regra não encontrada'}, status=404)
 
+    # Filtra apenas regras do mesmo grupo
     anterior = RegraLembrete.objects.filter(
         nutricionista=request.user,
+        grupo_id=pk_grupo, 
         ordem__lt=regra.ordem
     ).order_by('-ordem').first()
 
@@ -377,14 +363,16 @@ def regra_mover_up(request, pk):
 
 @csrf_exempt
 @login_required
-def regra_mover_down(request, pk):
+def regra_mover_down(request, pk_regra, pk_grupo):
+
     try:
-        regra = RegraLembrete.objects.get(pk=pk, nutricionista=request.user)
+        regra = RegraLembrete.objects.get(pk=pk_regra, nutricionista=request.user, grupo_id=pk_grupo)
     except RegraLembrete.DoesNotExist:
         return JsonResponse({'erro': 'Regra não encontrada'}, status=404)
 
     posterior = RegraLembrete.objects.filter(
         nutricionista=request.user,
+        grupo_id=pk_grupo,  
         ordem__gt=regra.ordem
     ).order_by('ordem').first()
 
@@ -442,7 +430,7 @@ def status_lembrete(request, pk):
     
     if req == 'habilitar':
         # empurar para a primeira regra existente
-        regra = RegraLembrete.objects.filter(nutricionista=request.user).order_by('ordem').first()
+        regra = RegraLembrete.objects.filter(nutricionista=request.user, grupo=paciente.grupo_lembrete).order_by('ordem').first()
         if not regra:
             return JsonResponse({'erro': 'Nenhuma regra de lembrete encontrada'}, status=400)
 
@@ -490,7 +478,7 @@ def status_paciente(request, pk):
     
     if req == 'habilitar':
         # empurar para a primeira regra existente
-        regra = RegraLembrete.objects.filter(nutricionista=request.user).order_by('ordem').first()
+        regra = RegraLembrete.objects.filter(nutricionista=request.user, grupo=paciente.grupo_lembrete).order_by('ordem').first()
         if not regra:
             return JsonResponse({'erro': 'Nenhuma regra de lembrete encontrada'}, status=400)
 
@@ -544,3 +532,25 @@ def registrar_consulta_retorno(request, pk):
     )
 
     return JsonResponse({'mensagem': 'Consulta registrada com sucesso'})
+
+def atribuir_grupo(request, pk_grupo, pk_paciente):
+
+    grupo_lembrete = GrupoLembrete.objects.get(pk=pk_grupo)
+
+    paciente = Paciente.objects.get(pk=pk_paciente)
+    paciente.grupo_lembrete = grupo_lembrete
+
+    paciente.save()
+
+    regra_lembrete = RegraLembrete.objects.filter(grupo=grupo_lembrete).order_by('-ordem').first()
+    nova_data = now().date() + timedelta(days=regra_lembrete.dias_apos)
+
+    Lembrete.objects.create(
+        paciente=paciente,
+        regra=regra_lembrete,
+        data_lembrete=nova_data,
+        texto=regra_lembrete.descricao
+    )
+
+    return JsonResponse({'mensagem':'Grupo de regras atribuido com sucesso.'})
+    

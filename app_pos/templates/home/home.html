@@ -23,6 +23,7 @@
         <input type="hidden" id="regra-grupo-id">
         <input type="hidden" id="nome-grupo">
         <input type="hidden" id="descricao-grupo">
+        <input type="hidden" id="paciente-id">
     
         <!-- Header -->
         <div class="mb-4">
@@ -257,7 +258,7 @@
                                             <button class="btn btn-outline-secondary btn-sm me-2" id="modalEditarGrupoBtn">
                                                 <i class="bi bi-pencil me-1"></i> Editar Grupo
                                             </button>
-                                            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#novaRegraModal">
+                                            <button class="btn btn-outline-primary btn-sm" id="btnNovaRegra">
                                                 <i class="bi bi-plus-circle me-1"></i> Nova Regra
                                             </button>
                                         </div>
@@ -265,7 +266,7 @@
 
                                     <!-- Descrição do Grupo -->
                                     <div class="alert alert-light mb-3" id="grupo-descricao">
-                                        Regras aplicadas no primeiro contato após a consulta inicial.
+                                        Escolha ou crie um grupo de regras.
                                     </div>
 
                                     <!-- Tabela de Regras do Grupo -->
@@ -539,6 +540,35 @@
                         <button type="submit" class="btn btn-primary" id="btn-registrar-consulta">Registrar</button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Atribuir Grupo de Regras ao Paciente -->
+        <div class="modal fade" id="atribuirGrupoModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="atribuir-grupo-form">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Atribuir Grupo de Regras</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" id="atribuir-patient-id">
+                            <div class="mb-3">
+                                <label for="grupo-select" class="form-label">Selecione o Grupo de Regras</label>
+                                <select class="form-select" id="grupo-select" required>
+                                    <option value="" disabled selected>Escolha um grupo</option>
+                                    <!-- Opções de grupos serão inseridas via JavaScript -->
+                                </select>
+                            </div>
+                            <div id="grupo-descricao-preview" class="alert alert-light d-none"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">Atribuir Grupo</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Selecionar depois</button>
+                        </div>
                     </form>
                 </div>
             </div>

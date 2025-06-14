@@ -13,12 +13,14 @@ urlpatterns += [
     path('api/paciente/<int:pk>/', views.paciente_detalhe, name='paciente_detalhe'),
     
     path('api/regras/<int:pk>/', views.regras_list_create, name='regras_list_create'),
-    path('api/regras/update/<int:pk>/', views.regras_detail_update, name='regras_detail_update'),
-    path('api/regras/<int:pk>/mover-up/', views.regra_mover_up, name='regra_mover_up'),
-    path('api/regras/<int:pk>/mover-down/', views.regra_mover_down, name='regra_mover_down'),
+    path('api/regras/update/<int:pk_regra>/<int:pk_grupo>/', views.regras_detail_update, name='regras_detail_update'),
+    path('api/regras/<int:pk_regra>/<int:pk_grupo>/mover-up/', views.regra_mover_up, name='regra_mover_up'),
+    path('api/regras/<int:pk_regra>/<int:pk_grupo>/mover-down/', views.regra_mover_down, name='regra_mover_down'),
 
     path('api/grupo-regras/', views.grupo_regras_list_create, name='grupo_regras_list_create'),
     path('api/grupo-regras/update/<int:pk>/', views.grupo_regras_update, name='grupo_regras_update'),
+
+    path('api/atribuir-grupo/<int:pk_grupo>/<int:pk_paciente>/', views.atribuir_grupo, name='atribuir_grupo'),
 
     path('api/cards-home/', views.atualizar_cards, name='atualizar_cards'),
     path('api/status-lembrete/<int:pk>/', views.status_lembrete, name='status_lembrete'),

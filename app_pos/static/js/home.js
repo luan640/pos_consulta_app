@@ -525,6 +525,15 @@ document.addEventListener('DOMContentLoaded', () => {
         
         showToast(result.mensagem, 'success');
 
+        const modalAtribuirGrupoEl = document.getElementById('atribuirGrupoModal');
+        const modalAtribuirGrupo = bootstrap.Modal.getInstance(modalAtribuirGrupoEl) || new bootstrap.Modal(modalAtribuirGrupoEl);
+        
+        carregarGrupoRegras();
+
+        document.getElementById('paciente-id').value = result.id_paciente;
+
+        modalAtribuirGrupo.show();
+
       } else {
         alert(result.erro || 'Erro ao cadastrar paciente.');
       }
@@ -537,6 +546,81 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 });
+
+document.getElementById('atribuir-grupo-form').addEventListener('submit', function (e) {
+  e.preventDefault();
+
+  const grupoId = document.getElementById('grupo-select').value;
+  const pacienteId = document.getElementById('paciente-id').value;
+
+  const modalAtribuirGrupoModalEl = document.getElementById('atribuirGrupoModal');
+  const modalAtribuirGrupoModal = bootstrap.Modal.getInstance(modalAtribuirGrupoModalEl) || new bootstrap.Modal(modalAtribuirGrupoModalEl);
+
+  fetch(`/api/atribuir-grupo/${grupoId}/${pacienteId}/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: {}
+  })
+    .then(res => res.json())
+    .then(() => {
+      document.getElementById('atribuir-grupo-form').reset();
+
+      modalAtribuirGrupoModal.hide(); // Vai disparar o evento e reabrir o antigo
+
+      // Atualiza apenas o card do paciente
+      fetch(`/api/paciente/${pacienteId}/`)
+      .then(res => res.json())
+      .then(updated => {
+          
+          const container = document.getElementById('patients-container');
+          const oldCard = container.querySelector(`[data-paciente-id="${updated.id}"]`);
+          const newCard = renderizarCardPaciente(updated);
+
+          if (oldCard) {
+              container.replaceChild(newCard, oldCard);
+          }
+      });
+
+      showToast('Sucesso!', 'success');
+    });
+});
+
+function carregarGrupoRegras() {
+  fetch('/api/grupo-regras/')
+    .then(res => res.json())
+    .then(data => {
+      
+      const selectGrupo = document.getElementById('grupo-select');
+        
+      if (!data.grupos || data.grupos.length === 0) {
+        selectGrupo.innerHTML = '';
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'Crie grupo de regras';
+        option.disabled = true;
+        option.selected = true;
+        selectGrupo.appendChild(option);
+        return;
+      }
+
+      // Preenche o <select> dropdown (se existir)
+      const grupoSelect = document.getElementById('grupo-select');
+      if (grupoSelect) {
+        grupoSelect.innerHTML = '';
+        data.grupos.forEach(grupo => {
+          const option = document.createElement('option');
+          option.value = grupo.id;
+          option.textContent = grupo.nome;
+          grupoSelect.appendChild(option);
+        });
+      }
+
+    })
+    .catch(err => console.error('Erro ao carregar grupos de regras:', err));
+}
 
 // Função para pegar o CSRF token do cookie
 function getCookie(name) {

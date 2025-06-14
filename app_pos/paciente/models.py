@@ -11,6 +11,7 @@ class Paciente(models.Model):
     dono = models.ForeignKey(User, on_delete=models.CASCADE)
     lembretes_ativos = models.BooleanField(default=True)
     ativo = models.BooleanField(default=True)
+    grupo_lembrete = models.ForeignKey('GrupoLembrete', blank=True, null=True, on_delete=models.CASCADE, related_name='grupo_paciente')
 
     def __str__(self):
         return self.nome

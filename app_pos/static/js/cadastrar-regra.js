@@ -10,6 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch('/api/grupo-regras/')
       .then(res => res.json())
       .then(data => {
+
+        if (!data.grupos || data.grupos.length === 0) {
+          document.getElementById('sem-regras').classList.remove('d-none');
+          return;
+        }
+
         // Preenche o <select> dropdown (se existir)
         const grupoSelect = document.getElementById('grupo-regras');
         if (grupoSelect) {
@@ -147,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const id = excluirBtn.getAttribute('data-excluir');
 
       if (confirm('Tem certeza que deseja excluir esta regra?')) {
-        fetch(`/api/regras/update/${id}/`, {
+        fetch(`/api/regras/update/${id}/${grupoId}/`, {
           method: 'DELETE',
           headers: { 'X-CSRFToken': csrfToken }
         }).then(() => {
@@ -161,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const id = (upBtn || downBtn).getAttribute('data-up') || (upBtn || downBtn).getAttribute('data-down');
       const direction = upBtn ? 'up' : 'down';
 
-      fetch(`/api/regras/${id}/mover-${direction}/`, {
+      fetch(`/api/regras/${id}/${grupoId}/mover-${direction}/`, {
         method: 'POST',
         headers: { 'X-CSRFToken': csrfToken }
       }).then(() => {
@@ -174,13 +180,16 @@ document.addEventListener('DOMContentLoaded', () => {
   carregarGrupoRegras();
 
   function salvarEdicao(id, row) {
+
+    const grupoId = document.getElementById('regra-grupo-id').value;
+
     const payload = {
       nome: row.querySelector('.nome-input').value,
       dias_apos: parseInt(row.querySelector('.dias-input').value, 10),
       descricao: row.querySelector('.descricao-input').value,
     };
 
-    fetch(`/api/regras/update/${id}/`, {
+    fetch(`/api/regras/update/${id}/${grupoId}/`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -314,7 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const payload = {
       nome: document.getElementById('grupoNome').value,
-      descricao: document.getElementById('descricao').value
+      descricao: document.getElementById('grupoDescricao').value
     };
 
     fetch(`/api/grupo-regras/`, {
@@ -408,6 +417,26 @@ document.addEventListener('DOMContentLoaded', () => {
         novoGrupoModal.hide(); // Vai disparar o evento e reabrir o antigo
         showToast('Grupo de regra editado com sucesso!', 'success');
       });
+  });
+
+  document.getElementById('btnNovaRegra').addEventListener('click', function () {
+
+    const grupoId = document.getElementById('regra-grupo-id').value;
+
+    if(!grupoId){
+      return showToast('Crie um grupo de regras','error');
+    } else {
+      const novaRegraModalEl = document.getElementById('novaRegraModal');
+      const novaRegraModal = bootstrap.Modal.getInstance(novaRegraModalEl) || new bootstrap.Modal(novaRegraModalEl);
+
+      const regraModalEl = document.getElementById('regraModal');
+      const regraModal = bootstrap.Modal.getInstance(regraModalEl) || new bootstrap.Modal(regraModalEl);
+
+      regraModal.hide();
+      novaRegraModal.show();
+
+    }
+
   });
 
 });
