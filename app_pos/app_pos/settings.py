@@ -26,8 +26,8 @@ SECRET_KEY = 'django-insecure-llo3s@)477a5$cyqu*bm=wg1s*)(f@1yph2h%x9=4qfv%-@t$i
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['transactions-batteries-accomplished-zambia.trycloudflare.com', '127.0.0.1']
+CSRF_TRUSTED_ORIGINS = ['https://transactions-batteries-accomplished-zambia.trycloudflare.com']
 
 # Application definition
 

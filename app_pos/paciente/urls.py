@@ -8,7 +8,6 @@ urlpatterns = [
 urlpatterns += [
     path('api/pacientes/', views.listar_pacientes_com_consultas, name='api_pacientes'),
     path('api/pacientes/novo/', views.cadastrar_paciente, name='api_cadastrar_paciente'),
-    path('api/materiais/', views.listar_materiais, name='api_listar_materiais'),
     path('api/registrar-contato/', views.registrar_contato, name='api_resistrar_contato'),
     path('api/paciente/<int:pk>/', views.paciente_detalhe, name='paciente_detalhe'),
     
@@ -25,6 +24,9 @@ urlpatterns += [
     path('api/cards-home/', views.atualizar_cards, name='atualizar_cards'),
     path('api/status-lembrete/<int:pk>/', views.status_lembrete, name='status_lembrete'),
     path('api/status-paciente/<int:pk>/', views.status_paciente, name='status_paciente'),
-    path('api/registrar-consulta-retorno/<int:pk>/', views.registrar_consulta_retorno, name='registrar_consulta_retorno')
+    path('api/registrar-consulta-retorno/<int:pk>/', views.registrar_consulta_retorno, name='registrar_consulta_retorno'),
+
+    path('api/materiais/', views.buscar_materiais, name='buscar_materiais'),
+    path('api/materiais/<int:pk>/', views.materiais, name='materiais'),
 
 ]

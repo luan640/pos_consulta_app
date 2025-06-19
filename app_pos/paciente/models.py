@@ -63,6 +63,7 @@ class Lembrete(models.Model):
     texto = models.TextField()
     concluido = models.BooleanField(default=False)
     criado_em = models.DateTimeField(auto_now_add=True)
+    contato_em = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return f"Lembrete para {self.paciente.nome} em {self.data_lembrete}"

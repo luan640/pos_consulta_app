@@ -3,6 +3,7 @@ import { showToast } from './message.js';
 document.addEventListener('DOMContentLoaded', () => {
   listarPacientes();
   atualizarCards();
+  inicializarSelecaoMateriais();
 });
 
 function listarPacientes() {
@@ -40,9 +41,15 @@ function listarPacientes() {
 
 export function renderizarCardPaciente(paciente) {
 
-  console.log(paciente);
+  // Ordena as consultas por id
+  const consultasOrdenadas = paciente.consultas.sort((a, b) => b.id - a.id);
 
-  const ultimaRaw = paciente.ultima_consulta;
+  // Pega a última consulta (a primeira do array ordenado)
+  const ultimaConsulta = consultasOrdenadas[0];
+  const tipoConsulta = ultimaConsulta?.tipo_consulta || 'consulta';
+  const textoUltimo = tipoConsulta === 'retorno' ? 'Último' : 'Última';
+
+  const ultimaRaw = ultimaConsulta?.data_consulta || paciente.ultima_consulta;
   const proximoRaw = paciente.proximo_lembrete;
 
   const ultima = ultimaRaw ? new Date(ultimaRaw + 'T00:00:00') : null;
@@ -101,8 +108,6 @@ export function renderizarCardPaciente(paciente) {
   const infos = document.createElement('div');
   infos.className = 'd-flex flex-wrap gap-3 mt-2';
 
-  const tipoConsulta = paciente.consultas[0]?.tipo_consulta || 'consulta';
-  const textoUltimo = tipoConsulta === 'retorno' ? 'Último' : 'Última';
 
   infos.innerHTML = `
     <div class="patient-info">
@@ -182,6 +187,7 @@ export function renderizarCardPaciente(paciente) {
 
       const disableBtn = document.createElement('button');
       disableBtn.className = 'btn btn-sm btn-disable-reminder';
+      disableBtn.innerHTML = '<i class="bi me-1"></i>';
       disableBtn.addEventListener('click', () => openDisableLembreteModal({
           id: paciente.id,
           name: paciente.nome,
@@ -695,50 +701,53 @@ function getCookie(name) {
   return cookieValue;
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const input = document.getElementById("new-material")
-  const suggestionsContainer = document.getElementById("material-suggestions")
-  const selectedContainer = document.getElementById("selected-materials")
-  const selectedMaterials = new Set()
+export function inicializarSelecaoMateriais() {
+  const suggestionsContainer = document.getElementById("material-suggestions");
+  const selectedContainer = document.getElementById("selected-materials");
+  const selectedMaterials = new Set();
+  
+  suggestionsContainer.innerHTML = '';
+  selectedContainer.innerHTML = '';
 
   // Carrega sugestões
   fetch("/api/materiais/")
     .then((res) => res.json())
     .then((data) => {
-      data.materiais.forEach((nome) => {
-        const chip = document.createElement("div")
-        chip.className = "material-chip"
-        chip.textContent = nome
-        chip.addEventListener("click", () => addMaterial(nome))
-        suggestionsContainer.appendChild(chip)
-      })
-    })
+      data.materiais.forEach((material) => {
+        const chip = document.createElement("div");
+        chip.className = "material-chip";
+        chip.textContent = material.descricao;
+        chip.dataset.materialId = material.id; // se precisar do id mais tarde
+        chip.addEventListener("click", () => addMaterial(material.descricao));
+        suggestionsContainer.appendChild(chip);
+      });
+    });
 
   // Adiciona ao input visual
   function addMaterial(nome) {
-    if (selectedMaterials.has(nome)) return
+    if (selectedMaterials.has(nome)) return;
 
-    selectedMaterials.add(nome)
-    renderSelected()
+    selectedMaterials.add(nome);
+    renderSelected();
   }
 
   // Renderiza os selecionados
   function renderSelected() {
-    selectedContainer.innerHTML = ""
+    selectedContainer.innerHTML = "";
     selectedMaterials.forEach((nome) => {
-      const pill = document.createElement("div")
-      pill.className = "material-pill"
-      pill.innerHTML = `${nome} <i class="bi bi-x-circle-fill" title="Remover"></i>`
+      const pill = document.createElement("div");
+      pill.className = "material-pill";
+      pill.innerHTML = `${nome} <i class="bi bi-x-circle-fill" title="Remover"></i>`;
 
       pill.querySelector("i").addEventListener("click", () => {
-        selectedMaterials.delete(nome)
-        renderSelected()
-      })
+        selectedMaterials.delete(nome);
+        renderSelected();
+      });
 
-      selectedContainer.appendChild(pill)
-    })
+      selectedContainer.appendChild(pill);
+    });
   }
-})
+}
 
 function atualizarCards() {
 

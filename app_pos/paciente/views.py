@@ -37,7 +37,7 @@ def listar_pacientes_com_consultas(request):
     consulta_map = {uc['paciente_id']: uc['ultima'] for uc in ultimas_consultas}
 
     # Buscar todas as consultas dos pacientes para trazer tipo_consulta
-    consultas = Consulta.objects.filter(paciente__in=pacientes).order_by('-data_consulta')
+    consultas = Consulta.objects.filter(paciente__in=pacientes).order_by('-id')
     consultas_por_paciente = {}
     for consulta in consultas:
         consultas_por_paciente.setdefault(consulta.paciente_id, []).append({
@@ -98,11 +98,6 @@ def cadastrar_paciente(request):
     
     return JsonResponse({'erro': 'Método não permitido'}, status=405)
 
-@login_required
-def listar_materiais(request):
-    materiais = Material.objects.filter(dono=request.user).values_list('descricao', flat=True)
-    return JsonResponse({'materiais': list(materiais)})
-
 @csrf_exempt
 @login_required
 def registrar_contato(request):
@@ -151,6 +146,7 @@ def registrar_contato(request):
     lembrete_atual = Lembrete.objects.filter(paciente=paciente, concluido=False).order_by('data_lembrete').first()
     if lembrete_atual:
         lembrete_atual.concluido = True
+        lembrete_atual.contato_em = now().date()
         lembrete_atual.save()
 
         # 5. Determinar próxima regra
@@ -176,7 +172,8 @@ def registrar_contato(request):
                     paciente=paciente,
                     regra=nova_regra,
                     data_lembrete=nova_data,
-                    texto=nova_regra.descricao
+                    texto=nova_regra.descricao,
+                    contato_em=None
                 )
 
             return JsonResponse({
@@ -461,7 +458,8 @@ def status_lembrete(request, pk):
             paciente=paciente,
             regra=regra,
             data_lembrete=data_lembrete,
-            texto=regra.descricao
+            texto=regra.descricao,
+            contato_em=now().date()
         )
             
         estado = True
@@ -509,7 +507,8 @@ def status_paciente(request, pk):
             paciente=paciente,
             regra=regra,
             data_lembrete=data_lembrete,
-            texto=regra.descricao
+            texto=regra.descricao,
+            contato_em=now().date()
         )
 
         paciente.ativo = True
@@ -577,6 +576,9 @@ def atribuir_grupo(request, pk_grupo, pk_paciente):
     paciente.lembretes_ativos = True
     paciente.save()
 
+    # buscar última consulta
+    ultima_consulta = Consulta.objects.filter(paciente=paciente).values('data_consulta').order_by('-data_consulta').first()
+
     # Excluir lembretes em aberto para o paciente
     Lembrete.objects.filter(paciente=paciente, concluido=False).delete()
 
@@ -585,15 +587,95 @@ def atribuir_grupo(request, pk_grupo, pk_paciente):
     if not regra_lembrete:
         return JsonResponse({'erro': 'Nenhuma regra encontrada para o grupo'}, status=400)
 
-    nova_data = now().date() + timedelta(days=regra_lembrete.dias_apos)
+    # Busca o último lembrete (concluído ou não)
+    ultimo_lembrete = Lembrete.objects.filter(paciente=paciente).order_by('-pk').first()
 
+    if not ultimo_lembrete:
+        # Se não tem nenhum lembrete, usa a data da consulta ou hoje como base
+        if ultima_consulta and ultima_consulta.get('data_consulta'):
+            base_data = ultima_consulta['data_consulta']
+        else:
+            base_data = now().date()
+        
+        nova_data = base_data + timedelta(days=regra_lembrete.dias_apos)
+    else:
+        # Se o último lembrete está pendente (não foi concluído)
+        if not ultimo_lembrete.concluido:
+            # Marca o lembrete pendente como concluído com a data de hoje
+            ultimo_lembrete.concluido = True
+            ultimo_lembrete.contato_em = now().date()
+            ultimo_lembrete.save()
+        
+        # Usa a data de contato do último lembrete (se existir) ou a data do lembrete como base
+        base_data = ultimo_lembrete.contato_em if ultimo_lembrete.contato_em else ultimo_lembrete.data_lembrete
+        nova_data = base_data + timedelta(days=regra_lembrete.dias_apos)
+
+    # Cria o novo lembrete (pendente)
     Lembrete.objects.create(
         paciente=paciente,
         regra=regra_lembrete,
         data_lembrete=nova_data,
         texto=regra_lembrete.descricao,
-        
+        contato_em=None,
+        concluido=False
     )
 
     return JsonResponse({'mensagem': 'Grupo de regras atribuído com sucesso.'})
     
+@login_required
+@require_http_methods(["PUT", "DELETE"])
+@csrf_exempt
+def materiais(request, pk):
+    try:
+        material = Material.objects.get(dono=request.user, pk=pk)
+    except Material.DoesNotExist:
+        return JsonResponse({'erro': 'Material não encontrado'}, status=404)
+
+    if request.method == 'PUT':
+        data = json.loads(request.body)
+        descricao = data.get('descricao')
+
+        # Verifica se já existe outro material com a mesma descrição para o usuário
+        if Material.objects.filter(dono=request.user, descricao=descricao).exclude(pk=pk).exists():
+            return JsonResponse({'erro': 'Já existe um material com essa descrição.'}, status=400)
+
+        material.descricao = descricao
+        material.save()
+        return JsonResponse({'mensagem': 'Material atualizado com sucesso'})
+
+    elif request.method == 'DELETE':
+        material.delete()
+        return JsonResponse({'mensagem': 'Material excluído com sucesso'})
+
+    return HttpResponseNotAllowed(['PUT', 'DELETE'])
+
+@login_required
+@require_http_methods(["GET", "POST"])
+@csrf_exempt
+def buscar_materiais(request):
+    try:
+        material = Material.objects.filter(dono=request.user)
+    except Material.DoesNotExist:
+        return JsonResponse({'erro': 'Material não encontrado'}, status=404)
+
+    if request.method == 'GET':
+        data = [{'id': m.id, 'descricao': m.descricao} for m in material]
+        return JsonResponse({'materiais': data})
+
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        descricao = data.get('descricao')
+        
+        # Verifica se já existe outro material com a mesma descrição para o usuário
+        if Material.objects.filter(dono=request.user, descricao=descricao).exists():
+            return JsonResponse({'erro': 'Já existe um material com essa descrição.'}, status=400)
+        else:
+            Material.objects.create(
+                dono=request.user,
+                descricao=descricao
+            )
+
+        return JsonResponse({'mensagem': 'Novo material adicionado com sucesso'})
+
+    return HttpResponseNotAllowed(['GET'])
+

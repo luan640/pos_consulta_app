@@ -41,6 +41,10 @@
                 <i class="bi bi-gear"></i>
                 Regras
             </button>
+            <button class="btn btn-outline-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#gerenciarMateriaisModal">
+                <i class="bi bi-gear"></i>
+                Materiais
+            </button>
             </div>
         </div>
 
@@ -55,7 +59,7 @@
                     </div>
                     <div>
                     <p class="text-secondary small mb-0">Total de Pacientes</p>
-                    <p class="fs-4 fw-bold mb-0" id="total-patients">0</p>
+                    <p class="fs-4 fw-bold mb-0 text-center" id="total-patients">0</p>
                     </div>
                 </div>
                 </div>
@@ -70,7 +74,7 @@
                     </div>
                     <div>
                     <p class="text-secondary small mb-0">Lembretes em atraso</p>
-                    <p class="fs-4 fw-bold text-danger mb-0" id="lembrete-atrasado">0</p>
+                    <p class="fs-4 fw-bold text-danger mb-0 text-center" id="lembrete-atrasado">0</p>
                     </div>
                 </div>
                 </div>
@@ -85,7 +89,7 @@
                     </div>
                     <div>
                     <p class="text-secondary small mb-0">Alertas ativos</p>
-                    <p class="fs-4 fw-bold text-purple mb-0" id="active-alerts">0</p>
+                    <p class="fs-4 fw-bold text-purple mb-0 text-center" id="active-alerts">0</p>
                     </div>
                 </div>
                 </div>
@@ -109,7 +113,7 @@
         <div id="patients-list" class="d-none">
             <div class="d-flex justify-content-between align-items-center mb-3">
             <h2 class="fs-4 fw-semibold">Lista de Pacientes (<span id="patient-count">0</span>)</h2>
-            <div class="small text-secondary">Ordenados por prioridade de contato</div>
+            <div class="small text-secondary">Controle de filtro aqui</div>
             </div>
             <div id="patients-container" class="patients-container">
             <!-- Patient cards will be inseridos via JavaScript -->
@@ -567,8 +571,87 @@
                         </div>
                         <div class="modal-footer">
                             <button type="submit" class="btn btn-primary">Atribuir Grupo</button>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Selecionar depois</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Gerenciar Materiais -->
+        <div class="modal fade" id="gerenciarMateriaisModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Gerenciar Materiais</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Lista de Materiais -->
+                        <div class="mb-4">
+                            <button class="btn btn-primary btn-sm mb-3" id="btnNovoMaterial" data-bs-toggle="modal" data-bs-target="#novoMaterialModal">
+                                <i class="bi bi-plus-circle me-1"></i> Novo Material
+                            </button>
+                            <div class="table-responsive">
+                            <table class="table table-bordered table-sm align-middle">
+                                <thead class="table-light">
+                                <tr>
+                                    <th>Nome</th>
+                                    <th class="text-center" style="width: 120px;">Ações</th>
+                                </tr>
+                                </thead>
+                                <tbody id="materiais-tbody">
+                                <!-- Linhas de materiais via JS -->
+                                </tbody>
+                            </table>
+                            <div id="sem-materiais" class="text-center text-secondary py-4 d-none">
+                                <i class="bi bi-file-earmark-text fs-3"></i>
+                                <p class="mt-2 mb-0">Nenhum material cadastrado.</p>
+                            </div>
+                            </div>
+                        </div>
+                        <!-- Formulário de Novo/Editar Material (exibido via JS) -->
+                        <div id="material-form-wrapper" class="d-none">
+                            <form id="material-form">
+                            <input type="hidden" id="material-id">
+                            <div class="mb-3">
+                                <label for="material-nome" class="form-label">Nome do Material</label>
+                                <input type="text" class="form-control" id="material-nome" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="material-descricao" class="form-label">Descrição</label>
+                                <textarea class="form-control" id="material-descricao" rows="2"></textarea>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-success" id="salvar-material-btn">Salvar</button>
+                                <button type="button" class="btn btn-secondary" id="cancelar-material-btn">Cancelar</button>
+                            </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Novo material -->
+        <div class="modal fade" id="novoMaterialModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="novo-material-form">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Novo Material</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                        <label for="novo-material-nome" class="form-label">Nome do Material</label>
+                        <input type="text" class="form-control" id="novo-material-nome" name="novo-material-nome" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
                     </form>
                 </div>
             </div>
@@ -584,5 +667,6 @@
     <script type="module" src="{% static 'js/registrar-contato.js' %}"></script>
     <script type="module" src="{% static 'js/message.js' %}"></script>
     <script type="module" src="{% static 'js/cadastrar-regra.js' %}"></script>
+    <script type="module" src="{% static 'js/materiais.js' %}"></script>
 </body>
 </html>
