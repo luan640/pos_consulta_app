@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pós-Atendimento Nutricional</title>
+    <!-- <title>Pós-Atendimento Nutricional</title> -->
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -29,7 +29,7 @@
         <div class="mb-4">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
             <div>
-            <h1 class="fw-bold mb-1">Pós-Atendimento Nutricional</h1>
+            <!-- <h1 class="fw-bold mb-1">Pós-Atendimento Nutricional</h1> -->
             <p class="text-secondary mb-0">Gerencie o acompanhamento dos seus pacientes</p>
             </div>
             <div class="d-flex gap-2">
@@ -37,11 +37,11 @@
                 <i class="bi bi-plus"></i>
                 Novo Paciente
             </button>
-            <button class="btn btn-outline-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#regraModal">
+            <button class="btn btn-info mx-auto" data-bs-toggle="modal" data-bs-target="#regraModal">
                 <i class="bi bi-gear"></i>
                 Regras
             </button>
-            <button class="btn btn-outline-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#gerenciarMateriaisModal">
+            <button class="btn btn-info mx-auto" data-bs-toggle="modal" data-bs-target="#gerenciarMateriaisModal">
                 <i class="bi bi-gear"></i>
                 Materiais
             </button>
@@ -49,103 +49,80 @@
         </div>
 
         <!-- Stats Cards -->
-        <div class="row g-4 mb-4">
-            <div class="col-md-3">
-            <div class="card h-100">
-                <div class="card-body p-3">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="stat-icon bg-blue-light">
-                    <i class="bi bi-calendar text-primary"></i>
-                    </div>
-                    <div>
-                    <p class="text-secondary small mb-0">Total de Pacientes</p>
-                    <p class="fs-4 fw-bold mb-0 text-center" id="total-patients">0</p>
-                    </div>
+        <section class="section">
+            <!-- <h2 class="section-title">📊 Indicadores de Saúde</h2> -->
+            <div class="medical-stats">
+                <div class="stat-card patients">
+                    <div class="stat-icon patients">👥</div>
+                    <div class="stat-number" id="total-patients">1,247</div>
+                    <div class="stat-label">Total de Pacientes</div>
                 </div>
+
+                <div class="stat-card treatments">
+                    <div class="stat-icon treatments">📅</div>
+                    <div class="stat-number" id="lembrete-atrasado">89</div>
+                    <div class="stat-label">Lembretes em atraso</div>
                 </div>
-            </div>
-            </div>
-            <div class="col-md-3">
-            <div class="card h-100">
-                <div class="card-body p-3">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="stat-icon bg-red-light">
-                    <i class="bi bi-exclamation-triangle text-danger"></i>
-                    </div>
-                    <div>
-                    <p class="text-secondary small mb-0">Lembretes em atraso</p>
-                    <p class="fs-4 fw-bold text-danger mb-0 text-center" id="lembrete-atrasado">0</p>
-                    </div>
-                </div>
+
+                <div class="stat-card emergencies">
+                    <div class="stat-icon emergencies">🚨</div>
+                    <div class="stat-number" id="active-alerts">3</div>
+                    <div class="stat-label">Alertas ativos</div>
+                    <!-- <div class="stat-trend trend-down">↘️ -2 desde ontem</div> -->
                 </div>
             </div>
-            </div>
-            <div class="col-md-3">
-            <div class="card h-100">
-                <div class="card-body p-3">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="stat-icon bg-purple-light">
-                    <i class="bi bi-calendar-week text-purple"></i>
-                    </div>
-                    <div>
-                    <p class="text-secondary small mb-0">Alertas ativos</p>
-                    <p class="fs-4 fw-bold text-purple mb-0 text-center" id="active-alerts">0</p>
-                    </div>
-                </div>
-                </div>
-            </div>
-            </div>
-        </div>
-        </div>
+        </section>
 
         <!-- Patients List -->
         <div class="mb-4">
-        <div id="empty-state" class="card text-center p-5">
-            <i class="bi bi-calendar3 fs-1 text-secondary mx-auto mb-3"></i>
-            <h3 class="fs-5 fw-medium mb-2">Nenhum paciente cadastrado</h3>
-            <p class="text-secondary mb-4">Comece cadastrando seu primeiro paciente para acompanhamento.</p>
-            <button class="btn btn-primary mx-auto" data-bs-toggle="modal" data-bs-target="#newPatientModal">
-            <i class="bi bi-plus me-2"></i>
-            Cadastrar Primeiro Paciente
-            </button>
-        </div>
+            <div id="empty-state" class="card text-center p-5">
+                <i class="bi bi-calendar3 fs-1 text-secondary mx-auto mb-3"></i>
+                <h3 class="fs-5 fw-medium mb-2">Nenhum paciente cadastrado</h3>
+                <p class="text-secondary mb-4">Comece cadastrando seu primeiro paciente para acompanhamento.</p>
+                <button class="btn btn-primary mx-auto" data-bs-toggle="modal" data-bs-target="#newPatientModal">
+                <i class="bi bi-plus me-2"></i>
+                Cadastrar Primeiro Paciente
+                </button>
+            </div>
 
-        <div id="patients-list" class="d-none">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="fs-4 fw-semibold">Lista de Pacientes (<span id="patient-count">0</span>)</h2>
-            <div class="small text-secondary">Controle de filtro aqui</div>
+            <div id="patients-list" class="d-none">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="fs-4 fw-semibold">Lista de Pacientes (<span id="patient-count">0</span>)</h2>
+                <div class="small text-secondary">Controle de filtro aqui</div>
+                </div>
+                <div id="patients-container" class="patients-container">
+                <!-- Patient cards will be inseridos via JavaScript -->
+                </div>
             </div>
-            <div id="patients-container" class="patients-container">
-            <!-- Patient cards will be inseridos via JavaScript -->
-            </div>
-        </div>
         </div>
 
         <!-- New Patient Modal -->
         <div class="modal fade" id="newPatientModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Cadastrar Novo Paciente</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="patient-form">
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Nome do Paciente *</label>
-                        <input type="text" class="form-control" id="name" required placeholder="Digite o nome completo">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Cadastrar Novo Paciente</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="mb-3">
-                        <label for="phone" class="form-label">Telefone</label>
-                        <input type="tel" class="form-control" id="phone" placeholder="(11) 99999-9999">
+                    <div class="modal-body">
+                        <form id="patient-form">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Nome do Paciente *</label>
+                                <input type="text" class="form-control" id="name" required placeholder="Digite o nome completo">
+                            </div>
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">Telefone</label>
+                                <input type="tel" class="form-control" id="phone" placeholder="(11) 99999-9999">
+                            </div>
+                            <div class="mb-3">
+                                <label for="lastConsultation" class="form-label">Data da Última Consulta *</label>
+                                <input type="date" class="form-control" id="lastConsultation" required>
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-success" id="submit-contact-btn">Salvar</button>
+                            </div>       
+                        </form>
                     </div>
-                    <div class="mb-3">
-                        <label for="lastConsultation" class="form-label">Data da Última Consulta *</label>
-                        <input type="date" class="form-control" id="lastConsultation" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100" id="submit-contact-btn">Cadastrar Paciente</button>
-                    </form>
-                </div>
                 </div>
             </div>
         </div>
@@ -163,47 +140,47 @@
                     </div>
                     <div class="modal-body p-4">
                         <form id="contact-form">
-                        <input type="hidden" id="contact-patient-id">
-                        <input type="hidden" id="contact-type">
+                            <input type="hidden" id="contact-patient-id">
+                            <input type="hidden" id="contact-type">
 
-                        <!-- Contact Notes Section -->
-                        <div class="mb-4">
-                            <label for="contact-notes" class="form-label fw-bold">
-                            <i class="bi bi-journal-text me-2"></i>Anotações do Contato
-                            </label>
-                            <textarea 
-                            class="form-control border border-2" 
-                            id="contact-notes" 
-                            rows="5" 
-                            placeholder="Descreva como foi o contato, feedback do paciente, orientações dadas..."
-                            ></textarea>
-                        </div>
-
-                        <!-- Materials Section -->
-                        <div class="mb-4 p-3 bg-light rounded">
-                            <label class="form-label fw-bold">
-                            <i class="bi bi-file-earmark-text me-2"></i>Materiais Entregues
-                            </label>
-                            
-                            <!-- Selected Materials -->
-                            <div id="selected-materials" class="d-flex flex-wrap gap-2 mb-3 p-2 border rounded bg-white min-height-50"></div>
-                            
-                            <!-- Material Suggestions -->
-                            <div>
-                            <p class="text-muted small mb-2">Sugestões de materiais:</p>
-                            <div id="material-suggestions" class="d-flex flex-wrap gap-2"></div>
+                            <!-- Contact Notes Section -->
+                            <div class="mb-4">
+                                <label for="contact-notes" class="form-label fw-bold">
+                                <i class="bi bi-journal-text me-2"></i>Anotações do Contato
+                                </label>
+                                <textarea 
+                                class="form-control border border-2" 
+                                id="contact-notes" 
+                                rows="5" 
+                                placeholder="Descreva como foi o contato, feedback do paciente, orientações dadas..."
+                                ></textarea>
                             </div>
-                        </div>
 
-                        <!-- Action Buttons -->
-                        <div class="d-flex gap-3 pt-3 border-top">
-                            <button type="submit" class="btn btn-primary flex-grow-1 py-2" id="btn-registrar-contato">
-                            <i class="bi bi-check-circle me-2"></i>Registrar Contato
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary py-2" data-bs-dismiss="modal">
-                            <i class="bi bi-x-circle me-2"></i>Cancelar
-                            </button>
-                        </div>
+                            <!-- Materials Section -->
+                            <div class="mb-4 p-3 bg-light rounded">
+                                <label class="form-label fw-bold">
+                                <i class="bi bi-file-earmark-text me-2"></i>Materiais Entregues
+                                </label>
+                                
+                                <!-- Selected Materials -->
+                                <div id="selected-materials" class="d-flex flex-wrap gap-2 mb-3 p-2 border rounded bg-white min-height-50"></div>
+                                
+                                <!-- Material Suggestions -->
+                                <div>
+                                <p class="text-muted small mb-2">Sugestões de materiais:</p>
+                                <div id="material-suggestions" class="d-flex flex-wrap gap-2"></div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="d-flex gap-3 pt-3 border-top">
+                                <button type="submit" class="btn btn-primary flex-grow-1 py-2" id="btn-registrar-contato">
+                                <i class="bi bi-check-circle me-2"></i>Registrar Contato
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary py-2" data-bs-dismiss="modal">
+                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -214,17 +191,17 @@
         <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Excluir Paciente</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Tem certeza que deseja excluir <span id="delete-patient-name"></span>? Esta ação não pode ser desfeita.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-danger" id="confirm-delete">Excluir</button>
-                </div>
+                    <div class="modal-header">
+                        <h5 class="modal-title">Excluir Paciente</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Tem certeza que deseja excluir <span id="delete-patient-name"></span>? Esta ação não pode ser desfeita.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-danger" id="confirm-delete">Excluir</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -243,8 +220,7 @@
                             <!-- Painel Lateral - Grupos -->
                             <div class="col-md-3 border-end">
                                 <div class="p-3 d-flex justify-content-between align-items-center border-bottom">
-                                    <h6 class="fw-bold mb-0">Grupos</h6>
-                                    <button class="btn btn-outline-primary btn-sm" id="novoGrupoBtn">
+                                    <button class="btn btn-primary d-flex align-items-center gap-2" id="novoGrupoBtn">Add grupo de regra
                                         <i class="bi bi-plus-circle"></i>
                                     </button>
                                 </div>
@@ -262,7 +238,7 @@
                                             <button class="btn btn-outline-secondary btn-sm me-2" id="modalEditarGrupoBtn">
                                                 <i class="bi bi-pencil me-1"></i> Editar Grupo
                                             </button>
-                                            <button class="btn btn-outline-primary btn-sm" id="btnNovaRegra">
+                                            <button class="btn btn-primary btn-sm" id="btnNovaRegra">
                                                 <i class="bi bi-plus-circle me-1"></i> Nova Regra
                                             </button>
                                         </div>
@@ -326,7 +302,7 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary btn-cancelar-grupo" data-bs-dismiss="modal">Voltar</button>
-                                <button type="submit" class="btn btn-primary" id="salvarGrupoBtn">Salvar</button>
+                                <button type="submit" class="btn btn-success" id="salvarGrupoBtn">Salvar</button>
                             </div>
                         </form>
                     </div>
@@ -354,7 +330,7 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary btn-cancelar-grupo" data-bs-dismiss="modal">Voltar</button>
-                                <button type="submit" class="btn btn-primary" id="editarGrupoBtn">Salvar</button>
+                                <button type="submit" class="btn btn-success" id="editarGrupoBtn">Salvar</button>
                             </div>
                         </form>
                     </div>
@@ -387,8 +363,8 @@
                                 <textarea class="form-control" id="nova-regra-descricao" rows="3"></textarea>
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="submit" class="btn btn-primary" id="salvarRegraBtn">Salvar</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Voltar</button>
+                                <button type="submit" class="btn btn-success" id="salvarRegraBtn">Salvar</button>
                             </div>
                         </form>
                     </div>
@@ -396,7 +372,7 @@
             </div>
         </div>
 
-        <!-- Modal: Deabilitar Lembrete -->
+        <!-- Modal: Desabilitar Lembrete -->
         <div class="modal fade" id="desabilitarLembrete" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-large">
                 <div class="modal-content">
@@ -541,8 +517,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary" id="btn-registrar-consulta">Registrar</button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success" id="btn-registrar-consulta">Salvar</button>
                     </div>
                     </form>
                 </div>
@@ -570,8 +546,8 @@
                             <div id="grupo-descricao-preview" class="alert alert-light d-none"></div>
                         </div>
                         <div class="modal-footer">
-                            <button type="submit" class="btn btn-primary">Atribuir Grupo</button>
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-success">Salvar</button>
                         </div>
                     </form>
                 </div>
@@ -649,7 +625,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary">Salvar</button>
+                        <button type="submit" class="btn btn-success">Salvar</button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     </div>
                     </form>

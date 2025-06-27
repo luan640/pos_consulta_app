@@ -26,10 +26,10 @@ fetch('/api/materiais/')
         tr.innerHTML = `
         <td class="descricao">${material.descricao}</td>
         <td class="acoes d-flex gap-2">
-            <button class="btn btn-sm btn-outline-primary btn-editar" title="Editar">
+            <button class="btn btn-sm btn-info btn-editar" title="Editar">
             <i class="bi bi-pencil"></i>
             </button>
-            <button class="btn btn-sm btn-outline-danger btn-excluir" title="Excluir">
+            <button class="btn btn-sm btn-danger btn-excluir" title="Excluir">
             <i class="bi bi-trash"></i>
             </button>
         </td>

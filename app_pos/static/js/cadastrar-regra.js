@@ -94,16 +94,16 @@ document.addEventListener('DOMContentLoaded', () => {
             <td class="dias">${regra.dias_apos}</td>
             <td class="descricao">${regra.descricao}</td>
             <td class="acoes d-flex gap-2">
-              <button class="btn btn-sm btn-outline-primary btn-editar" title="Editar">
+              <button class="btn btn-sm btn-info btn-editar" title="Editar">
                 <i class="bi bi-pencil"></i>
               </button>
-              <button class="btn btn-sm btn-outline-secondary" data-up="${regra.id}" title="Mover para cima">
+              <button class="btn btn-sm btn-success" data-up="${regra.id}" title="Mover para cima">
                 <i class="bi bi-arrow-up"></i>
               </button>
-              <button class="btn btn-sm btn-outline-secondary" data-down="${regra.id}" title="Mover para baixo">
+              <button class="btn btn-sm btn-success" data-down="${regra.id}" title="Mover para baixo">
                 <i class="bi bi-arrow-down"></i>
               </button>
-              <button class="btn btn-sm btn-outline-danger" data-excluir="${regra.id}" title="Excluir">
+              <button class="btn btn-sm btn-danger" data-excluir="${regra.id}" title="Excluir">
                 <i class="bi bi-trash"></i>
               </button>
             </td>
@@ -126,10 +126,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <td><input type="number" class="form-control form-control-sm dias-input" value="${dias}"></td>
               <td><input type="text" class="form-control form-control-sm descricao-input" value="${descricao}"></td>
               <td>
-                <button class="btn btn-sm btn-outline-success btn-salvar" title="Salvar">
+                <button class="btn btn-sm btn-success btn-salvar" title="Salvar">
                   <i class="bi bi-check"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger btn-cancelar" title="Cancelar">
+                <button class="btn btn-sm btn-danger btn-cancelar" title="Cancelar">
                   <i class="bi bi-x"></i>
                 </button>
               </td>
