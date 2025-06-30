@@ -108,7 +108,6 @@ export function renderizarCardPaciente(paciente) {
   const infos = document.createElement('div');
   infos.className = 'd-flex flex-wrap gap-3 mt-2';
 
-
   infos.innerHTML = `
     <div class="patient-info">
       <i class="bi bi-calendar"></i> 
@@ -118,7 +117,7 @@ export function renderizarCardPaciente(paciente) {
     <div class="patient-info"><i class="bi bi-calendar text-primary"></i> Próximo: ${proximoStr}</div>
     <button class="btn btn-link p-0" id="btnAlterarGrupo" data-patient-id="${paciente.id}">
       <div class="patient-info">
-        <i class="text-primary"></i>
+          <i class="bi bi-people text-primary"></i>
         ${paciente.grupo_regra_atual || 'Atribuir grupo'}
       </div>
     </button>
@@ -165,61 +164,74 @@ export function renderizarCardPaciente(paciente) {
   }
 
   const botoesContainer = document.createElement('div');
-  botoesContainer.className = 'd-flex gap-2';
+  botoesContainer.className = 'action-buttons'; // container geral
+
+  // Primary Actions container
+  const primaryActions = document.createElement('div');
+  primaryActions.className = 'primary-actions d-flex gap-2';
+
+  // Secondary Actions container
+  const secondaryActions = document.createElement('div');
+  secondaryActions.className = 'secondary-actions d-flex gap-2';
 
   const togglePatientBtn = document.createElement('button');
   togglePatientBtn.className = paciente.paciente_ativo
-    ? 'btn btn-sm btn-disable-paciente'
-    : 'btn btn-sm btn-enable-paciente';
+    ? 'btn-icon btn-secondary'
+    : 'btn-icon btn-success';
 
   if (paciente.paciente_ativo) {
 
     if (paciente.lembretes_ativos && paciente.grupo_regra_atual) {
+      // Registrar Contato
       const contactBtn = document.createElement('button');
-      contactBtn.className = 'btn btn-sm btn-success';
-      contactBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Registrar Contato';
+      contactBtn.className = 'btn-icon btn-success';
+      contactBtn.setAttribute('data-tooltip', 'Registrar Contato');
+      contactBtn.innerHTML = '<i class="bi bi-check-circle"></i>';
       contactBtn.addEventListener('click', () => openContactModal({
         id: paciente.id,
         name: paciente.nome,
         type: paciente.nome_lembrete
       }));
-      botoesContainer.appendChild(contactBtn);
+      primaryActions.appendChild(contactBtn);
 
+      // Desativar Lembretes
       const disableBtn = document.createElement('button');
-      disableBtn.className = 'btn btn-sm btn-disable-reminder';
-      disableBtn.innerHTML = '<i class="bi me-1"></i>';
+      disableBtn.className = 'btn-icon btn-warning';
+      disableBtn.setAttribute('data-tooltip', 'Desativar Lembretes');
+      disableBtn.innerHTML = '<i class="bi bi-bell-slash"></i>';
       disableBtn.addEventListener('click', () => openDisableLembreteModal({
-          id: paciente.id,
-          name: paciente.nome,
+        id: paciente.id,
+        name: paciente.nome,
       }));
-      botoesContainer.appendChild(disableBtn);
+      secondaryActions.appendChild(disableBtn);
     } else if (paciente.grupo_regra_atual && !paciente.lembretes_ativos) {
-
       const enableBtn = document.createElement('button');
-      enableBtn.className = 'btn btn-sm btn-enable-reminder';
-      enableBtn.innerHTML = 'Habilitar';
+      enableBtn.setAttribute('data-tooltip', 'Reativar Lembretes');
+      enableBtn.className = 'btn-icon btn-info';
+      enableBtn.innerHTML = '<i class="bi bi-bell"></i>';
       enableBtn.addEventListener('click', () => openEnableLembreteModal({
-          id: paciente.id,
-          name: paciente.nome,
+        id: paciente.id,
+        name: paciente.nome,
       }));
-
-      botoesContainer.appendChild(enableBtn);
+      secondaryActions.appendChild(enableBtn);
     }
 
-    const contactBtn = document.createElement('button');
-    contactBtn.className = 'btn btn-sm btn-registrar-consulta';
-    contactBtn.innerHTML = '<i class="bi bi-calendar-check me-1"></i> Registrar Consulta';
-    contactBtn.addEventListener('click', () => openRegistrarConsultaModal({
+    // Registrar Consulta
+    const registrarConsultaBtn = document.createElement('button');
+    registrarConsultaBtn.className = 'btn-icon btn-primary';
+    registrarConsultaBtn.setAttribute('data-tooltip', 'Registrar Consulta');
+    registrarConsultaBtn.innerHTML = '<i class="bi bi-calendar-plus"></i>';
+    registrarConsultaBtn.addEventListener('click', () => openRegistrarConsultaModal({
       id: paciente.id,
       name: paciente.nome,
     }));
-    botoesContainer.appendChild(contactBtn);
+    primaryActions.appendChild(registrarConsultaBtn);
 
-    togglePatientBtn.innerHTML = 'Desativar paciente';
-    togglePatientBtn.title = 'Desativar paciente';
+    togglePatientBtn.setAttribute('data-tooltip', 'Desativar Paciente');
+    togglePatientBtn.innerHTML = '<i class="bi bi-person-dash"></i>';
   } else {
-    togglePatientBtn.innerHTML = 'Reativar paciente';
-    togglePatientBtn.title = 'Ativar paciente';
+    togglePatientBtn.setAttribute('data-tooltip', 'Reativar Paciente');
+    togglePatientBtn.innerHTML = '<i class="bi bi-person-check"></i>';
   }
 
   togglePatientBtn.addEventListener('click', () => {
@@ -236,27 +248,43 @@ export function renderizarCardPaciente(paciente) {
     }
   });
 
-  botoesContainer.appendChild(togglePatientBtn);
+  const historicoConsultaBt = document.createElement('button');
+  historicoConsultaBt.className = 'btn-icon btn-outline-primary';
+  historicoConsultaBt.setAttribute('data-tooltip', 'Histórico de Consultas');
+  historicoConsultaBt.innerHTML = '<i class="bi bi-journal-medical"></i>';
+  historicoConsultaBt.addEventListener('click', () => openHistoricoConsultaModal({
+  }));
+  
+  const historicoContatoBt = document.createElement('button');
+  historicoContatoBt.className = 'btn-icon btn-outline-secondary';
+  historicoContatoBt.setAttribute('data-tooltip', 'Histórico de Contatos');
+  historicoContatoBt.innerHTML = '<i class="bi bi-chat-dots"></i>';
+  historicoContatoBt.addEventListener('click', () => openHistoricoContatoModal({
+  }));
 
+  const EditarPacienteBt = document.createElement('button');
+  EditarPacienteBt.className = 'btn-icon btn-outline-primary';
+  EditarPacienteBt.setAttribute('data-tooltip', 'Editar Paciente');
+  EditarPacienteBt.innerHTML = '<i class="bi bi-pencil"></i>';
+  EditarPacienteBt.addEventListener('click', () => openEditarInfoPacientesModal({
+  }));
+
+  secondaryActions.appendChild(historicoConsultaBt);
+  secondaryActions.appendChild(historicoContatoBt);
+  secondaryActions.appendChild(EditarPacienteBt);
+
+  // Adiciona togglePaciente ao container de ações secundárias para ficar ao lado dos outros botões secundários
+  secondaryActions.appendChild(togglePatientBtn);
+
+  // Junta os dois grupos dentro do container principal
+  botoesContainer.appendChild(primaryActions);
+  botoesContainer.appendChild(secondaryActions);
+
+  // Depois, anexa ao seu elemento pai conforme já faz
   topRow.appendChild(contato);
   topRow.appendChild(botoesContainer);
   body.appendChild(topRow);
 
-  if (atrasado) {
-    const alertBox = document.createElement('div');
-    alertBox.className = 'alert-box';
-    alertBox.innerHTML = `
-      <div class="d-flex gap-2">
-        <i class="bi bi-exclamation-triangle text-warning mt-1"></i>
-        <div>
-          <p class="alert-title">${paciente.nome_lembrete || 'Lembrete Pendente'}</p>
-          <p class="alert-text">${paciente.texto_lembrete || '---'}</p>
-          <p class="alert-overdue">⚠️ Contato em atraso há ${Math.abs(diasParaProximo)} dias</p>
-        </div>
-      </div>
-    `;
-    body.appendChild(alertBox);
-  }
 
   // if (!paciente.grupo_regra_atual) {
     
@@ -306,6 +334,27 @@ function openRegistrarConsultaModal(patient) {
   idPaciente.value = patient.id;
 
   disableLembreteModal.show();
+}
+
+function openHistoricoConsultaModal(patient) {
+
+  const historicoConsultaModal = new bootstrap.Modal(document.getElementById('consultasModal'));
+
+  historicoConsultaModal.show();
+}
+
+function openHistoricoContatoModal(patient) {
+
+  const historicoContatoModal = new bootstrap.Modal(document.getElementById('contatosModal'));
+
+  historicoContatoModal.show();
+}
+
+function openEditarInfoPacientesModal(patient) {
+
+  const editarInfoPacienteModal = new bootstrap.Modal(document.getElementById('editarPacienteModal'));
+
+  editarInfoPacienteModal.show();
 }
 
 function openEnableLembreteModal(patient) {
@@ -432,6 +481,13 @@ document.getElementById('confirm-reactivate-patient').addEventListener('click', 
       showToast(result.mensagem, 'success');
     } else {
       showToast(result.erro || 'Erro ao desativar paciente.', 'error');
+
+      // apagar modal anterior
+      const modalInstance = bootstrap.Modal.getInstance(document.getElementById('reativarPacienteModal')) 
+                    || new bootstrap.Modal(document.getElementById('reativarPacienteModal'));
+      modalInstance.hide();
+
+      openAtribuirGrupoModal(idPaciente);
     }
   } catch (err) {
     showToast('Erro inesperado ao desativar paciente.', 'error');

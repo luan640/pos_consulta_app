@@ -500,7 +500,7 @@ def status_paciente(request, pk):
         # empurar para a primeira regra existente
         regra = RegraLembrete.objects.filter(nutricionista=request.user, grupo=paciente.grupo_lembrete).order_by('ordem').first()
         if not regra:
-            return JsonResponse({'erro': 'Nenhuma regra de lembrete encontrada'}, status=400)
+            return JsonResponse({'erro': 'Escolha uma regra de lembrete!'}, status=400)
 
         data_lembrete = now().date() + timedelta(days=regra.dias_apos)
         Lembrete.objects.create(
@@ -574,6 +574,7 @@ def atribuir_grupo(request, pk_grupo, pk_paciente):
 
     paciente.grupo_lembrete = grupo_lembrete
     paciente.lembretes_ativos = True
+    paciente.ativo = True
     paciente.save()
 
     # buscar última consulta

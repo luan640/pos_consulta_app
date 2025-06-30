@@ -46,19 +46,16 @@ body {
 }
 
 .patient-info {
-    background: #f8f9fa;
-    padding: 0.5rem 0.75rem;
-    border-radius: 8px;
     font-size: 0.875rem;
     color: #6c757d;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    border: 1px solid #e9ecef;
 }
 
 .patient-info i {
-    font-size: 1rem;
+    width: 16px;
+    text-align: center;
 }
 
 .badge-waiting {
@@ -151,31 +148,6 @@ body {
 .btn-outline-secondary:hover {
     background: #6c757d;
     transform: translateY(-1px);
-}
-
-.btn-disable-reminder {
-    background: linear-gradient(135deg, #adb5bd, #ced4da);
-    color: #495057;
-    border: 1px solid #adb5bd;
-    position: relative;
-    padding-left: 2.2rem;
-}
-
-.btn-disable-reminder::before {
-    content: "\1F514";
-    /* Unicode bell symbol */
-    position: absolute;
-    left: 0.75rem;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 1rem;
-    opacity: 0.7;
-}
-
-.btn-disable-reminder:hover {
-    background: linear-gradient(135deg, #868e96, #adb5bd);
-    color: #212529;
-    border-color: #868e96;
 }
 
 .btn-enable-reminder {
@@ -328,10 +300,6 @@ body {
         justify-content: center;
     }
     
-    .patient-info {
-        font-size: 0.8rem;
-    }
-    
     .card-header, .card-body {
         padding: 1rem;
     }
@@ -346,3 +314,168 @@ body {
 .text-secondary {
     color: #495057 !important;
 }
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.primary-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.secondary-actions {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #dee2e6;
+    background: white;
+    color: #6c757d;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.btn-icon:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.btn-icon.btn-success {
+    background: #28a745;
+    color: white;
+    border-color: #28a745;
+}
+
+.btn-icon.btn-success:hover {
+    background: #218838;
+    color: white;
+}
+
+.btn-icon.btn-primary {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.btn-icon.btn-primary:hover {
+    background: #0056b3;
+    color: white;
+}
+
+.btn-icon.btn-warning {
+    background: #ffc107;
+    color: #212529;
+    border-color: #ffc107;
+}
+
+.btn-icon.btn-warning:hover {
+    background: #e0a800;
+}
+
+.btn-icon.btn-danger {
+    background: #dc3545;
+    color: white;
+    border-color: #dc3545;
+}
+
+.btn-icon.btn-danger:hover {
+    background: #c82333;
+    color: white;
+}
+
+.btn-icon.btn-secondary {
+    background: #6c757d;
+    color: white;
+    border-color: #6c757d;
+}
+
+.btn-icon.btn-secondary:hover {
+    background: #545b62;
+    color: white;
+}
+
+.btn-icon i {
+    font-size: 1.1rem;
+}
+
+.btn-icon::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 1000;
+}
+
+.btn-icon:hover::after {
+    opacity: 1;
+}
+
+.btn-icon.btn-info {
+    background: #17a2b8;
+    color: white;
+    border-color: #17a2b8;
+}
+
+.btn-icon.btn-info:hover {
+    background: #138496;
+    color: white;
+}
+
+.btn-icon.btn-outline-primary {
+    background: white;
+    color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-icon.btn-outline-primary:hover {
+    background: #007bff;
+    color: white;
+}
+
+.btn-icon.btn-outline-secondary {
+    background: white;
+    color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-icon.btn-outline-secondary:hover {
+    background: #6c757d;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .action-buttons {
+        justify-content: center;
+        width: 100%;
+        margin-top: 1rem;
+    }
+    
+    .primary-actions,
+    .secondary-actions {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+

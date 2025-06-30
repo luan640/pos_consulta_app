@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="{% static 'css/toast-styles.css' %}">
     <link rel="stylesheet" href="{% static 'css/contact-modal.css' %}">
     <link rel="stylesheet" href="{% static 'css/card-pacientes.css' %}">
+    <link rel="stylesheet" href="{% static 'css/modal-historico-consulta.css' %}">
 </head>
 <body class="bg-light">
     <div class="container py-4">
@@ -173,13 +174,9 @@
                             </div>
 
                             <!-- Action Buttons -->
-                            <div class="d-flex gap-3 pt-3 border-top">
-                                <button type="submit" class="btn btn-primary flex-grow-1 py-2" id="btn-registrar-contato">
-                                <i class="bi bi-check-circle me-2"></i>Registrar Contato
-                                </button>
-                                <button type="button" class="btn btn-outline-secondary py-2" data-bs-dismiss="modal">
-                                <i class="bi bi-x-circle me-2"></i>Cancelar
-                                </button>
+                            <div class="d-flex justify-content-end">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-success" id="btn-registrar-contato">Salvar</button>
                             </div>
                         </form>
                     </div>
@@ -397,7 +394,7 @@
                     </div>
                     <div class="modal-footer justify-content-center">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-warning" id="confirm-disable-reminder">Desabilitar Lembrete</button>
+                        <button type="button" class="btn btn-success" id="confirm-disable-reminder">Salvar</button>
                     </div>
                 </div>
             </div>
@@ -405,7 +402,7 @@
 
         <!-- Modal: Habilitar Lembrete -->
         <div class="modal fade" id="habilitarLembrete" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-sm">
+            <div class="modal-dialog modal-md">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">Habilitar lembrete</h5>
@@ -457,7 +454,7 @@
                     </div>
                     <div class="modal-footer justify-content-center">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-warning" id="confirm-deactivate-patient">Desativar Temporariamente</button>
+                        <button type="button" class="btn btn-success" id="confirm-deactivate-patient">Salvar</button>
                     </div>
                 </div>
             </div>
@@ -486,7 +483,7 @@
                     </div>
                     <div class="modal-footer justify-content-center">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-success" id="confirm-reactivate-patient">Reativar Paciente</button>
+                        <button type="button" class="btn btn-success" id="confirm-reactivate-patient">Salvar</button>
                     </div>
                 </div>
             </div>
@@ -625,10 +622,168 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-success">Salvar</button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Salvar</button>
                     </div>
                     </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Histórico de Consultas -->
+        <div class="modal fade" id="consultasModal" tabindex="-1" aria-labelledby="consultasModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="consultasModalLabel">
+                            <i class="bi bi-journal-medical me-2"></i>
+                            Histórico de Consultas - Luan Santos
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="history-item consulta">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="history-type text-success">Consulta</span>
+                                    <div class="history-date">26 de Junho de 2025</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="history-item retorno">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="history-type text-info">Retorno</span>
+                                    <div class="history-date">15 de Maio de 2025</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="history-item consulta">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="history-type text-success">Consulta</span>
+                                    <div class="history-date">10 de Abril de 2025</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Histórico de Contatos -->
+        <div class="modal fade" id="contatosModal" tabindex="-1" aria-labelledby="contatosModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="contatosModalLabel">
+                            <i class="bi bi-chat-dots me-2"></i>
+                            Histórico de Contatos - Iuan Santos
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="history-item contato">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="history-type text-warning">Contato</span>
+                                    <div class="history-date">28 de Junho de 2025 - 14:30</div>
+                                </div>
+                                <span class="badge bg-warning text-dark">WhatsApp</span>
+                            </div>
+                            <p class="mb-2"><strong>Observação:</strong> Paciente confirmou que está seguindo o tratamento corretamente. Relatou melhora nos sintomas.</p>
+                            <div class="materials-list">
+                                <strong>Materiais entregues:</strong>
+                                <div class="material-item"><i class="bi bi-file-earmark-text me-1"></i> Orientações de exercícios</div>
+                                <div class="material-item"><i class="bi bi-file-earmark-text me-1"></i> Dieta recomendada</div>
+                            </div>
+                        </div>
+
+                        <div class="history-item contato">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="history-type text-warning">Contato</span>
+                                    <div class="history-date">20 de Junho de 2025 - 09:15</div>
+                                </div>
+                                <span class="badge bg-primary">Telefone</span>
+                            </div>
+                            <p class="mb-2"><strong>Observação:</strong> Lembrete sobre a consulta agendada. Paciente confirmou presença.</p>
+                            <div class="materials-list">
+                                <strong>Materiais entregues:</strong>
+                                <div class="material-item"><i class="bi bi-calendar-check me-1"></i> Confirmação de agendamento</div>
+                            </div>
+                        </div>
+
+                        <div class="history-item contato">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="history-type text-warning">Contato</span>
+                                    <div class="history-date">18 de Maio de 2025 - 16:45</div>
+                                </div>
+                                <span class="badge bg-warning text-dark">WhatsApp</span>
+                            </div>
+                            <p class="mb-2"><strong>Observação:</strong> Paciente tirou dúvidas sobre a medicação. Orientações fornecidas via mensagem.</p>
+                            <div class="materials-list">
+                                <strong>Materiais entregues:</strong>
+                                <div class="material-item"><i class="bi bi-file-earmark-medical me-1"></i> Bula simplificada</div>
+                                <div class="material-item"><i class="bi bi-clock me-1"></i> Horários de medicação</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Editar Paciente -->
+        <div class="modal fade" id="editarPacienteModal" tabindex="-1" aria-labelledby="editarPacienteModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editarPacienteModalLabel">
+                            <i class="bi bi-pencil me-2"></i>
+                            Editar Informações do Paciente
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editarPacienteForm">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="nomeInput" placeholder="Nome completo" value="Iuan Santos" required>
+                                <label for="nomeInput">Nome completo</label>
+                            </div>
+                            
+                            <div class="form-floating mb-3">
+                                <input type="tel" class="form-control" id="telefoneInput" placeholder="Telefone" value="85999012483" required>
+                                <label for="telefoneInput">Telefone</label>
+                                <div class="form-text">Digite apenas números (DDD + número)</div>
+                            </div>
+                            
+                            <div class="form-floating mb-3">
+                                <input type="email" class="form-control" id="emailInput" placeholder="E-mail (opcional)" value="">
+                                <label for="emailInput">E-mail (opcional)</label>
+                            </div>
+                            
+                            <div class="form-floating mb-3">
+                                <textarea class="form-control" id="observacoesInput" placeholder="Observações" style="height: 100px"></textarea>
+                                <label for="observacoesInput">Observações gerais</label>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="salvarEdicaoPaciente()">
+                            <i class="bi bi-check-lg me-1"></i>
+                            Salvar Alterações
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
