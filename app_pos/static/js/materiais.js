@@ -7,125 +7,133 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function carregarMateriais() {
-fetch('/api/materiais/')
-    .then(res => res.json())
-    .then(data => {
-    const tbody = document.getElementById('materiais-tbody');
-    tbody.innerHTML = '';
-    
-    const semMaterial = document.getElementById('sem-materiais');
-    if (data.materiais.length === 0) {
-        semMaterial.classList.remove('d-none');
-    } else {
-        semMaterial.classList.add('d-none');
-    }
+    fetch('/api/materiais/')
+        .then(res => res.json())
+        .then(data => {
+        const tbody = document.getElementById('materiais-tbody');
+        tbody.innerHTML = '';
+        
+        const semMaterial = document.getElementById('sem-materiais');
+        if (data.materiais.length === 0) {
+            semMaterial.classList.remove('d-none');
+        } else {
+            semMaterial.classList.add('d-none');
+        }
 
-    data.materiais.forEach(material => {
-        const tr = document.createElement('tr');
-        tr.dataset.materialId = material.id;
-        tr.innerHTML = `
-        <td class="descricao">${material.descricao}</td>
-        <td class="acoes d-flex gap-2">
-            <button class="btn btn-sm btn-info btn-editar" title="Editar">
-            <i class="bi bi-pencil"></i>
-            </button>
-            <button class="btn btn-sm btn-danger btn-excluir" title="Excluir">
-            <i class="bi bi-trash"></i>
-            </button>
-        </td>
-        `;
-        tbody.appendChild(tr);
-    });
-
-    // Edição inline
-    tbody.querySelectorAll('.btn-editar').forEach(btn => {
-        btn.addEventListener('click', function () {
-        const row = btn.closest('tr');
-        const id = row.dataset.materialId;
-        const descricao = row.querySelector('.descricao').textContent;
-
-        row.innerHTML = `
-            <td><input type="text" class="form-control form-control-sm descricao-input" value="${descricao}"></td>
-            <td class="d-flex gap-2">
-            <button class="btn btn-sm btn-outline-success btn-salvar" title="Salvar">
-                <i class="bi bi-check"></i>
-            </button>
-            <button class="btn btn-sm btn-outline-danger btn-cancelar" title="Cancelar">
-                <i class="bi bi-x"></i>
-            </button>
+        data.materiais.forEach(material => {
+            const tr = document.createElement('tr');
+            tr.dataset.materialId = material.id;
+            tr.innerHTML = `
+            <td class="descricao">${material.descricao}</td>
+            <td class="acoes d-flex gap-2">
+                <button class="btn btn-sm btn-info btn-editar" title="Editar">
+                <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-danger btn-excluir" title="Excluir">
+                <i class="bi bi-trash"></i>
+                </button>
             </td>
-        `;
+            `;
+            tbody.appendChild(tr);
+        });
 
-        row.querySelector('.btn-salvar').addEventListener('click', () => {
-        const novaDescricao = row.querySelector('.descricao-input').value.trim();
-        if (!novaDescricao) {
-            alert('Descrição não pode ser vazia.');
-            return;
-        }
+        // Edição inline
+        tbody.querySelectorAll('.btn-editar').forEach(btn => {
+            btn.addEventListener('click', function () {
+            const row = btn.closest('tr');
+            const id = row.dataset.materialId;
+            const descricao = row.querySelector('.descricao').textContent;
 
-        fetch(`/api/materiais/${id}/`, {
-            method: 'PUT',
-            headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken') // Adicione isso se estiver usando CSRF
-            },
-            body: JSON.stringify({ descricao: novaDescricao })
-        })
-            .then(async res => {
-            const data = await res.json();
-            if (!res.ok) {
-                showToast(data.erro || 'Erro ao atualizar material', 'error');
-                carregarMateriais();
-                return;
-            }
-                showToast(data.mensagem || 'Material atualizado com sucesso!', 'success');
-                carregarMateriais();
-                inicializarSelecaoMateriais();
-            })
-            .catch(err => {
-                console.error(err);
-                showToast('Erro inesperado ao tentar salvar.', 'error');
+            row.innerHTML = `
+                <td><input type="text" class="form-control form-control-sm descricao-input" value="${descricao}"></td>
+                <td class="d-flex gap-2">
+                <button class="btn btn-sm btn-success btn-salvar" title="Salvar">
+                    <span class="btn-salvar-content"><i class="bi bi-check"></i></span>
+                </button>
+                <button class="btn btn-sm btn-danger btn-cancelar" title="Cancelar">
+                    <i class="bi bi-x"></i>
+                </button>
+                </td>
+            `;
+
+            const btnSalvar = row.querySelector('.btn-salvar');
+            btnSalvar.addEventListener('click', () => {
+                const novaDescricao = row.querySelector('.descricao-input').value.trim();
+                if (!novaDescricao) {
+                    alert('Descrição não pode ser vazia.');
+                    return;
+                }
+
+                // Mostra loading
+                const salvarContent = btnSalvar.querySelector('.btn-salvar-content');
+                salvarContent.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>`;
+                btnSalvar.disabled = true;
+
+                fetch(`/api/materiais/${id}/`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ descricao: novaDescricao })
+                })
+                .then(async res => {
+                    const data = await res.json();
+                    if (!res.ok) {
+                        showToast(data.erro || 'Erro ao atualizar material', 'error');
+                        carregarMateriais();
+                        return;
+                    }
+                    showToast(data.mensagem || 'Material atualizado com sucesso!', 'success');
+                    carregarMateriais();
+                    inicializarSelecaoMateriais();
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast('Erro inesperado ao tentar salvar.', 'error');
+                });
+            });
+
+            row.querySelector('.btn-cancelar').addEventListener('click', carregarMateriais);
             });
         });
 
-        row.querySelector('.btn-cancelar').addEventListener('click', carregarMateriais);
-        });
-    });
+        // Exclusão
+        tbody.querySelectorAll('.btn-excluir').forEach(btn => {
+            btn.addEventListener('click', function () {
+            const row = btn.closest('tr');
+            const id = row.dataset.materialId;
+            if (confirm('Deseja excluir este material?')) {
+                fetch(`/api/materiais/${id}/`, {
+                method: 'DELETE'
+                })
+                .then(async res => {
+                const data = await res.json();
+                if (!res.ok) {
+                    showToast(data.erro || 'Erro ao deletar material', 'error');
+                    carregarMateriais();
+                    return;
+                }
+                    showToast(data.mensagem || 'Material deletado com sucesso!', 'success');
+                    carregarMateriais();
+                    inicializarSelecaoMateriais();
 
-    // Exclusão
-    tbody.querySelectorAll('.btn-excluir').forEach(btn => {
-        btn.addEventListener('click', function () {
-        const row = btn.closest('tr');
-        const id = row.dataset.materialId;
-        if (confirm('Deseja excluir este material?')) {
-            fetch(`/api/materiais/${id}/`, {
-            method: 'DELETE'
-            })
-            .then(async res => {
-            const data = await res.json();
-            if (!res.ok) {
-                showToast(data.erro || 'Erro ao deletar material', 'error');
-                carregarMateriais();
-                return;
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast('Erro inesperado ao tentar deletar.', 'error');
+                });
             }
-                showToast(data.mensagem || 'Material deletado com sucesso!', 'success');
-                carregarMateriais();
-                inicializarSelecaoMateriais();
-
-            })
-            .catch(err => {
-                console.error(err);
-                showToast('Erro inesperado ao tentar deletar.', 'error');
             });
-        }
         });
-    });
 
-    });
+        });
 }
 
 // submissão do formulario novo-material-form
 const novoMaterialForm = document.getElementById('novo-material-form');
+const btnSalvarNovoMaterial = novoMaterialForm.querySelector('button[type="submit"]');
+
 novoMaterialForm.addEventListener('submit', function (e) {
     e.preventDefault();
 
@@ -136,6 +144,11 @@ novoMaterialForm.addEventListener('submit', function (e) {
         showToast('Descrição não pode ser vazia.', 'error');
         return;
     }
+
+    // Mostra loading no botão
+    const originalBtnContent = btnSalvarNovoMaterial.innerHTML;
+    btnSalvarNovoMaterial.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...`;
+    btnSalvarNovoMaterial.disabled = true;
 
     fetch('/api/materiais/', {
         method: 'POST',
@@ -169,6 +182,11 @@ novoMaterialForm.addEventListener('submit', function (e) {
     .catch(err => {
         console.error(err);
         showToast('Erro inesperado ao tentar adicionar.', 'error');
+    })
+    .finally(() => {
+        // Restaura o botão
+        btnSalvarNovoMaterial.innerHTML = originalBtnContent;
+        btnSalvarNovoMaterial.disabled = false;
     });
 });
 

@@ -249,24 +249,28 @@ export function renderizarCardPaciente(paciente) {
   });
 
   const historicoConsultaBt = document.createElement('button');
-  historicoConsultaBt.className = 'btn-icon btn-outline-primary';
-  historicoConsultaBt.setAttribute('data-tooltip', 'Histórico de Consultas');
-  historicoConsultaBt.innerHTML = '<i class="bi bi-journal-medical"></i>';
-  historicoConsultaBt.addEventListener('click', () => openHistoricoConsultaModal({
+    historicoConsultaBt.className = 'btn-icon btn-outline-primary';
+    historicoConsultaBt.setAttribute('data-tooltip', 'Histórico de Consultas');
+    historicoConsultaBt.innerHTML = '<i class="bi bi-journal-medical"></i>';
+    historicoConsultaBt.addEventListener('click', () => openHistoricoConsultaModal({
+      patient: paciente.id
   }));
   
   const historicoContatoBt = document.createElement('button');
-  historicoContatoBt.className = 'btn-icon btn-outline-secondary';
-  historicoContatoBt.setAttribute('data-tooltip', 'Histórico de Contatos');
-  historicoContatoBt.innerHTML = '<i class="bi bi-chat-dots"></i>';
-  historicoContatoBt.addEventListener('click', () => openHistoricoContatoModal({
+    historicoContatoBt.className = 'btn-icon btn-outline-secondary';
+    historicoContatoBt.setAttribute('data-tooltip', 'Histórico de Contatos');
+    historicoContatoBt.innerHTML = '<i class="bi bi-chat-dots"></i>';
+    historicoContatoBt.addEventListener('click', () => openHistoricoContatoModal({
+      patient: paciente.id
+
   }));
 
   const EditarPacienteBt = document.createElement('button');
-  EditarPacienteBt.className = 'btn-icon btn-outline-primary';
-  EditarPacienteBt.setAttribute('data-tooltip', 'Editar Paciente');
-  EditarPacienteBt.innerHTML = '<i class="bi bi-pencil"></i>';
-  EditarPacienteBt.addEventListener('click', () => openEditarInfoPacientesModal({
+    EditarPacienteBt.className = 'btn-icon btn-outline-primary';
+    EditarPacienteBt.setAttribute('data-tooltip', 'Editar Paciente');
+    EditarPacienteBt.innerHTML = '<i class="bi bi-pencil"></i>';
+    EditarPacienteBt.addEventListener('click', () => openEditarInfoPacientesModal({
+      patient: paciente
   }));
 
   secondaryActions.appendChild(historicoConsultaBt);
@@ -336,26 +340,192 @@ function openRegistrarConsultaModal(patient) {
   disableLembreteModal.show();
 }
 
-function openHistoricoConsultaModal(patient) {
-
-  const historicoConsultaModal = new bootstrap.Modal(document.getElementById('consultasModal'));
-
+async function openHistoricoConsultaModal(patient) {
+  // Abre o modal imediatamente e mostra loading
+  const historicoConsultaModalEl = document.getElementById('consultasModal');
+  const historicoConsultaModal = bootstrap.Modal.getInstance(historicoConsultaModalEl) || new bootstrap.Modal(historicoConsultaModalEl);
+  const modalBody = document.getElementById('consultas-historico-body');
+  modalBody.innerHTML = '<div class="text-center text-secondary py-3"><div class="spinner-border spinner-border-sm"></div> Carregando...</div>';
   historicoConsultaModal.show();
+
+  try {
+    const response = await fetch(`/api/historico-consulta/${patient.patient}/`);
+    if (!response.ok) throw new Error('Erro ao buscar histórico');
+    const data = await response.json();
+
+    if (data.consultas && data.consultas.length > 0) {
+      modalBody.innerHTML = data.consultas.map(consulta => {
+        const dataObj = new Date(consulta.data_consulta);
+        const dataFormatada = dataObj.toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric'
+        });
+        const tipo = consulta.tipo_consulta === 'retorno'
+          ? '<span class="history-type text-info">Retorno</span>'
+          : '<span class="history-type text-success">Consulta</span>';
+        return `
+          <div class="history-item consulta mb-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                ${tipo}
+                <div class="history-date">${dataFormatada}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      modalBody.innerHTML = '<div class="text-center text-secondary py-3">Nenhuma consulta registrada.</div>';
+    }
+  } catch (e) {
+    modalBody.innerHTML = '<div class="text-danger text-center py-3">Erro ao carregar histórico.</div>';
+  }
 }
 
-function openHistoricoContatoModal(patient) {
-
-  const historicoContatoModal = new bootstrap.Modal(document.getElementById('contatosModal'));
-
+async function openHistoricoContatoModal(patient) {
+  // Abre o modal imediatamente e mostra loading
+  const historicoContatoModalEl = document.getElementById('contatosModal');
+  const historicoContatoModal = bootstrap.Modal.getInstance(historicoContatoModalEl) || new bootstrap.Modal(historicoContatoModalEl);
+  const body = document.getElementById('contatosModalBody');
+  body.innerHTML = '<div class="text-center text-secondary py-3"><div class="spinner-border spinner-border-sm"></div> Carregando...</div>';
   historicoContatoModal.show();
+
+  try {
+    const resp = await fetch(`/api/historico-contatos/${patient.patient}/`);
+    if (!resp.ok) throw new Error('Erro ao buscar histórico');
+    const data = await resp.json();
+
+    if (!data.contatos || data.contatos.length === 0) {
+      body.innerHTML = '<div class="text-center text-secondary py-3"><i class="bi bi-info-circle"></i> Nenhum contato registrado.</div>';
+    } else {
+      body.innerHTML = data.contatos.map(contato => {
+        // Formata data/hora
+        const dataContato = contato.criado_em ? new Date(contato.criado_em) : null;
+        const dataFormatada = dataContato
+          ? dataContato.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) +
+            ' - ' +
+            dataContato.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          : '';
+
+        // Tipo de contato (badge)
+        let tipoBadge = '';
+        if (contato.tipo) {
+          if (contato.tipo.toLowerCase() === 'whatsapp') {
+            tipoBadge = '<span class="badge bg-warning text-dark">WhatsApp</span>';
+          } else if (contato.tipo.toLowerCase() === 'telefone') {
+            tipoBadge = '<span class="badge bg-primary">Telefone</span>';
+          } else {
+            tipoBadge = `<span class="badge bg-secondary">${contato.tipo}</span>`;
+          }
+        }
+
+        // Anotações e materiais
+        let anotacoesHtml = '';
+        if (contato.anotacoes && contato.anotacoes.length > 0) {
+          anotacoesHtml = contato.anotacoes.map(anotacao => {
+            let materiaisHtml = '';
+            if (anotacao.materiais_enviados && anotacao.materiais_enviados.length > 0) {
+              materiaisHtml = `
+                <div class="materials-list">
+                  <strong>Materiais entregues:</strong>
+                  ${anotacao.materiais_enviados.map(mat => `
+                    <div class="material-item">
+                      <i class="bi bi-file-earmark-text me-1"></i> ${mat.descricao || ''}
+                    </div>
+                  `).join('')}
+                </div>
+              `;
+            }
+            return `
+              <p class="mb-2"><strong>Anotação:</strong> ${anotacao.texto || ''}</p>
+              ${materiaisHtml}
+            `;
+          }).join('');
+        }
+
+        return `
+          <div class="history-item contato mb-4 pb-2 border-bottom">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <span class="history-type text-warning">Contato</span>
+                <div class="history-date">${dataFormatada}</div>
+              </div>
+              ${tipoBadge}
+            </div>
+            ${anotacoesHtml}
+          </div>
+        `;
+      }).join('');
+    }
+  } catch (e) {
+    body.innerHTML = '<div class="text-danger text-center py-3">Erro ao carregar histórico de contatos.</div>';
+  }
 }
 
+// Função para abrir o modal e preencher os campos
 function openEditarInfoPacientesModal(patient) {
 
+  document.getElementById('editarPacienteId').value = patient.patient.id;
+  document.getElementById('nomeInput').value = patient.patient.nome || '';
+  document.getElementById('telefoneInput').value = patient.patient.telefone || '';
   const editarInfoPacienteModal = new bootstrap.Modal(document.getElementById('editarPacienteModal'));
-
   editarInfoPacienteModal.show();
 }
+
+// Evento para enviar PUT ao editar paciente
+document.getElementById('salvarEdicaoPacienteBtn').addEventListener('click', async function () {
+  const btn = this;
+  btn.disabled = true;
+
+  // Cria spinner "Salvando..."
+  let spinner = document.createElement('span');
+  spinner.className = 'ms-2 spinner-border spinner-border-sm align-middle';
+  spinner.setAttribute('role', 'status');
+  spinner.setAttribute('aria-hidden', 'true');
+  spinner.id = 'saving-spinner';
+  let savingText = document.createElement('span');
+  savingText.className = 'ms-1 align-middle';
+  spinner.appendChild(savingText);
+
+  if (!btn.querySelector('#saving-spinner')) {
+    btn.appendChild(spinner);
+  }
+
+  const id = document.getElementById('editarPacienteId').value;
+  const nome = document.getElementById('nomeInput').value;
+  const telefone = document.getElementById('telefoneInput').value;
+
+  const data = {
+    nome,
+    telefone,
+  };
+
+  try {
+    const response = await fetch(`/api/editar-paciente/${id}/`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': (document.querySelector('[name=csrfmiddlewaretoken]') || {}).value || ''
+      },
+      body: JSON.stringify(data)
+    });
+    if (response.ok) {
+      bootstrap.Modal.getInstance(document.getElementById('editarPacienteModal')).hide();
+      listarPacientes();
+      showToast('Paciente atualizado com sucesso!', 'success');
+    } else {
+      alert('Erro ao atualizar paciente.');
+    }
+  } catch (e) {
+    alert('Erro de conexão ao atualizar paciente.');
+  } finally {
+    btn.disabled = false;
+    if (btn.querySelector('#saving-spinner')) {
+      btn.removeChild(btn.querySelector('#saving-spinner'));
+    }
+  }
+});
 
 function openEnableLembreteModal(patient) {
 
@@ -405,6 +575,37 @@ function openActivatePatientModal(patient) {
 
   reativarPatientModal.show();
 }
+
+// Função para abrir o modal de exclusão e esconder o de edição
+function openModalExcluirGrupo() {
+    // Esconde o modal de editar grupo
+    const editarGrupoModalEl = document.getElementById('editarGrupo');
+    const editarGrupoModal = bootstrap.Modal.getInstance(editarGrupoModalEl) || new bootstrap.Modal(editarGrupoModalEl);
+    editarGrupoModal.hide();
+
+    // Abre o modal de confirmação de exclusão
+    const modalEl = document.getElementById('confirmarExclusaoGrupoModal');
+    const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+    modal.show();
+}
+
+// Botão "Excluir" no modal de editar grupo
+document.getElementById('excluirGrupoBtn').addEventListener('click', async (event) => {
+    openModalExcluirGrupo();
+});
+
+// Botão "Voltar" no modal de confirmação de exclusão
+document.getElementById('voltar-editar-grupo-btn').addEventListener('click', function() {
+    // Fecha o modal de exclusão
+    const excluirModalEl = document.getElementById('confirmarExclusaoGrupoModal');
+    const excluirModal = bootstrap.Modal.getInstance(excluirModalEl);
+    excluirModal.hide();
+
+    // Reabre o modal de editar grupo
+    const editarGrupoModalEl = document.getElementById('editarGrupo');
+    const editarGrupoModal = bootstrap.Modal.getInstance(editarGrupoModalEl) || new bootstrap.Modal(editarGrupoModalEl);
+    editarGrupoModal.show();
+});
 
 // ao clicar no botão registrar-contato deve enviar uma requisição post para o servidor
 document.getElementById('btn-registrar-consulta').addEventListener('click', async (event) => {
@@ -603,6 +804,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
 
+    // Cria o spinner "Salvando..."
+    let spinner = document.createElement('span');
+    spinner.className = 'ms-2 spinner-border spinner-border-sm align-middle';
+    spinner.setAttribute('role', 'status');
+    spinner.setAttribute('aria-hidden', 'true');
+    spinner.id = 'saving-spinner';
+    let savingText = document.createElement('span');
+    savingText.className = 'ms-1 align-middle';
+    // savingText.textContent = 'Salvando...';
+    spinner.appendChild(savingText);
+
+    // Adiciona o spinner ao botão se ainda não existe
+    if (!submitBtn.querySelector('#saving-spinner')) {
+      submitBtn.appendChild(spinner);
+    }
+
     const nome = document.getElementById('name').value.trim();
     const telefone = document.getElementById('phone').value.trim();
     const dataConsulta = document.getElementById('lastConsultation').value;
@@ -612,6 +829,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (new Date(dataConsulta) > hoje) {
       showToast('A data da última consulta não pode ser no futuro.', 'error');
       submitBtn.disabled = false;
+      if (submitBtn.querySelector('#saving-spinner')) {
+        submitBtn.removeChild(submitBtn.querySelector('#saving-spinner'));
+      }
       return;
     } 
 
@@ -660,6 +880,10 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('Erro inesperado ao cadastrar paciente.', 'error');
     } finally {
       submitBtn.disabled = false;
+      // Remove o spinner
+      if (submitBtn.querySelector('#saving-spinner')) {
+        submitBtn.removeChild(submitBtn.querySelector('#saving-spinner'));
+      }
     }
 
   });
@@ -674,6 +898,24 @@ document.getElementById('atribuir-grupo-form').addEventListener('submit', functi
 
   const modalAtribuirGrupoModalEl = document.getElementById('atribuirGrupoModal');
   const modalAtribuirGrupoModal = bootstrap.Modal.getInstance(modalAtribuirGrupoModalEl) || new bootstrap.Modal(modalAtribuirGrupoModalEl);
+
+  const submitBtn = document.querySelector('#atribuir-grupo-form button[type="submit"]');
+  submitBtn.disabled = true;
+
+  // Cria spinner "Salvando..."
+  let spinner = document.createElement('span');
+  spinner.className = 'ms-2 spinner-border spinner-border-sm align-middle';
+  spinner.setAttribute('role', 'status');
+  spinner.setAttribute('aria-hidden', 'true');
+  spinner.id = 'saving-spinner';
+  let savingText = document.createElement('span');
+  savingText.className = 'ms-1 align-middle';
+  // savingText.textContent = 'Salvando...';
+  spinner.appendChild(savingText);
+
+  if (!submitBtn.querySelector('#saving-spinner')) {
+    submitBtn.appendChild(spinner);
+  }
 
   fetch(`/api/atribuir-grupo/${grupoId}/${pacienteId}/`, {
     method: 'POST',
@@ -693,7 +935,6 @@ document.getElementById('atribuir-grupo-form').addEventListener('submit', functi
       fetch(`/api/paciente/${pacienteId}/`)
       .then(res => res.json())
       .then(updated => {
-          
           const container = document.getElementById('patients-container');
           const oldCard = container.querySelector(`[data-paciente-id="${updated.id}"]`);
           const newCard = renderizarCardPaciente(updated);
@@ -704,6 +945,15 @@ document.getElementById('atribuir-grupo-form').addEventListener('submit', functi
       });
 
       showToast('Sucesso!', 'success');
+    })
+    .catch(() => {
+      showToast('Erro ao atribuir grupo.', 'error');
+    })
+    .finally(() => {
+      submitBtn.disabled = false;
+      if (submitBtn.querySelector('#saving-spinner')) {
+        submitBtn.removeChild(submitBtn.querySelector('#saving-spinner'));
+      }
     });
 });
 

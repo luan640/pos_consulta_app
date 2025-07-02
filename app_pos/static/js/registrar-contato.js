@@ -4,9 +4,9 @@ import { showToast } from './message.js';
 document.getElementById('contact-form').addEventListener('submit', function (e) {
     e.preventDefault();
 
-    const submitBtn = document.getElementById('submit-contact-btn');
+    const submitBtn = document.getElementById('btn-registrar-contato');
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Enviando...';
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Salvando...';
 
     const patientId = document.getElementById('contact-patient-id').value;
     const contactType = document.getElementById('contact-type').value;
@@ -66,7 +66,7 @@ document.getElementById('contact-form').addEventListener('submit', function (e) 
     })
     .finally(() => {
         submitBtn.disabled = false;
-        submitBtn.innerHTML = 'Registrar Contato';
+        submitBtn.innerHTML = 'Salvar';
     });
 
 });

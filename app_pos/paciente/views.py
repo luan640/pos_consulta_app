@@ -680,3 +680,102 @@ def buscar_materiais(request):
 
     return HttpResponseNotAllowed(['GET'])
 
+@login_required
+@require_http_methods(['GET'])
+def historico_consulta(request, pk):
+    try:
+        paciente = Paciente.objects.get(pk=pk, dono=request.user)
+    except Paciente.DoesNotExist:
+        return JsonResponse({'erro': 'Paciente não encontrado'}, status=404)
+
+    consultas = Consulta.objects.filter(paciente=paciente).order_by('-data_consulta')
+    consultas_list = [
+        {
+            'id': consulta.id,
+            'data_consulta': consulta.data_consulta,
+            'tipo_consulta': consulta.tipo_consulta,
+        }
+        for consulta in consultas
+    ]
+
+    return JsonResponse({'consultas': consultas_list})
+
+@login_required
+@require_http_methods(['GET'])
+def historico_contatos(request, pk):
+    try:
+        paciente = Paciente.objects.get(pk=pk, dono=request.user)
+    except Paciente.DoesNotExist:
+        return JsonResponse({'erro': 'Paciente não encontrado'}, status=404)
+
+    contatos = ContatoNutricionista.objects.filter(paciente=paciente).order_by('-data_contato').prefetch_related('anotacoes__material_enviado')
+    contatos_list = []
+    for contato in contatos:
+        anotacoes = []
+        for anotacao in contato.anotacoes.all():
+            materiais = [{'id': m.id, 'descricao': m.descricao} for m in anotacao.material_enviado.all()]
+            anotacoes.append({
+                'id': anotacao.id,
+                'texto': anotacao.texto,
+                'materiais_enviados': materiais,
+                'criado_em': anotacao.criado_em,
+            })
+        contatos_list.append({
+            'id': contato.id,
+            'data_contato': contato.data_contato,
+            'tipo': contato.tipo,
+            'criado_em': contato.criado_em,
+            'anotacoes': anotacoes,
+        })
+
+    return JsonResponse({'contatos': contatos_list})
+
+
+@csrf_exempt
+@login_required
+@require_http_methods(["PUT"])
+def atualizar_paciente(request, pk):
+    try:
+        paciente = Paciente.objects.get(pk=pk, dono=request.user)
+    except Paciente.DoesNotExist:
+        return JsonResponse({'erro': 'Paciente não encontrado'}, status=404)
+
+    data = json.loads(request.body)
+    nome = data.get('nome')
+    telefone = data.get('telefone')
+
+    if nome is not None:
+        paciente.nome = nome
+    if telefone is not None:
+        paciente.telefone = telefone
+
+    paciente.save()
+    return JsonResponse({'mensagem': 'Paciente atualizado com sucesso'})
+
+@login_required
+def verifica_se_tem_cadastrado(request):
+    user = request.user
+
+    tem_material = Material.objects.filter(dono=user).exists()
+    tem_grupo = GrupoLembrete.objects.filter(dono=user).exists()
+    tem_paciente = Paciente.objects.filter(dono=user).exists()
+
+    context = {
+        'tem_material': tem_material,
+        'tem_grupo': tem_grupo,
+        'tem_paciente': tem_paciente,
+    }
+
+    return JsonResponse(context)
+
+@csrf_exempt
+@login_required
+@require_http_methods(["DELETE"])
+def excluir_grupo_regra(request, pk):
+    try:
+        grupo = GrupoLembrete.objects.get(pk=pk, dono=request.user)
+    except GrupoLembrete.DoesNotExist:
+        return JsonResponse({'erro': 'Grupo de regras não encontrado'}, status=404)
+
+    grupo.delete()
+    return JsonResponse({'mensagem': 'Grupo de regras excluído com sucesso'})

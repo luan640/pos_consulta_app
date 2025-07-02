@@ -11,11 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(res => res.json())
       .then(data => {
 
-        if (!data.grupos || data.grupos.length === 0) {
-          document.getElementById('sem-regras').classList.remove('d-none');
-          return;
-        }
-
         // Preenche o <select> dropdown (se existir)
         const grupoSelect = document.getElementById('grupo-regras');
         if (grupoSelect) {
@@ -76,13 +71,23 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function carregarRegras() {
-
-    const idGrupo = document.getElementById('regra-grupo-id').value
+    const idGrupo = document.getElementById('regra-grupo-id').value;
+    const tbody = document.getElementById('regras-tbody');
+    
+    // Mostra um loading na tabela
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="text-center">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Carregando...</span>
+          </div>
+        </td>
+      </tr>
+    `;
 
     fetch(`/api/regras/${idGrupo}/`)
       .then(res => res.json())
       .then(data => {
-        const tbody = document.getElementById('regras-tbody');
         tbody.innerHTML = '';
 
         data.regras.forEach(regra => {
@@ -180,8 +185,22 @@ document.addEventListener('DOMContentLoaded', () => {
   carregarGrupoRegras();
 
   function salvarEdicao(id, row) {
-
     const grupoId = document.getElementById('regra-grupo-id').value;
+    const btnSalvar = row.querySelector('.btn-salvar');
+
+    // Cria spinner se não existir
+    let spinner = btnSalvar.querySelector('.spinner-border');
+    if (!spinner) {
+      spinner = document.createElement('span');
+      spinner.className = 'spinner-border spinner-border-sm ms-2'; // pequeno spinner, margem esquerda
+      spinner.setAttribute('role', 'status');
+      spinner.setAttribute('aria-hidden', 'true');
+      btnSalvar.appendChild(spinner);
+    }
+
+    // Mostra spinner e desabilita botão
+    spinner.style.display = 'inline-block';
+    btnSalvar.disabled = true;
 
     const payload = {
       nome: row.querySelector('.nome-input').value,
@@ -208,6 +227,11 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(err => {
         alert('Erro ao salvar edição');
         console.error(err);
+      })
+      .finally(() => {
+        // Esconde spinner e habilita botão novamente
+        spinner.style.display = 'none';
+        btnSalvar.disabled = false;
       });
   }
 
@@ -222,9 +246,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Submissão do formulário
   document.getElementById('nova-regra-form').addEventListener('submit', function (e) {
-    
     e.preventDefault();
-    const grupoId = document.getElementById('regra-grupo-id').value
+    const grupoId = document.getElementById('regra-grupo-id').value;
+
+    const submitBtn = document.getElementById('salvarRegraBtn');
+    const originalBtnHtml = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...`;
 
     const payload = {
       nome: document.getElementById('nova-regra-nome').value,
@@ -248,6 +276,10 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Regra criada com sucesso!', 'success');
         carregarRegras(grupoId); // Atualiza tabela
         carregarGrupoRegras();
+      })
+      .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHtml;
       });
   });
 
@@ -321,6 +353,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const regraModalEl = document.getElementById('regraModal');
     const regraModal = bootstrap.Modal.getInstance(regraModalEl) || new bootstrap.Modal(regraModalEl);
 
+    const submitBtn = document.getElementById('salvarGrupoBtn');
+    const originalBtnHtml = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...`;
+
     const payload = {
       nome: document.getElementById('grupoNome').value,
       descricao: document.getElementById('grupoDescricao').value
@@ -338,14 +375,17 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(() => {
         document.getElementById('grupoForm').reset();
 
-        // Adiciona listener para reabrir o modal antigo após fechar este
         novoGrupoModalEl.addEventListener('hidden.bs.modal', function handler() {
           regraModal.show();
           novoGrupoModalEl.removeEventListener('hidden.bs.modal', handler);
         });
         carregarGrupoRegras();
-        novoGrupoModal.hide(); // Vai disparar o evento e reabrir o antigo
+        novoGrupoModal.hide();
         showToast('Grupo de regra criado com sucesso!', 'success');
+      })
+      .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHtml;
       });
   });
 
@@ -370,13 +410,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('editarGrupoDescricao').value = descricaoGrupo;
 
     // Quando o novo modal for fechado (por qualquer motivo: cancelar, clicar fora, etc.)
-    novoGrupoModalEl.addEventListener('hidden.bs.modal', function handler() {
-      // Reabre o modal antigo
+    // Fecha o modal de edição e reabre o modal principal ao clicar em cancelar
+    novoGrupoModalEl.querySelector('.btn-cancelar-grupo')?.addEventListener('click', function () {
+      novoGrupoModal.hide();
       regraModal.show();
-
-      // Remove o listener para evitar múltiplos disparos
-      novoGrupoModalEl.removeEventListener('hidden.bs.modal', handler);
     });
+
+    // novoGrupoModalEl.addEventListener('hidden.bs.modal', function handler() {
+    //   // Reabre o modal antigo
+    //   regraModal.show();
+
+    //   // Remove o listener para evitar múltiplos disparos
+    //   novoGrupoModalEl.removeEventListener('hidden.bs.modal', handler);
+    // });
   });
 
   // botão para salvar grupo salvarGrupoBtn
@@ -390,6 +436,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const regraModal = bootstrap.Modal.getInstance(regraModalEl) || new bootstrap.Modal(regraModalEl);
 
     const grupoId = document.getElementById('regra-grupo-id').value;
+
+    const submitBtn = document.getElementById('editarGrupoBtn');
+    const originalBtnHtml = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...`;
 
     const payload = {
       nome: document.getElementById('editarGrupoNome').value,
@@ -416,6 +467,10 @@ document.addEventListener('DOMContentLoaded', () => {
         carregarGrupoRegras();
         novoGrupoModal.hide(); // Vai disparar o evento e reabrir o antigo
         showToast('Grupo de regra editado com sucesso!', 'success');
+      })
+      .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHtml;
       });
   });
 

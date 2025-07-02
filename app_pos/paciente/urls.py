@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path('home/', views.home, name='home'),
+    path('', views.home, name='home'),
 ]
 
 urlpatterns += [
@@ -18,6 +19,7 @@ urlpatterns += [
 
     path('api/grupo-regras/', views.grupo_regras_list_create, name='grupo_regras_list_create'),
     path('api/grupo-regras/update/<int:pk>/', views.grupo_regras_update, name='grupo_regras_update'),
+    path('api/excluir-grupo-regra/', views.excluir_grupo_regra, name='excluir_grupo_regra'),
 
     path('api/atribuir-grupo/<int:pk_grupo>/<int:pk_paciente>/', views.atribuir_grupo, name='atribuir_grupo'),
 
@@ -28,5 +30,12 @@ urlpatterns += [
 
     path('api/materiais/', views.buscar_materiais, name='buscar_materiais'),
     path('api/materiais/<int:pk>/', views.materiais, name='materiais'),
+
+    path('api/historico-consulta/<int:pk>/', views.historico_consulta, name='historico_consulta'),
+    path('api/historico-contatos/<int:pk>/', views.historico_contatos, name='historico_contatos'),
+    path('api/editar-paciente/<int:pk>/', views.atualizar_paciente, name='atualizar_paciente'),
+
+    path('api/verificar-cadastro/', views.verifica_se_tem_cadastrado, name='verifica_se_tem_cadastrado'),
+    
 
 ]
