@@ -3,13 +3,13 @@ import { showToast } from './message.js';
 document.addEventListener('DOMContentLoaded', () => {
   listarPacientes();
   atualizarCards();
+
   inicializarDesativarPaciente();
   inicializarDesativarLembrete();
   inicializarHabilitarLembrete();
   inicializarReativarPaciente();
   inicializarRegistroConsulta();
   inicializarBotaoExcluirGrupo();
-  openModalExcluirGrupo();
   inicializarBotaoEditarGrupo();
   inicializarVoltarEditarGrupo();
   inicializarFormularioAtribuirGrupo();
@@ -628,13 +628,19 @@ function inicializarVoltarEditarGrupo() {
   const voltarBtn = document.getElementById('voltar-editar-grupo-btn');
   if (voltarBtn && !voltarBtn.dataset.listenerAdded) {
     voltarBtn.dataset.listenerAdded = 'true';
+
     voltarBtn.addEventListener('click', () => {
       const excluirModal = bootstrap.Modal.getInstance(document.getElementById('confirmarExclusaoGrupoModal'));
       if (excluirModal) excluirModal.hide();
 
       const editarModalEl = document.getElementById('editarGrupo');
-      const editarModal = bootstrap.Modal.getInstance(editarModalEl) || new bootstrap.Modal(editarModalEl);
-      editarModal.show();
+      let editarModal = bootstrap.Modal.getInstance(editarModalEl);
+
+      if (!editarModal) {
+        editarModal = new bootstrap.Modal(editarModalEl, { show: false }); // prevenindo auto-show
+      }
+
+      editarModal.show(); // só aqui que realmente mostra
     });
   }
 }

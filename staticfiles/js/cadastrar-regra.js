@@ -183,6 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   carregarGrupoRegras();
+  // inicializarBotaoEditarGrupoModal();
 
   function salvarEdicao(id, row) {
     const grupoId = document.getElementById('regra-grupo-id').value;
@@ -390,40 +391,45 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // botao para editar grupo (nome e descrição)
-  document.getElementById('modalEditarGrupoBtn').addEventListener('click', function () {
-    const regraModalEl = document.getElementById('regraModal');
-    const novoGrupoModalEl = document.getElementById('editarGrupo');
+  function inicializarBotaoEditarGrupoModal() {
+    const btn = document.getElementById('modalEditarGrupoBtn');
 
-    const regraModal = bootstrap.Modal.getInstance(regraModalEl) || new bootstrap.Modal(regraModalEl);
-    const novoGrupoModal = new bootstrap.Modal(novoGrupoModalEl);
+    if (btn && !btn.dataset.listenerAdded) {
+      btn.dataset.listenerAdded = 'true';
 
-    // Oculta o modal antigo
-    regraModal.hide();
+      btn.addEventListener('click', function () {
+        const regraModalEl = document.getElementById('regraModal');
+        const novoGrupoModalEl = document.getElementById('editarGrupo');
 
-    const nomeGrupo = document.getElementById('nome-grupo').value;
-    const descricaoGrupo = document.getElementById('descricao-grupo').value;
+        const regraModal = bootstrap.Modal.getInstance(regraModalEl) || new bootstrap.Modal(regraModalEl);
+        const novoGrupoModal = new bootstrap.Modal(novoGrupoModalEl, { show: false }); // evitar auto-show
 
-    // Mostra o novo modal
-    novoGrupoModal.show();
+        // Oculta o modal antigo
+        regraModal.hide();
 
-    document.getElementById('editarGrupoNome').value = nomeGrupo;
-    document.getElementById('editarGrupoDescricao').value = descricaoGrupo;
+        // Preenche os campos do modal de edição
+        const nomeGrupo = document.getElementById('nome-grupo').value;
+        const descricaoGrupo = document.getElementById('descricao-grupo').value;
 
-    // Quando o novo modal for fechado (por qualquer motivo: cancelar, clicar fora, etc.)
-    // Fecha o modal de edição e reabre o modal principal ao clicar em cancelar
-    novoGrupoModalEl.querySelector('.btn-cancelar-grupo')?.addEventListener('click', function () {
-      novoGrupoModal.hide();
-      regraModal.show();
-    });
+        document.getElementById('editarGrupoNome').value = nomeGrupo;
+        document.getElementById('editarGrupoDescricao').value = descricaoGrupo;
 
-    // novoGrupoModalEl.addEventListener('hidden.bs.modal', function handler() {
-    //   // Reabre o modal antigo
-    //   regraModal.show();
+        // Mostra o novo modal
+        novoGrupoModal.show();
 
-    //   // Remove o listener para evitar múltiplos disparos
-    //   novoGrupoModalEl.removeEventListener('hidden.bs.modal', handler);
-    // });
-  });
+        // Protege o botão cancelar contra múltiplos listeners
+        const cancelarBtn = novoGrupoModalEl.querySelector('.btn-cancelar-grupo');
+        if (cancelarBtn && !cancelarBtn.dataset.listenerAdded) {
+          cancelarBtn.dataset.listenerAdded = 'true';
+
+          cancelarBtn.addEventListener('click', function () {
+            novoGrupoModal.hide();
+            regraModal.show();
+          });
+        }
+      });
+    }
+  }
 
   // botão para salvar grupo salvarGrupoBtn
   document.getElementById('editarGrupoForm').addEventListener('submit', function (e) {
@@ -495,4 +501,3 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 });
-
