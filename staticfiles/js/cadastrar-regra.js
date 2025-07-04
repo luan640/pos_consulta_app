@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   carregarGrupoRegras();
-  // inicializarBotaoEditarGrupoModal();
+  inicializarBotaoEditarGrupoModal();
 
   function salvarEdicao(id, row) {
     const grupoId = document.getElementById('regra-grupo-id').value;
