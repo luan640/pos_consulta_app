@@ -27,8 +27,9 @@ SECRET_KEY = 'django-insecure-llo3s@)477a5$cyqu*bm=wg1s*)(f@1yph2h%x9=4qfv%-@t$i
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['lembrapro.onrender.com', '127.0.0.1']
-CSRF_TRUSTED_ORIGINS = ['https://lembrapro.onrender.com']
+# ALLOWED_HOSTS = ['lembrapro.onrender.com', '127.0.0.1']
+ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = ['https://lembrapro.onrender.com', 'http://127.0.0.1']
 
 # Application definition
 
@@ -167,3 +168,23 @@ LOGIN_REDIRECT_URL = '/home/'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 LOGIN_URL = '/login/'
+
+LOGGING = {
+    'version': 1,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
