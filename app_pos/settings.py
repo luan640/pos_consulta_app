@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-llo3s@)477a5$cyqu*bm=wg1s*)(f@1yph2h%x9=4qfv%-@t$i
 DEBUG = False
 
 ALLOWED_HOSTS = ['lembrapro.onrender.com', '127.0.0.1']
-CSRF_TRUSTED_ORIGINS = ['https://https://lembrapro.onrender.com']
+CSRF_TRUSTED_ORIGINS = ['https://lembrapro.onrender.com']
 
 # Application definition
 
@@ -92,11 +92,11 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DB_NAME'),
-        'USER': env('DB_USER'),
-        'PASSWORD': env('DB_PASSWORD'),
-        'HOST': env('DB_HOST'),
-        'PORT': env('DB_PORT'),
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': '15512332',
+        'HOST': 'database.cptoi4pdeur0.us-east-1.rds.amazonaws.com',
+        'PORT': '5432',
         'OPTIONS': {
             'options': '-c search_path=lembra_pro'
         }
