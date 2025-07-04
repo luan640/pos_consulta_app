@@ -76,6 +76,7 @@ def cadastrar_paciente(request):
         nome = data.get('nome')
         telefone = data.get('telefone')
         data_ultima_consulta = data.get('data_ultima_consulta')
+        tipo_consulta = data.get('tipo_consulta', 'consulta') 
 
         if not nome or not data_ultima_consulta:
             return JsonResponse({'erro': 'Nome e data da última consulta são obrigatórios'}, status=400)
@@ -91,7 +92,8 @@ def cadastrar_paciente(request):
         data_consulta = parse_date(data_ultima_consulta)
         Consulta.objects.create(
             paciente=paciente,
-            data_consulta=data_consulta
+            data_consulta=data_consulta,
+            tipo_consulta= tipo_consulta
         )
 
         return JsonResponse({'mensagem': 'Paciente cadastrado com sucesso', 'id_paciente':paciente.id})
@@ -688,11 +690,11 @@ def historico_consulta(request, pk):
     except Paciente.DoesNotExist:
         return JsonResponse({'erro': 'Paciente não encontrado'}, status=404)
 
-    consultas = Consulta.objects.filter(paciente=paciente).order_by('-data_consulta')
+    consultas = Consulta.objects.filter(paciente=paciente).order_by('data_consulta')
     consultas_list = [
         {
             'id': consulta.id,
-            'data_consulta': consulta.data_consulta,
+            'data_consulta': consulta.data_consulta.strftime('%d/%m/%Y') if consulta.data_consulta else None,
             'tipo_consulta': consulta.tipo_consulta,
         }
         for consulta in consultas
@@ -729,7 +731,6 @@ def historico_contatos(request, pk):
         })
 
     return JsonResponse({'contatos': contatos_list})
-
 
 @csrf_exempt
 @login_required

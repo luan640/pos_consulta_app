@@ -119,6 +119,14 @@
                                 <input type="date" class="form-control" id="lastConsultation" required>
                                 <label for="lastConsultation" for="lastConsultation" class="form-label">Data da Última Consulta *</label>
                             </div>
+                            <div class="form-floating mb-3">
+                                <select class="form-select" id="tipoConsulta" required>
+                                    <option value="" disabled selected>Selecione</option>
+                                    <option value="consulta">Consulta</option>
+                                    <option value="retorno">Retorno</option>
+                                </select>
+                                <label for="tipoConsulta">Tipo de Consulta *</label>
+                            </div>
                             <div class="d-flex justify-content-end">
                                 <button type="submit" class="btn btn-success" id="submit-contact-btn">Salvar</button>
                             </div>       

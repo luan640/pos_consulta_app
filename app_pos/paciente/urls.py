@@ -37,5 +37,4 @@ urlpatterns += [
 
     path('api/verificar-cadastro/', views.verifica_se_tem_cadastrado, name='verifica_se_tem_cadastrado'),
     
-
 ]

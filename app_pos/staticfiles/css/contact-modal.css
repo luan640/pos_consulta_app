@@ -1,0 +1,71 @@
+/* Custom styles for the contact modal */
+.material-chip {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  margin: 0.2rem;
+  border-radius: 25px;
+  background-color: #e9ecef;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.material-chip:hover {
+  background-color: #dee2e6;
+}
+
+.material-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.8rem;
+  margin: 0.2rem;
+  border-radius: 25px;
+  background-color: #cfe2ff;
+  border: 1px solid #9ec5fe;
+  color: #0d6efd;
+  font-size: 0.9rem;
+}
+
+.material-pill i {
+  margin-left: 0.5rem;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.material-pill i:hover {
+  opacity: 1;
+}
+
+.min-height-50 {
+  min-height: 50px;
+}
+
+/* Improve form controls */
+.form-control:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Modal animation */
+.modal.fade .modal-dialog {
+  transition: transform 0.3s ease-out;
+}
+
+.modal.show .modal-dialog {
+  transform: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .modal-dialog {
+    margin: 0.5rem;
+  }
+
+  .d-flex.gap-3 {
+    flex-direction: column;
+  }
+
+  .btn {
+    margin-bottom: 0.5rem;
+  }
+}
