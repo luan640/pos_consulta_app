@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-llo3s@)477a5$cyqu*bm=wg1s*)(f@1yph2h%x9=4qfv%-@t$i
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['https://lembrapro.onrender.com', '127.0.0.1']
+ALLOWED_HOSTS = ['lembrapro.onrender.com', '127.0.0.1']
 CSRF_TRUSTED_ORIGINS = ['https://https://lembrapro.onrender.com']
 
 # Application definition
