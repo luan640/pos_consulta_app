@@ -46,15 +46,14 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',       # 1º
+    'whitenoise.middleware.WhiteNoiseMiddleware',         # 2º – agora imediatamente após
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', 
-
 ]
 
 ROOT_URLCONF = 'app_pos.urls'
@@ -75,7 +74,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'app_pos.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -99,6 +97,9 @@ DATABASES = {
         'PASSWORD': env('DB_PASSWORD'),
         'HOST': env('DB_HOST'),
         'PORT': env('DB_PORT'),
+        'OPTIONS': {
+            'options': '-c search_path=lembra_pro'
+        }
     }
 }
 
@@ -137,16 +138,24 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-
-STATIC_URL = 'static/'
-
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static"),
-]
-
-# Pasta onde o collectstatic vai jogar todos os arquivos
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [ os.path.join(BASE_DIR, 'static') ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+
+# E adicione esta configuração moderna:
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+# Configurações adicionais do WhiteNoise
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = True  # Apenas para desenvolvimento
+WHITENOISE_MANIFEST_STRICT = False
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

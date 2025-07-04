@@ -1,0 +1,25 @@
+.material-chip {
+  background-color: #e9ecef;
+  border-radius: 20px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.material-chip:hover {
+  background-color: #d6d8db;
+}
+
+.material-pill {
+  background-color: #0d6efd;
+  color: white;
+  border-radius: 20px;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.material-pill i {
+  cursor: pointer;
+}
