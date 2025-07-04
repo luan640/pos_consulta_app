@@ -3,7 +3,18 @@ import { showToast } from './message.js';
 document.addEventListener('DOMContentLoaded', () => {
   listarPacientes();
   atualizarCards();
-  inicializarSelecaoMateriais();
+  inicializarDesativarPaciente();
+  inicializarDesativarLembrete();
+  inicializarHabilitarLembrete();
+  inicializarReativarPaciente();
+  inicializarRegistroConsulta();
+  inicializarBotaoExcluirGrupo();
+  openModalExcluirGrupo();
+  inicializarBotaoEditarGrupo();
+  inicializarVoltarEditarGrupo();
+  inicializarFormularioAtribuirGrupo();
+  inicializarEdicaoPaciente();
+
 });
 
 function listarPacientes() {
@@ -473,58 +484,65 @@ function openEditarInfoPacientesModal(patient) {
 }
 
 // Evento para enviar PUT ao editar paciente
-document.getElementById('salvarEdicaoPacienteBtn').addEventListener('click', async function () {
-  const btn = this;
-  btn.disabled = true;
+function inicializarEdicaoPaciente() {
+  const btn = document.getElementById('salvarEdicaoPacienteBtn');
 
-  // Cria spinner "Salvando..."
-  let spinner = document.createElement('span');
-  spinner.className = 'ms-2 spinner-border spinner-border-sm align-middle';
-  spinner.setAttribute('role', 'status');
-  spinner.setAttribute('aria-hidden', 'true');
-  spinner.id = 'saving-spinner';
-  let savingText = document.createElement('span');
-  savingText.className = 'ms-1 align-middle';
-  spinner.appendChild(savingText);
+  if (btn && !btn.dataset.listenerAdded) {
+    btn.dataset.listenerAdded = 'true';
 
-  if (!btn.querySelector('#saving-spinner')) {
-    btn.appendChild(spinner);
-  }
+    btn.addEventListener('click', async function () {
+      btn.disabled = true;
 
-  const id = document.getElementById('editarPacienteId').value;
-  const nome = document.getElementById('nomeInput').value;
-  const telefone = document.getElementById('telefoneInput').value;
+      // Cria spinner "Salvando..."
+      let spinner = document.createElement('span');
+      spinner.className = 'ms-2 spinner-border spinner-border-sm align-middle';
+      spinner.setAttribute('role', 'status');
+      spinner.setAttribute('aria-hidden', 'true');
+      spinner.id = 'saving-spinner';
 
-  const data = {
-    nome,
-    telefone,
-  };
+      let savingText = document.createElement('span');
+      savingText.className = 'ms-1 align-middle';
+      spinner.appendChild(savingText);
 
-  try {
-    const response = await fetch(`/api/editar-paciente/${id}/`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': (document.querySelector('[name=csrfmiddlewaretoken]') || {}).value || ''
-      },
-      body: JSON.stringify(data)
+      if (!btn.querySelector('#saving-spinner')) {
+        btn.appendChild(spinner);
+      }
+
+      const id = document.getElementById('editarPacienteId').value;
+      const nome = document.getElementById('nomeInput').value;
+      const telefone = document.getElementById('telefoneInput').value;
+
+      const data = { nome, telefone };
+
+      try {
+        const response = await fetch(`/api/editar-paciente/${id}/`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': (document.querySelector('[name=csrfmiddlewaretoken]') || {}).value || ''
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+          bootstrap.Modal.getInstance(document.getElementById('editarPacienteModal'))?.hide();
+          listarPacientes();
+          showToast('Paciente atualizado com sucesso!', 'success');
+        } else {
+          alert('Erro ao atualizar paciente.');
+        }
+      } catch (e) {
+        alert('Erro de conexão ao atualizar paciente.');
+      } finally {
+        btn.disabled = false;
+        const existingSpinner = btn.querySelector('#saving-spinner');
+        if (existingSpinner) {
+          btn.removeChild(existingSpinner);
+        }
+      }
     });
-    if (response.ok) {
-      bootstrap.Modal.getInstance(document.getElementById('editarPacienteModal')).hide();
-      listarPacientes();
-      showToast('Paciente atualizado com sucesso!', 'success');
-    } else {
-      alert('Erro ao atualizar paciente.');
-    }
-  } catch (e) {
-    alert('Erro de conexão ao atualizar paciente.');
-  } finally {
-    btn.disabled = false;
-    if (btn.querySelector('#saving-spinner')) {
-      btn.removeChild(btn.querySelector('#saving-spinner'));
-    }
   }
-});
+}
 
 function openEnableLembreteModal(patient) {
 
@@ -589,374 +607,439 @@ function openModalExcluirGrupo() {
 }
 
 // Botão "Excluir" no modal de editar grupo
-document.getElementById('excluirGrupoBtn').addEventListener('click', async (event) => {
-    openModalExcluirGrupo();
-});
+function inicializarBotaoExcluirGrupo() {
+  const btn = document.getElementById('excluirGrupoBtn');
+  if (btn && !btn.dataset.listenerAdded) {
+    btn.dataset.listenerAdded = 'true';
+    btn.addEventListener('click', openModalExcluirGrupo);
+  }
+}
+
+function inicializarBotaoEditarGrupo() {
+  const btn = document.getElementById('excluirGrupoBtn');
+  if (btn && !btn.dataset.listenerAdded) {
+    btn.dataset.listenerAdded = 'true';
+    btn.addEventListener('click', openModalExcluirGrupo);
+  }
+}
 
 // Botão "Voltar" no modal de confirmação de exclusão
-document.getElementById('voltar-editar-grupo-btn').addEventListener('click', function() {
-    // Fecha o modal de exclusão
-    const excluirModalEl = document.getElementById('confirmarExclusaoGrupoModal');
-    const excluirModal = bootstrap.Modal.getInstance(excluirModalEl);
-    excluirModal.hide();
+function inicializarVoltarEditarGrupo() {
+  const voltarBtn = document.getElementById('voltar-editar-grupo-btn');
+  if (voltarBtn && !voltarBtn.dataset.listenerAdded) {
+    voltarBtn.dataset.listenerAdded = 'true';
+    voltarBtn.addEventListener('click', () => {
+      const excluirModal = bootstrap.Modal.getInstance(document.getElementById('confirmarExclusaoGrupoModal'));
+      if (excluirModal) excluirModal.hide();
 
-    // Reabre o modal de editar grupo
-    const editarGrupoModalEl = document.getElementById('editarGrupo');
-    const editarGrupoModal = bootstrap.Modal.getInstance(editarGrupoModalEl) || new bootstrap.Modal(editarGrupoModalEl);
-    editarGrupoModal.show();
-});
+      const editarModalEl = document.getElementById('editarGrupo');
+      const editarModal = bootstrap.Modal.getInstance(editarModalEl) || new bootstrap.Modal(editarModalEl);
+      editarModal.show();
+    });
+  }
+}
 
 // ao clicar no botão registrar-contato deve enviar uma requisição post para o servidor
-document.getElementById('btn-registrar-consulta').addEventListener('click', async (event) => {
+function inicializarRegistroConsulta() {
+  const btn = document.getElementById('btn-registrar-consulta');
 
-  event.preventDefault(); // Isso previne o refresh da página
+  if (btn && !btn.dataset.listenerAdded) {
+    btn.dataset.listenerAdded = 'true';
 
-  const idPaciente = document.getElementById('consulta-patient-id').value;
-  const tipoConsulta = document.getElementById('consulta-tipo').value;
-  const dataConsulta = document.getElementById('consulta-data').value;
-  const submitBtn = document.getElementById('btn-registrar-consulta');
+    btn.addEventListener('click', async (event) => {
+      event.preventDefault();
 
-  // verifica se a data escolhida é maior que hoje, se for não deixar enviar
-  const hoje = new Date();
-  const dataSelecionada = new Date(dataConsulta);
-  if (dataSelecionada > hoje) {
-    showToast('A data da consulta não pode ser no futuro.', 'error');
-    return;
-  }
+      const idPaciente = document.getElementById('consulta-patient-id').value;
+      const tipoConsulta = document.getElementById('consulta-tipo').value;
+      const dataConsulta = document.getElementById('consulta-data').value;
+      const submitBtn = btn;
 
-  submitBtn.disabled = true;
+      const hoje = new Date();
+      const dataSelecionada = new Date(dataConsulta);
 
-  try {
-    const response = await fetch(`/api/registrar-consulta-retorno/${idPaciente}/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken'),
-      },
-      body: JSON.stringify({
-        tipoConsulta: tipoConsulta,
-        dataConsulta: dataConsulta
-      }),
+      if (dataSelecionada > hoje) {
+        showToast('A data da consulta não pode ser no futuro.', 'error');
+        return;
+      }
+
+      submitBtn.disabled = true;
+
+      try {
+        const response = await fetch(`/api/registrar-consulta-retorno/${idPaciente}/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+          },
+          body: JSON.stringify({
+            tipoConsulta: tipoConsulta,
+            dataConsulta: dataConsulta
+          }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          const modalInstance = bootstrap.Modal.getInstance(document.getElementById('registrarConsultaModal'));
+          modalInstance?.hide();
+          listarPacientes();
+          showToast(result.mensagem, 'success');
+        } else {
+          showToast(result.erro || 'Erro ao registrar consulta.', 'error');
+        }
+      } catch (err) {
+        showToast('Erro inesperado ao registrar consulta.', 'error');
+      } finally {
+        submitBtn.disabled = false;
+      }
     });
-
-    const result = await response.json();
-
-    if (response.ok) {
-      const modalInstance = bootstrap.Modal.getInstance(document.getElementById('registrarConsultaModal'));
-      modalInstance?.hide();
-      listarPacientes();
-      showToast(result.mensagem, 'success');
-    } else {
-      showToast(result.erro || 'Erro ao registrar consulta.', 'error');
-    }
-  } catch (err) {
-    showToast('Erro inesperado ao registrar consulta.', 'error');
-  } finally {
-    submitBtn.disabled = false;
   }
-});
+}
 
 // ao clicar no botão confirm-reactivate-patient deve enviar uma requisição post para o servidor
-document.getElementById('confirm-reactivate-patient').addEventListener('click', async () => {
-  const idPaciente = document.getElementById('reactivate-patient-id').value;
-  const submitBtn = document.getElementById('confirm-reactivate-patient');
-  submitBtn.disabled = true;
+function inicializarReativarPaciente() {
+  const btn = document.getElementById('confirm-reactivate-patient');
 
-  try {
-    const response = await fetch(`/api/status-paciente/${idPaciente}/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken'),
-      },
-      body: JSON.stringify({ estado: 'habilitar' }),
+  if (btn && !btn.dataset.listenerAdded) {
+    btn.dataset.listenerAdded = 'true';
+
+    btn.addEventListener('click', async () => {
+      const idPaciente = document.getElementById('reactivate-patient-id').value;
+      const submitBtn = btn;
+      submitBtn.disabled = true;
+
+      try {
+        const response = await fetch(`/api/status-paciente/${idPaciente}/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+          },
+          body: JSON.stringify({ estado: 'habilitar' }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          const modalInstance = bootstrap.Modal.getInstance(document.getElementById('reativarPacienteModal'));
+          modalInstance?.hide();
+          listarPacientes();
+          showToast(result.mensagem, 'success');
+        } else {
+          showToast(result.erro || 'Erro ao desativar paciente.', 'error');
+
+          // Fechar modal atual
+          const modalInstance = bootstrap.Modal.getInstance(document.getElementById('reativarPacienteModal')) 
+                            || new bootstrap.Modal(document.getElementById('reativarPacienteModal'));
+          modalInstance.hide();
+
+          // Abrir modal de atribuição de grupo
+          openAtribuirGrupoModal(idPaciente);
+        }
+      } catch (err) {
+        showToast('Erro inesperado ao desativar paciente.', 'error');
+      } finally {
+        submitBtn.disabled = false;
+      }
     });
-
-    const result = await response.json();
-
-    if (response.ok) {
-      const modalInstance = bootstrap.Modal.getInstance(document.getElementById('reativarPacienteModal'));
-      modalInstance?.hide();
-      listarPacientes();
-      showToast(result.mensagem, 'success');
-    } else {
-      showToast(result.erro || 'Erro ao desativar paciente.', 'error');
-
-      // apagar modal anterior
-      const modalInstance = bootstrap.Modal.getInstance(document.getElementById('reativarPacienteModal')) 
-                    || new bootstrap.Modal(document.getElementById('reativarPacienteModal'));
-      modalInstance.hide();
-
-      openAtribuirGrupoModal(idPaciente);
-    }
-  } catch (err) {
-    showToast('Erro inesperado ao desativar paciente.', 'error');
-  } finally {
-    submitBtn.disabled = false;
   }
-});
+}
 
 // ao clicar no botão confirm-deactivate-patient deve enviar uma requisição post para o servidor
-document.getElementById('confirm-deactivate-patient').addEventListener('click', async () => {
-  const idPaciente = document.getElementById('deactivate-patient-id').value;
-  const submitBtn = document.getElementById('confirm-deactivate-patient');
-  submitBtn.disabled = true;
+function inicializarDesativarPaciente() {
+  const btn = document.getElementById('confirm-deactivate-patient');
 
-  try {
-    const response = await fetch(`/api/status-paciente/${idPaciente}/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken'),
-      },
-      body: JSON.stringify({ estado: 'desabilitar' }),
+  if (btn && !btn.dataset.listenerAdded) {
+    btn.dataset.listenerAdded = 'true';
+
+    btn.addEventListener('click', async () => {
+      const idPaciente = document.getElementById('deactivate-patient-id').value;
+      const submitBtn = btn;
+      submitBtn.disabled = true;
+
+      try {
+        const response = await fetch(`/api/status-paciente/${idPaciente}/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+          },
+          body: JSON.stringify({ estado: 'desabilitar' }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          const modalInstance = bootstrap.Modal.getInstance(document.getElementById('desativarPacienteModal'));
+          modalInstance?.hide();
+          listarPacientes();
+          showToast(result.mensagem, 'success');
+        } else {
+          showToast(result.erro || 'Erro ao desativar paciente.', 'error');
+        }
+      } catch (err) {
+        showToast('Erro inesperado ao desativar paciente.', 'error');
+      } finally {
+        submitBtn.disabled = false;
+      }
     });
-
-    const result = await response.json();
-
-    if (response.ok) {
-      const modalInstance = bootstrap.Modal.getInstance(document.getElementById('desativarPacienteModal'));
-      modalInstance?.hide();
-      listarPacientes();
-      showToast(result.mensagem, 'success');
-    } else {
-      showToast(result.erro || 'Erro ao desativar paciente.', 'error');
-    }
-  } catch (err) {
-    showToast('Erro inesperado ao desativar paciente.', 'error');
-  } finally {
-    submitBtn.disabled = false;
   }
-});
+}
 
 // ao clicar no botão confirm-disable-reminder deve enviar uma requisição post para o servidor
-document.getElementById('confirm-disable-reminder').addEventListener('click', async () => {
-  const idPaciente = document.getElementById('disable-patient-id').value;
-  const submitBtn = document.getElementById('confirm-disable-reminder');
-  submitBtn.disabled = true;
+function inicializarDesativarLembrete() {
+  const btn = document.getElementById('confirm-disable-reminder');
 
-  try {
-    const response = await fetch(`/api/status-lembrete/${idPaciente}/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken'),
-      },
-      body: JSON.stringify({ estado: 'desabilitar' }),
+  if (btn && !btn.dataset.listenerAdded) {
+    btn.dataset.listenerAdded = 'true';
+
+    btn.addEventListener('click', async () => {
+      const idPaciente = document.getElementById('disable-patient-id').value;
+      const submitBtn = btn;
+      submitBtn.disabled = true;
+
+      try {
+        const response = await fetch(`/api/status-lembrete/${idPaciente}/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+          },
+          body: JSON.stringify({ estado: 'desabilitar' }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          const modalInstance = bootstrap.Modal.getInstance(document.getElementById('desabilitarLembrete'));
+          modalInstance?.hide();
+          listarPacientes();
+          showToast(result.mensagem, 'success');
+        } else {
+          showToast(result.erro || 'Erro ao desabilitar lembrete.', 'error');
+        }
+      } catch (err) {
+        showToast('Erro inesperado ao desabilitar lembrete.', 'error');
+      } finally {
+        submitBtn.disabled = false;
+      }
     });
-
-    const result = await response.json();
-
-    if (response.ok) {
-      const modalInstance = bootstrap.Modal.getInstance(document.getElementById('desabilitarLembrete'));
-      modalInstance?.hide();
-      listarPacientes();
-      showToast(result.mensagem, 'success');
-    } else {
-      showToast(result.erro || 'Erro ao desabilitar lembrete.', 'error');
-    }
-  } catch (err) {
-    showToast('Erro inesperado ao desabilitar lembrete.', 'error');
-  } finally {
-    submitBtn.disabled = false;
   }
-});
+}
 
 // ao clicar no botão confirm-enable-reminder deve enviar uma requisição post para o servidor
-document.getElementById('confirm-enable-reminder').addEventListener('click', async () => {
-  const idPaciente = document.getElementById('enable-patient-id').value;
-  const submitBtn = document.getElementById('confirm-enable-reminder');
-  submitBtn.disabled = true;
+function inicializarHabilitarLembrete() {
+  const btn = document.getElementById('confirm-enable-reminder');
 
-  try {
-    const response = await fetch(`/api/status-lembrete/${idPaciente}/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken'),
-      },
-      body: JSON.stringify({ estado: 'habilitar' }),
+  if (btn && !btn.dataset.listenerAdded) {
+    btn.dataset.listenerAdded = 'true';
+
+    btn.addEventListener('click', async () => {
+      const idPaciente = document.getElementById('enable-patient-id').value;
+      const submitBtn = btn;
+      submitBtn.disabled = true;
+
+      try {
+        const response = await fetch(`/api/status-lembrete/${idPaciente}/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+          },
+          body: JSON.stringify({ estado: 'habilitar' }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          const modalInstance = bootstrap.Modal.getInstance(document.getElementById('habilitarLembrete'));
+          modalInstance?.hide();
+          listarPacientes();
+          showToast(result.mensagem, 'success');
+        } else {
+          showToast(result.erro || 'Erro ao habilitar lembrete.', 'error');
+        }
+      } catch (err) {
+        showToast('Erro inesperado ao habilitar lembrete.', 'error');
+      } finally {
+        submitBtn.disabled = false;
+      }
     });
-
-    const result = await response.json();
-
-    if (response.ok) {
-      const modalInstance = bootstrap.Modal.getInstance(document.getElementById('habilitarLembrete'));
-      modalInstance?.hide();
-      listarPacientes();
-      showToast(result.mensagem, 'success');
-    } else {
-      showToast(result.erro || 'Erro ao habilitar lembrete.', 'error');
-    }
-  } catch (err) {
-    showToast('Erro inesperado ao habilitar lembrete.', 'error');
-  } finally {
-    submitBtn.disabled = false;
   }
-});
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('patient-form');
+  if (!form.dataset.listenerAdded) {
+    form.dataset.listenerAdded = 'true';
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const submitBtn = form.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
 
-    // Cria o spinner "Salvando..."
-    let spinner = document.createElement('span');
-    spinner.className = 'ms-2 spinner-border spinner-border-sm align-middle';
-    spinner.setAttribute('role', 'status');
-    spinner.setAttribute('aria-hidden', 'true');
-    spinner.id = 'saving-spinner';
-    let savingText = document.createElement('span');
-    savingText.className = 'ms-1 align-middle';
-    // savingText.textContent = 'Salvando...';
-    spinner.appendChild(savingText);
+      // Cria o spinner "Salvando..."
+      let spinner = document.createElement('span');
+      spinner.className = 'ms-2 spinner-border spinner-border-sm align-middle';
+      spinner.setAttribute('role', 'status');
+      spinner.setAttribute('aria-hidden', 'true');
+      spinner.id = 'saving-spinner';
+      let savingText = document.createElement('span');
+      savingText.className = 'ms-1 align-middle';
+      // savingText.textContent = 'Salvando...';
+      spinner.appendChild(savingText);
 
-    // Adiciona o spinner ao botão se ainda não existe
-    if (!submitBtn.querySelector('#saving-spinner')) {
-      submitBtn.appendChild(spinner);
-    }
-
-    const nome = document.getElementById('name').value.trim();
-    const telefone = document.getElementById('phone').value.trim();
-    const dataConsulta = document.getElementById('lastConsultation').value;
-    const tipoConsulta = document.getElementById('tipoConsulta').value;
-
-    const hoje = new Date();
-
-    if (new Date(dataConsulta) > hoje) {
-      showToast('A data da última consulta não pode ser no futuro.', 'error');
-      submitBtn.disabled = false;
-      if (submitBtn.querySelector('#saving-spinner')) {
-        submitBtn.removeChild(submitBtn.querySelector('#saving-spinner'));
+      // Adiciona o spinner ao botão se ainda não existe
+      if (!submitBtn.querySelector('#saving-spinner')) {
+        submitBtn.appendChild(spinner);
       }
-      return;
-    } 
 
-    const payload = {
-      nome: nome,
-      telefone: telefone,
-      data_ultima_consulta: dataConsulta,
-      tipo_consulta: tipoConsulta,
-    };
+      const nome = document.getElementById('name').value.trim();
+      const telefone = document.getElementById('phone').value.trim();
+      const dataConsulta = document.getElementById('lastConsultation').value;
+      const tipoConsulta = document.getElementById('tipoConsulta').value;
 
-    try {
-      const response = await fetch('/api/pacientes/novo/', {
+      const hoje = new Date();
+
+      if (new Date(dataConsulta) > hoje) {
+        showToast('A data da última consulta não pode ser no futuro.', 'error');
+        submitBtn.disabled = false;
+        if (submitBtn.querySelector('#saving-spinner')) {
+          submitBtn.removeChild(submitBtn.querySelector('#saving-spinner'));
+        }
+        return;
+      } 
+
+      const payload = {
+        nome: nome,
+        telefone: telefone,
+        data_ultima_consulta: dataConsulta,
+        tipo_consulta: tipoConsulta,
+      };
+
+      try {
+        const response = await fetch('/api/pacientes/novo/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          // Fecha modal, limpa formulário e recarrega lista
+          const modalInstance = bootstrap.Modal.getInstance(document.getElementById('newPatientModal')) 
+                              || new bootstrap.Modal(document.getElementById('newPatientModal'));
+          modalInstance.hide();
+          form.reset();
+          
+          listarPacientes();
+          
+          showToast(result.mensagem, 'success');
+
+          const modalAtribuirGrupoEl = document.getElementById('atribuirGrupoModal');
+          const modalAtribuirGrupo = bootstrap.Modal.getInstance(modalAtribuirGrupoEl) || new bootstrap.Modal(modalAtribuirGrupoEl);
+          
+          carregarGrupoRegras();
+
+          document.getElementById('paciente-id').value = result.id_paciente;
+
+          modalAtribuirGrupo.show();
+
+        } else {
+          alert(result.erro || 'Erro ao cadastrar paciente.');
+        }
+      } catch (err) {
+        showToast('Erro inesperado ao cadastrar paciente.', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        // Remove o spinner
+        if (submitBtn.querySelector('#saving-spinner')) {
+          submitBtn.removeChild(submitBtn.querySelector('#saving-spinner'));
+        }
+      }
+
+  
+    });
+  }
+});
+
+function inicializarFormularioAtribuirGrupo() {
+  const form = document.getElementById('atribuir-grupo-form');
+
+  if (form && !form.dataset.listenerAdded) {
+    form.dataset.listenerAdded = 'true';
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const grupoId = document.getElementById('grupo-select').value;
+      const pacienteId = document.getElementById('paciente-id').value;
+
+      const modalAtribuirGrupoModalEl = document.getElementById('atribuirGrupoModal');
+      const modalAtribuirGrupoModal = bootstrap.Modal.getInstance(modalAtribuirGrupoModalEl) 
+        || new bootstrap.Modal(modalAtribuirGrupoModalEl);
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+
+      // Cria spinner "Salvando..."
+      let spinner = document.createElement('span');
+      spinner.className = 'ms-2 spinner-border spinner-border-sm align-middle';
+      spinner.setAttribute('role', 'status');
+      spinner.setAttribute('aria-hidden', 'true');
+      spinner.id = 'saving-spinner';
+      let savingText = document.createElement('span');
+      savingText.className = 'ms-1 align-middle';
+      spinner.appendChild(savingText);
+
+      if (!submitBtn.querySelector('#saving-spinner')) {
+        submitBtn.appendChild(spinner);
+      }
+
+      fetch(`/api/atribuir-grupo/${grupoId}/${pacienteId}/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRFToken': getCookie('csrftoken'),
+          'X-CSRFToken': getCookie('csrftoken')
         },
-        body: JSON.stringify(payload),
-      });
+        body: {}  // corpo vazio, como no original
+      })
+        .then(res => res.json())
+        .then(() => {
+          form.reset();
+          modalAtribuirGrupoModal.hide(); // Fecha modal
 
-      const result = await response.json();
+          // Atualiza o card do paciente
+          fetch(`/api/paciente/${pacienteId}/`)
+            .then(res => res.json())
+            .then(updated => {
+              const container = document.getElementById('patients-container');
+              const oldCard = container.querySelector(`[data-paciente-id="${updated.id}"]`);
+              const newCard = renderizarCardPaciente(updated);
+              if (oldCard) {
+                container.replaceChild(newCard, oldCard);
+              }
+            });
 
-      if (response.ok) {
-        // Fecha modal, limpa formulário e recarrega lista
-        const modalInstance = bootstrap.Modal.getInstance(document.getElementById('newPatientModal')) 
-                            || new bootstrap.Modal(document.getElementById('newPatientModal'));
-        modalInstance.hide();
-        form.reset();
-        
-        listarPacientes();
-        
-        showToast(result.mensagem, 'success');
-
-        const modalAtribuirGrupoEl = document.getElementById('atribuirGrupoModal');
-        const modalAtribuirGrupo = bootstrap.Modal.getInstance(modalAtribuirGrupoEl) || new bootstrap.Modal(modalAtribuirGrupoEl);
-        
-        carregarGrupoRegras();
-
-        document.getElementById('paciente-id').value = result.id_paciente;
-
-        modalAtribuirGrupo.show();
-
-      } else {
-        alert(result.erro || 'Erro ao cadastrar paciente.');
-      }
-    } catch (err) {
-      showToast('Erro inesperado ao cadastrar paciente.', 'error');
-    } finally {
-      submitBtn.disabled = false;
-      // Remove o spinner
-      if (submitBtn.querySelector('#saving-spinner')) {
-        submitBtn.removeChild(submitBtn.querySelector('#saving-spinner'));
-      }
-    }
-
-  });
-
-});
-
-document.getElementById('atribuir-grupo-form').addEventListener('submit', function (e) {
-  e.preventDefault();
-
-  const grupoId = document.getElementById('grupo-select').value;
-  const pacienteId = document.getElementById('paciente-id').value;
-
-  const modalAtribuirGrupoModalEl = document.getElementById('atribuirGrupoModal');
-  const modalAtribuirGrupoModal = bootstrap.Modal.getInstance(modalAtribuirGrupoModalEl) || new bootstrap.Modal(modalAtribuirGrupoModalEl);
-
-  const submitBtn = document.querySelector('#atribuir-grupo-form button[type="submit"]');
-  submitBtn.disabled = true;
-
-  // Cria spinner "Salvando..."
-  let spinner = document.createElement('span');
-  spinner.className = 'ms-2 spinner-border spinner-border-sm align-middle';
-  spinner.setAttribute('role', 'status');
-  spinner.setAttribute('aria-hidden', 'true');
-  spinner.id = 'saving-spinner';
-  let savingText = document.createElement('span');
-  savingText.className = 'ms-1 align-middle';
-  // savingText.textContent = 'Salvando...';
-  spinner.appendChild(savingText);
-
-  if (!submitBtn.querySelector('#saving-spinner')) {
-    submitBtn.appendChild(spinner);
-  }
-
-  fetch(`/api/atribuir-grupo/${grupoId}/${pacienteId}/`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCookie('csrftoken')
-    },
-    body: {}
-  })
-    .then(res => res.json())
-    .then(() => {
-      document.getElementById('atribuir-grupo-form').reset();
-
-      modalAtribuirGrupoModal.hide(); // Vai disparar o evento e reabrir o antigo
-
-      // Atualiza apenas o card do paciente
-      fetch(`/api/paciente/${pacienteId}/`)
-      .then(res => res.json())
-      .then(updated => {
-          const container = document.getElementById('patients-container');
-          const oldCard = container.querySelector(`[data-paciente-id="${updated.id}"]`);
-          const newCard = renderizarCardPaciente(updated);
-
-          if (oldCard) {
-              container.replaceChild(newCard, oldCard);
+          showToast('Sucesso!', 'success');
+        })
+        .catch(() => {
+          showToast('Erro ao atribuir grupo.', 'error');
+        })
+        .finally(() => {
+          submitBtn.disabled = false;
+          const existingSpinner = submitBtn.querySelector('#saving-spinner');
+          if (existingSpinner) {
+            submitBtn.removeChild(existingSpinner);
           }
-      });
-
-      showToast('Sucesso!', 'success');
-    })
-    .catch(() => {
-      showToast('Erro ao atribuir grupo.', 'error');
-    })
-    .finally(() => {
-      submitBtn.disabled = false;
-      if (submitBtn.querySelector('#saving-spinner')) {
-        submitBtn.removeChild(submitBtn.querySelector('#saving-spinner'));
-      }
+        });
     });
-});
+  }
+}
 
 function carregarGrupoRegras() {
   fetch('/api/grupo-regras/')
