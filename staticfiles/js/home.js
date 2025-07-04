@@ -797,98 +797,101 @@ document.getElementById('confirm-enable-reminder').addEventListener('click', asy
 
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('patient-form');
+  if (!form.dataset.listenerAdded) {
+    form.dataset.listenerAdded = 'true';
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const submitBtn = form.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
 
-    // Cria o spinner "Salvando..."
-    let spinner = document.createElement('span');
-    spinner.className = 'ms-2 spinner-border spinner-border-sm align-middle';
-    spinner.setAttribute('role', 'status');
-    spinner.setAttribute('aria-hidden', 'true');
-    spinner.id = 'saving-spinner';
-    let savingText = document.createElement('span');
-    savingText.className = 'ms-1 align-middle';
-    // savingText.textContent = 'Salvando...';
-    spinner.appendChild(savingText);
+      // Cria o spinner "Salvando..."
+      let spinner = document.createElement('span');
+      spinner.className = 'ms-2 spinner-border spinner-border-sm align-middle';
+      spinner.setAttribute('role', 'status');
+      spinner.setAttribute('aria-hidden', 'true');
+      spinner.id = 'saving-spinner';
+      let savingText = document.createElement('span');
+      savingText.className = 'ms-1 align-middle';
+      // savingText.textContent = 'Salvando...';
+      spinner.appendChild(savingText);
 
-    // Adiciona o spinner ao botão se ainda não existe
-    if (!submitBtn.querySelector('#saving-spinner')) {
-      submitBtn.appendChild(spinner);
-    }
-
-    const nome = document.getElementById('name').value.trim();
-    const telefone = document.getElementById('phone').value.trim();
-    const dataConsulta = document.getElementById('lastConsultation').value;
-    const tipoConsulta = document.getElementById('tipoConsulta').value;
-
-    const hoje = new Date();
-
-    if (new Date(dataConsulta) > hoje) {
-      showToast('A data da última consulta não pode ser no futuro.', 'error');
-      submitBtn.disabled = false;
-      if (submitBtn.querySelector('#saving-spinner')) {
-        submitBtn.removeChild(submitBtn.querySelector('#saving-spinner'));
+      // Adiciona o spinner ao botão se ainda não existe
+      if (!submitBtn.querySelector('#saving-spinner')) {
+        submitBtn.appendChild(spinner);
       }
-      return;
-    } 
 
-    const payload = {
-      nome: nome,
-      telefone: telefone,
-      data_ultima_consulta: dataConsulta,
-      tipo_consulta: tipoConsulta,
-    };
+      const nome = document.getElementById('name').value.trim();
+      const telefone = document.getElementById('phone').value.trim();
+      const dataConsulta = document.getElementById('lastConsultation').value;
+      const tipoConsulta = document.getElementById('tipoConsulta').value;
 
-    try {
-      const response = await fetch('/api/pacientes/novo/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCookie('csrftoken'),
-        },
-        body: JSON.stringify(payload),
-      });
+      const hoje = new Date();
 
-      const result = await response.json();
+      if (new Date(dataConsulta) > hoje) {
+        showToast('A data da última consulta não pode ser no futuro.', 'error');
+        submitBtn.disabled = false;
+        if (submitBtn.querySelector('#saving-spinner')) {
+          submitBtn.removeChild(submitBtn.querySelector('#saving-spinner'));
+        }
+        return;
+      } 
 
-      if (response.ok) {
-        // Fecha modal, limpa formulário e recarrega lista
-        const modalInstance = bootstrap.Modal.getInstance(document.getElementById('newPatientModal')) 
-                            || new bootstrap.Modal(document.getElementById('newPatientModal'));
-        modalInstance.hide();
-        form.reset();
-        
-        listarPacientes();
-        
-        showToast(result.mensagem, 'success');
+      const payload = {
+        nome: nome,
+        telefone: telefone,
+        data_ultima_consulta: dataConsulta,
+        tipo_consulta: tipoConsulta,
+      };
 
-        const modalAtribuirGrupoEl = document.getElementById('atribuirGrupoModal');
-        const modalAtribuirGrupo = bootstrap.Modal.getInstance(modalAtribuirGrupoEl) || new bootstrap.Modal(modalAtribuirGrupoEl);
-        
-        carregarGrupoRegras();
+      try {
+        const response = await fetch('/api/pacientes/novo/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+          },
+          body: JSON.stringify(payload),
+        });
 
-        document.getElementById('paciente-id').value = result.id_paciente;
+        const result = await response.json();
 
-        modalAtribuirGrupo.show();
+        if (response.ok) {
+          // Fecha modal, limpa formulário e recarrega lista
+          const modalInstance = bootstrap.Modal.getInstance(document.getElementById('newPatientModal')) 
+                              || new bootstrap.Modal(document.getElementById('newPatientModal'));
+          modalInstance.hide();
+          form.reset();
+          
+          listarPacientes();
+          
+          showToast(result.mensagem, 'success');
 
-      } else {
-        alert(result.erro || 'Erro ao cadastrar paciente.');
+          const modalAtribuirGrupoEl = document.getElementById('atribuirGrupoModal');
+          const modalAtribuirGrupo = bootstrap.Modal.getInstance(modalAtribuirGrupoEl) || new bootstrap.Modal(modalAtribuirGrupoEl);
+          
+          carregarGrupoRegras();
+
+          document.getElementById('paciente-id').value = result.id_paciente;
+
+          modalAtribuirGrupo.show();
+
+        } else {
+          alert(result.erro || 'Erro ao cadastrar paciente.');
+        }
+      } catch (err) {
+        showToast('Erro inesperado ao cadastrar paciente.', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        // Remove o spinner
+        if (submitBtn.querySelector('#saving-spinner')) {
+          submitBtn.removeChild(submitBtn.querySelector('#saving-spinner'));
+        }
       }
-    } catch (err) {
-      showToast('Erro inesperado ao cadastrar paciente.', 'error');
-    } finally {
-      submitBtn.disabled = false;
-      // Remove o spinner
-      if (submitBtn.querySelector('#saving-spinner')) {
-        submitBtn.removeChild(submitBtn.querySelector('#saving-spinner'));
-      }
-    }
 
-  });
-
+  
+    });
+  }
 });
 
 document.getElementById('atribuir-grupo-form').addEventListener('submit', function (e) {
