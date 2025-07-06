@@ -51,7 +51,7 @@ class RegraLembrete(models.Model):
     dias_apos = models.IntegerField(help_text="Dias após o evento para criar o lembrete")
     descricao = models.TextField()
     ordem = models.IntegerField(help_text="Ordem de prioridade para a regra")
-    grupo = models.ForeignKey(GrupoLembrete, on_delete=models.CASCADE, related_name='regras')
+    grupo = models.ForeignKey(GrupoLembrete, on_delete=models.SET_NULL, related_name='regras', null=True)
 
     def __str__(self):
         return f"{self.nome} ({self.dias_apos} dias)"

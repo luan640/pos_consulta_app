@@ -346,24 +346,37 @@
 
         <!-- Modal: confirmar exclusão grupo de regra -->
         <div class="modal fade" id="confirmarExclusaoGrupoModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                <h5 class="modal-title">Excluir Grupo de Regras</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            <div class="modal-dialog modal-md">
+                <div class="modal-content fade-in">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            Excluir Grupo de Regras
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    
+                    <div class="modal-body text-center">
+                        <div class="alert alert-danger d-flex align-items-start" role="alert">
+                            <i class="bi bi-exclamation-circle-fill text-danger me-2 mt-1"></i>
+                            <div class="text-start">
+                                <strong>Atenção:</strong> Esta ação não pode ser desfeita e todas as regras deste grupo serão removidas permanentemente.
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-warning d-flex align-items-start" role="alert">
+                            <i class="bi bi-info-circle-fill text-warning me-2 mt-1"></i>
+                            <div class="text-start">
+                                <strong>Importante:</strong> Caso algum paciente esteja cadastrado a este grupo de regras, ele ficará sem grupo de regras atribuído.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="voltar-editar-grupo-btn">Voltar</button>
+                        <button type="button" class="btn btn-danger" id="confirmar-exclusao-grupo-btn">Excluir</button>
+                    </div>
                 </div>
-                <div class="modal-body">
-                <p>
-                Tem certeza que deseja excluir o grupo <span id="nome-grupo-exclusao" class="fw-bold text-primary"></span>?
-                <br>
-                <span class="text-danger">Esta ação não pode ser desfeita e todas as regras deste grupo serão removidas.</span>
-                </p>
-                </div>
-                <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="voltar-editar-grupo-btn">Voltar</button>
-                <button type="button" class="btn btn-danger" id="confirmar-exclusao-grupo-btn">Excluir</button>
-                </div>
-            </div>
             </div>
         </div>
 
@@ -524,29 +537,29 @@
             <div class="modal-dialog">
                 <div class="modal-content">
                     <form id="registrar-consulta-form">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Registrar Consulta para <span id="consulta-patient-name" class="fw-bold text-primary"></span></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="hidden" id="consulta-patient-id">
-                        <div class="mb-3">
-                            <label for="consulta-tipo" class="form-label">Tipo de Consulta</label>
-                            <select class="form-select" id="consulta-tipo" required>
-                                <option value="" disabled selected>Selecione</option>
-                                <option value="consulta">Consulta</option>
-                                <option value="retorno">Retorno</option>
-                            </select>
+                        <div class="modal-header">
+                            <h5 class="modal-title">Registrar Consulta para <span id="consulta-patient-name" class="fw-bold text-primary"></span></h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                         </div>
-                        <div class="mb-3">
-                            <label for="consulta-data" class="form-label">Data</label>
-                            <input type="date" class="form-control" id="consulta-data" required>
+                        <div class="modal-body">
+                            <input type="hidden" id="consulta-patient-id">
+                            <div class="mb-3">
+                                <label for="consulta-tipo" class="form-label">Tipo de Consulta</label>
+                                <select class="form-select" id="consulta-tipo" required>
+                                    <option value="" disabled selected>Selecione</option>
+                                    <option value="consulta">Consulta</option>
+                                    <option value="retorno">Retorno</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="consulta-data" class="form-label">Data</label>
+                                <input type="date" class="form-control" id="consulta-data" required>
+                            </div>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success" id="btn-registrar-consulta">Salvar</button>
-                    </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-success" id="btn-registrar-consulta">Salvar</button>
+                        </div>
                     </form>
                 </div>
             </div>

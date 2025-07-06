@@ -1049,6 +1049,18 @@ function inicializarFormularioAtribuirGrupo() {
 }
 
 function carregarGrupoRegras() {
+
+  const selectGrupo = document.getElementById('grupo-select');
+  if (selectGrupo) {
+    selectGrupo.innerHTML = '';
+    const loadingOption = document.createElement('option');
+    loadingOption.value = '';
+    loadingOption.textContent = 'Carregando...';
+    loadingOption.disabled = true;
+    loadingOption.selected = true;
+    selectGrupo.appendChild(loadingOption);
+  }
+
   fetch('/api/grupo-regras/')
     .then(res => res.json())
     .then(data => {
@@ -1165,3 +1177,4 @@ function atualizarCards() {
 
 
 }
+

@@ -500,4 +500,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
   });
 
+  document.getElementById('confirmar-exclusao-grupo-btn').addEventListener('click', function () {
+    const grupoId = document.getElementById('regra-grupo-id').value;
+    const excluirGrupoModalEl = document.getElementById('confirmarExclusaoGrupoModal');
+    const excluirGrupoModal = bootstrap.Modal.getInstance(excluirGrupoModalEl);
+
+    const btn = this;
+    const originalBtnHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Excluindo...`;
+
+    fetch(`/api/excluir-grupo-regra/${grupoId}/`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({ id: grupoId })
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Erro ao excluir grupo');
+        return res.json();
+      })
+      .then(() => {
+        excluirGrupoModal.hide();
+        showToast('Grupo excluído com sucesso!', 'success');
+        carregarGrupoRegras();
+      })
+      .catch(() => {
+        showToast('Erro ao excluir grupo', 'error');
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalBtnHtml;
+      });
+  });
+
 });

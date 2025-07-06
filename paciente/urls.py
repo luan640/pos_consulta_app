@@ -19,7 +19,7 @@ urlpatterns += [
 
     path('api/grupo-regras/', views.grupo_regras_list_create, name='grupo_regras_list_create'),
     path('api/grupo-regras/update/<int:pk>/', views.grupo_regras_update, name='grupo_regras_update'),
-    path('api/excluir-grupo-regra/', views.excluir_grupo_regra, name='excluir_grupo_regra'),
+    path('api/excluir-grupo-regra/<int:pk>/', views.excluir_grupo_regra, name='excluir_grupo_regra'),
 
     path('api/atribuir-grupo/<int:pk_grupo>/<int:pk_paciente>/', views.atribuir_grupo, name='atribuir_grupo'),
 
