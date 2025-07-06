@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
   inicializarVoltarEditarGrupo();
   inicializarFormularioAtribuirGrupo();
   inicializarEdicaoPaciente();
+  inicializarSelecaoMateriais();
 
 });
 
