@@ -18,6 +18,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
 });
 
+// Atualiza o card do paciente na lista pelo id, mostrando loading apenas no card alterado
+export function atualizarCardPaciente(pacienteId) {
+  const container = document.getElementById('patients-container');
+  const oldCard = container.querySelector(`[data-paciente-id="${pacienteId}"]`);
+  if (oldCard) {
+    // Mostra loading no próprio card
+    oldCard.innerHTML = `
+      <div class="d-flex justify-content-center align-items-center" style="min-height: 120px;">
+        <div class="spinner-border text-primary" role="status"></div>
+      </div>
+    `;
+  }
+  fetch(`/api/paciente/${pacienteId}/`)
+    .then(res => res.json())
+    .then(updated => {
+      const newCard = renderizarCardPaciente(updated);
+      if (oldCard) {
+        container.replaceChild(newCard, oldCard);
+      }
+    });
+}
+
 function listarPacientes() {
   const container = document.getElementById('patients-container');
   const count = document.getElementById('patient-count');
@@ -140,7 +162,7 @@ export function renderizarCardPaciente(paciente) {
       ${textoUltimo} ${tipoConsulta}: ${ultimaStr}
     </div>
     <div class="patient-info"><i class="bi bi-clock"></i> ${diasAtrasStr}</div>
-    <div class="patient-info"><i class="bi bi-calendar text-primary"></i> Próximo: ${proximoStr}</div>
+    <div class="patient-info"><i class="bi bi-calendar text-primary"></i> Próximo contato: ${proximoStr}</div>
     <button class="btn btn-link p-0" id="btnAlterarGrupo" data-patient-id="${paciente.id}">
       <div class="patient-info">
           <i class="bi bi-people text-primary"></i>
@@ -536,7 +558,8 @@ function inicializarEdicaoPaciente() {
 
         if (response.ok) {
           bootstrap.Modal.getInstance(document.getElementById('editarPacienteModal'))?.hide();
-          listarPacientes();
+          // listarPacientes();
+          atualizarCardPaciente(id);
           showToast('Paciente atualizado com sucesso!', 'success');
         } else {
           alert('Erro ao atualizar paciente.');
@@ -669,14 +692,15 @@ function inicializarRegistroConsulta() {
       const tipoConsulta = document.getElementById('consulta-tipo').value;
       const dataConsulta = document.getElementById('consulta-data').value;
       const submitBtn = btn;
-
-      const hoje = new Date();
-      const dataSelecionada = new Date(dataConsulta);
-
-      if (dataSelecionada > hoje) {
-        showToast('A data da consulta não pode ser no futuro.', 'error');
-        return;
-      }
+      
+      // RETIRANDO A VERIFICAÇÃO DE DATA FUTURA AO REGISTRAR CONSULTA
+      
+      // const hoje = new Date();
+      // const dataSelecionada = new Date(dataConsulta);
+      // if (dataSelecionada > hoje) {
+      //   showToast('A data da consulta não pode ser no futuro.', 'error');
+      //   return;
+      // }
 
       submitBtn.disabled = true;
 
@@ -698,7 +722,8 @@ function inicializarRegistroConsulta() {
         if (response.ok) {
           const modalInstance = bootstrap.Modal.getInstance(document.getElementById('registrarConsultaModal'));
           modalInstance?.hide();
-          listarPacientes();
+          // listarPacientes();
+          atualizarCardPaciente(idPaciente);
           showToast(result.mensagem, 'success');
         } else {
           showToast(result.erro || 'Erro ao registrar consulta.', 'error');
@@ -739,7 +764,8 @@ function inicializarReativarPaciente() {
         if (response.ok) {
           const modalInstance = bootstrap.Modal.getInstance(document.getElementById('reativarPacienteModal'));
           modalInstance?.hide();
-          listarPacientes();
+          // listarPacientes();
+          atualizarCardPaciente(idPaciente);
           showToast(result.mensagem, 'success');
         } else {
           showToast(result.erro || 'Erro ao desativar paciente.', 'error');
@@ -788,7 +814,8 @@ function inicializarDesativarPaciente() {
         if (response.ok) {
           const modalInstance = bootstrap.Modal.getInstance(document.getElementById('desativarPacienteModal'));
           modalInstance?.hide();
-          listarPacientes();
+          // listarPacientes();
+          atualizarCardPaciente(idPaciente);
           showToast(result.mensagem, 'success');
         } else {
           showToast(result.erro || 'Erro ao desativar paciente.', 'error');
@@ -829,7 +856,8 @@ function inicializarDesativarLembrete() {
         if (response.ok) {
           const modalInstance = bootstrap.Modal.getInstance(document.getElementById('desabilitarLembrete'));
           modalInstance?.hide();
-          listarPacientes();
+          // listarPacientes();
+          atualizarCardPaciente(idPaciente);
           showToast(result.mensagem, 'success');
         } else {
           showToast(result.erro || 'Erro ao desabilitar lembrete.', 'error');
@@ -870,7 +898,8 @@ function inicializarHabilitarLembrete() {
         if (response.ok) {
           const modalInstance = bootstrap.Modal.getInstance(document.getElementById('habilitarLembrete'));
           modalInstance?.hide();
-          listarPacientes();
+          // listarPacientes();
+          atualizarCardPaciente(idPaciente);
           showToast(result.mensagem, 'success');
         } else {
           showToast(result.erro || 'Erro ao habilitar lembrete.', 'error');
@@ -952,7 +981,8 @@ document.addEventListener('DOMContentLoaded', () => {
           modalInstance.hide();
           form.reset();
           
-          listarPacientes();
+          // listarPacientes();
+          atualizarCardPaciente(result.id_paciente);
           
           showToast(result.mensagem, 'success');
 
@@ -1030,16 +1060,17 @@ function inicializarFormularioAtribuirGrupo() {
           modalAtribuirGrupoModal.hide(); // Fecha modal
 
           // Atualiza o card do paciente
-          fetch(`/api/paciente/${pacienteId}/`)
-            .then(res => res.json())
-            .then(updated => {
-              const container = document.getElementById('patients-container');
-              const oldCard = container.querySelector(`[data-paciente-id="${updated.id}"]`);
-              const newCard = renderizarCardPaciente(updated);
-              if (oldCard) {
-                container.replaceChild(newCard, oldCard);
-              }
-            });
+          // fetch(`/api/paciente/${pacienteId}/`)
+          //   .then(res => res.json())
+          //   .then(updated => {
+          //     const container = document.getElementById('patients-container');
+          //     const oldCard = container.querySelector(`[data-paciente-id="${updated.id}"]`);
+          //     const newCard = renderizarCardPaciente(updated);
+          //     if (oldCard) {
+          //       container.replaceChild(newCard, oldCard);
+          //     }
+          // });
+          atualizarCardPaciente(pacienteId);
 
           showToast('Sucesso!', 'success');
         })
