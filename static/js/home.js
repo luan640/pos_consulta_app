@@ -19,15 +19,25 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function listarPacientes() {
+  const container = document.getElementById('patients-container');
+  const count = document.getElementById('patient-count');
+  const listSection = document.getElementById('patients-list');
+  const emptyState = document.getElementById('empty-state');
+
+  // Mostra spinner de loading enquanto carrega
+  container.innerHTML = `
+    <div class="text-center py-4">
+      <div class="spinner-border text-primary" role="status"></div>
+      <div class="mt-2 text-secondary">Carregando pacientes...</div>
+    </div>
+  `;
+  emptyState.classList.add('d-none');
+  listSection.classList.remove('d-none');
+
   fetch('/api/pacientes/')
     .then(response => response.json())
     .then(data => {
       const lista = data.pacientes;
-      const container = document.getElementById('patients-container');
-      const count = document.getElementById('patient-count');
-      const listSection = document.getElementById('patients-list');
-      const emptyState = document.getElementById('empty-state');
-
       container.innerHTML = ''; // Limpa o container antes de renderizar
 
       if (lista.length === 0) {
@@ -39,15 +49,14 @@ function listarPacientes() {
         count.textContent = lista.length;
 
         lista.forEach(paciente => {
-          
           const card = renderizarCardPaciente(paciente);
           container.appendChild(card);
-  
         });
       }
     })
     .catch(err => {
       showToast('Erro ao carregar pacientes', 'error');
+      container.innerHTML = '<div class="text-danger text-center py-4">Erro ao carregar pacientes.</div>';
     });
 }
 
@@ -1159,10 +1168,14 @@ export function inicializarSelecaoMateriais() {
 }
 
 function atualizarCards() {
-
   const cardTotalPatientes = document.getElementById('total-patients');
   const cardTotalLembretes = document.getElementById('active-alerts');
   const cardLembreteAtrasado = document.getElementById('lembrete-atrasado');
+
+  // Mostra spinner de loading em cada card
+  cardTotalPatientes.innerHTML = `<span class="spinner-border text-primary" role="status"></span>`;
+  cardTotalLembretes.innerHTML = `<span class="spinner-border text-primary" role="status"></span>`;
+  cardLembreteAtrasado.innerHTML = `<span class="spinner-border text-primary" role="status"></span>`;
 
   fetch('/api/cards-home/')
     .then(response => response.json())
@@ -1173,8 +1186,9 @@ function atualizarCards() {
     })
     .catch(err => {
       showToast('Erro ao carregar estatísticas', 'error');
+      cardTotalPatientes.textContent = '--';
+      cardTotalLembretes.textContent = '--';
+      cardLembreteAtrasado.textContent = '--';
     });
-
-
 }
 
