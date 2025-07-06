@@ -38,6 +38,8 @@ export function atualizarCardPaciente(pacienteId) {
         container.replaceChild(newCard, oldCard);
       }
     });
+
+  atualizarCards();
 }
 
 function listarPacientes() {
