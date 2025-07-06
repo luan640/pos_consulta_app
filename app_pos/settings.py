@@ -14,9 +14,13 @@ from pathlib import Path
 import os 
 import environ
 
+# Inicializa o django-environ
+env = environ.Env()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 # BASE_DIR = Path(__file__).resolve().parent.parent
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -25,7 +29,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'django-insecure-llo3s@)477a5$cyqu*bm=wg1s*)(f@1yph2h%x9=4qfv%-@t$i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG')
 
 # ALLOWED_HOSTS = ['lembrapro.onrender.com', '127.0.0.1']
 ALLOWED_HOSTS = ['*']
@@ -86,9 +90,6 @@ WSGI_APPLICATION = 'app_pos.wsgi.application'
 #     }
 # }
 
-# Inicializa o django-environ
-env = environ.Env()
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 schema = env('DB_SCHEMA', default='lembra_pro_dev')
 DATABASES = {
