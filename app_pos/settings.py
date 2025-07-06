@@ -90,16 +90,17 @@ WSGI_APPLICATION = 'app_pos.wsgi.application'
 env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
+schema = env('DB_SCHEMA', default='lembra_pro_dev')
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': '15512332',
-        'HOST': 'database.cptoi4pdeur0.us-east-1.rds.amazonaws.com',
-        'PORT': '5432',
+        'NAME': env('DB_NAME', default='postgres'),
+        'USER': env('DB_USER', default='postgres'),
+        'PASSWORD': env('DB_PASSWORD', default=''),
+        'HOST': env('DB_HOST', default='localhost'),
+        'PORT': env('DB_PORT', default='5432'),
         'OPTIONS': {
-            'options': '-c search_path=lembra_pro'
+            'options': f'-c search_path={schema}'
         }
     }
 }
