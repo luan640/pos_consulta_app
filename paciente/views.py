@@ -354,6 +354,22 @@ def regras_detail_update(request, pk_regra, pk_grupo):
         regra.dias_apos = data.get('dias_apos', regra.dias_apos)
         regra.descricao = data.get('descricao', regra.descricao)
         regra.save()
+
+        # ver se tem algum lembrete ativo com essa regra e atualizar a data
+        lembretes = Lembrete.objects.filter(regra=regra, concluido=False)
+        for lembrete in lembretes:
+
+            # buscar data do ultimo contato do paciente
+            ultimo_contato = lembrete.paciente.lembretes.filter(concluido=True).order_by('-contato_em').first()
+            # se existir, usa a data do ultimo contato
+            data_ultimo_contato = now().date()
+            if ultimo_contato:
+                data_ultimo_contato = ultimo_contato.contato_em
+
+            lembrete.data_lembrete = data_ultimo_contato + timedelta(days=regra.dias_apos)
+            lembrete.texto = regra.descricao
+            lembrete.save()
+        
         return JsonResponse({'mensagem': 'Regra atualizada'})
 
     elif request.method == 'DELETE':
