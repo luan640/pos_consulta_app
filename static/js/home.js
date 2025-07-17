@@ -63,7 +63,7 @@ function listarPacientes() {
     .then(data => {
       const lista = data.pacientes;
       container.innerHTML = ''; // Limpa o container antes de renderizar
-
+      
       if (lista.length === 0) {
         emptyState.classList.remove('d-none');
         listSection.classList.add('d-none');
@@ -197,21 +197,35 @@ export function renderizarCardPaciente(paciente) {
   topRow.className = 'd-flex justify-content-between align-items-center mb-3';
 
   const contato = document.createElement('div');
-  contato.className = 'text-decoration-none'; // Garante que o link não tenha sublinhado
+  contato.className = 'd-flex align-items-center gap-3'; // Para alinhar lado a lado
 
   // Garante que o telefone esteja em formato apenas números
   const telefoneLimpo = paciente.telefone?.replace(/\D/g, '');
 
+  // Bloco WhatsApp
+  let whatsappHtml = '';
   if (telefoneLimpo) {
-    contato.innerHTML = `
+    whatsappHtml = `
       <a href="https://wa.me/55${telefoneLimpo}" target="_blank" class="whatsapp-contact d-flex gap-2 align-items-center text-success text-decoration-none">
         <i class="bi bi-whatsapp" style="font-size: 1.2rem;"></i>
         <span>${paciente.telefone}</span>
       </a>
     `;
   } else {
-    contato.innerHTML = `<i class="bi bi-whatsapp"></i> ---`;
+    whatsappHtml = `<i class="bi bi-whatsapp"></i> ---`;
   }
+
+  // Bloco texto do lembrete
+  let lembreteHtml = '';
+  if (paciente.texto_lembrete) {
+    lembreteHtml = `
+      <span class="lembrete-text text-secondary" style="font-size: 0.95rem;">
+        <i class="bi bi-chat-left-text me-1"></i>Ação: ${paciente.texto_lembrete}
+      </span>
+    `;
+  }
+
+  contato.innerHTML = whatsappHtml + lembreteHtml;
 
   const botoesContainer = document.createElement('div');
   botoesContainer.className = 'action-buttons'; // container geral
@@ -338,7 +352,6 @@ export function renderizarCardPaciente(paciente) {
   topRow.appendChild(contato);
   topRow.appendChild(botoesContainer);
   body.appendChild(topRow);
-
 
   // if (!paciente.grupo_regra_atual) {
     
