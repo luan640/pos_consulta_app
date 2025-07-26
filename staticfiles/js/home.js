@@ -42,11 +42,31 @@ export function atualizarCardPaciente(pacienteId) {
   atualizarCards();
 }
 
-function listarPacientes() {
+
+export function listarPacientes() {
   const container = document.getElementById('patients-container');
-  const count = document.getElementById('patient-count');
   const listSection = document.getElementById('patients-list');
   const emptyState = document.getElementById('empty-state');
+
+  // Campos de filtro
+  const filtroNome = document.getElementById('filter-name')?.value || '';
+  const filtroStatus = document.getElementById('filter-reminder')?.value || '';
+  const filtroSort = document.getElementById('filter-sort')?.value || '';
+
+  // Constrói a query string com filtros, se houver
+  const params = new URLSearchParams();
+
+  if (filtroNome.trim() !== '') {
+    params.append('nome', filtroNome.trim());
+  }
+
+  if (filtroStatus.trim() !== '') {
+    params.append('status_lembrete', filtroStatus.trim());
+  }
+
+  if (filtroSort.trim() !== '') {
+    params.append('sort', filtroSort.trim());
+  }
 
   // Mostra spinner de loading enquanto carrega
   container.innerHTML = `
@@ -58,7 +78,7 @@ function listarPacientes() {
   emptyState.classList.add('d-none');
   listSection.classList.remove('d-none');
 
-  fetch('/api/pacientes/')
+  fetch(`/api/pacientes/?${params.toString()}`)
     .then(response => response.json())
     .then(data => {
       const lista = data.pacientes;
@@ -70,7 +90,6 @@ function listarPacientes() {
       } else {
         emptyState.classList.add('d-none');
         listSection.classList.remove('d-none');
-        count.textContent = lista.length;
 
         lista.forEach(paciente => {
           const card = renderizarCardPaciente(paciente);

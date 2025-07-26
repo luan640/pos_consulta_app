@@ -16,7 +16,7 @@ from .models import (
 )
 
 import json
-from datetime import timedelta
+from datetime import timedelta, datetime, date
 
 @login_required
 def home(request):
@@ -26,6 +26,16 @@ def home(request):
 @login_required
 def listar_pacientes_com_consultas(request):
     pacientes = Paciente.objects.filter(dono=request.user)
+
+    nome = request.GET.get('nome', '').strip()
+    status_lembrete = request.GET.get('status_lembrete', '').strip()
+
+    # Aplica os filtros se existirem
+    if nome:
+        pacientes = pacientes.filter(nome__icontains=nome)
+
+    if status_lembrete:
+        pacientes = pacientes.filter(lembretes_ativos=status_lembrete)
 
     # Última consulta por paciente
     ultimas_consultas = (
@@ -63,6 +73,17 @@ def listar_pacientes_com_consultas(request):
             'grupo_regra_atual': paciente.grupo_lembrete.nome if paciente.grupo_lembrete else None,
             'consultas': consultas_por_paciente.get(paciente.id, [])
         })
+
+    ordenar_por = request.GET.get('sort', '')
+
+    if ordenar_por == 'name-asc':
+        dados.sort(key=lambda p: p['nome'].lower())
+    elif ordenar_por == 'name-desc':
+        dados.sort(key=lambda p: p['nome'].lower(), reverse=True)
+    elif ordenar_por == 'contact-nearest':
+        dados.sort(key=lambda p: p['proximo_lembrete'] or date.max)
+    elif ordenar_por == 'contact-farthest':
+        dados.sort(key=lambda p: p['proximo_lembrete'] or date.min, reverse=True)
 
     return JsonResponse({'pacientes': dados})
 
@@ -796,3 +817,9 @@ def excluir_grupo_regra(request, pk):
 
     grupo.delete()
     return JsonResponse({'mensagem': 'Grupo de regras excluído com sucesso'})
+
+def filtrar_home(request):
+
+    nome = request.GET.get('nome_paciente')
+    status_lembrete = request.GET.get('status_lembrete')
+
