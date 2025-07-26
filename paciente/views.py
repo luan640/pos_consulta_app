@@ -76,6 +76,9 @@ def listar_pacientes_com_consultas(request):
 
     ordenar_por = request.GET.get('sort', '')
 
+    # ordenar pelo próximo contato mais próximo
+    dados.sort(key=lambda p: p['proximo_lembrete'] or date.max)
+
     if ordenar_por == 'name-asc':
         dados.sort(key=lambda p: p['nome'].lower())
     elif ordenar_por == 'name-desc':

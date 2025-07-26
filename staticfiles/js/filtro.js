@@ -1,35 +1,42 @@
 import { listarPacientes } from './home.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-
-    inicializarFiltrosPacientes();
-
+  inicializarFiltrosPacientes();
 });
 
 export function inicializarFiltrosPacientes() {
-    const aplicarBtn = document.getElementById('apply-filters');
-    const resetarBtn = document.getElementById('reset-filters');
-    
-    const filtroNome = document.getElementById('filter-name');
-    const filtroStatus = document.getElementById('filter-status');
-    const filtroSort = document.getElementById('filter-sort');
+  const aplicarBtn = document.getElementById('apply-filters');
+  const resetarBtn = document.getElementById('reset-filters');
 
-    if (aplicarBtn) {
-        aplicarBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            listarPacientes();
-        });
-    }
+  const filtroNome = document.getElementById('filter-name');
+  const filtroStatus = document.getElementById('filter-status');
+  const filtroSort = document.getElementById('filter-sort');
 
-    if (resetarBtn) {
-        resetarBtn.addEventListener('click', (e) => {
-        e.preventDefault();
+  if (aplicarBtn) {
+    aplicarBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      listarPacientes();
+    });
+  }
 
-        if (filtroNome) filtroNome.value = '';
-        if (filtroStatus) filtroStatus.value = '';
-        if (filtroSort) filtroSort.value = '';
+  if (resetarBtn) {
+    resetarBtn.addEventListener('click', (e) => {
+      e.preventDefault();
 
-        listarPacientes();
-        });
-    }
+      if (filtroNome) filtroNome.value = '';
+      if (filtroStatus) filtroStatus.value = '';
+      if (filtroSort) filtroSort.value = '';
+
+      listarPacientes();
+    });
+  }
+
+  // 💡 Aqui está o tratamento do Enter
+  const form = document.getElementById('filtros-form');
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      listarPacientes();
+    });
+  }
 }

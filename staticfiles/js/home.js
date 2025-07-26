@@ -1015,20 +1015,20 @@ document.addEventListener('DOMContentLoaded', () => {
           modalInstance.hide();
           form.reset();
           
-          // listarPacientes();
-          atualizarCardPaciente(result.id_paciente);
-          
           showToast(result.mensagem, 'success');
-
+          
           const modalAtribuirGrupoEl = document.getElementById('atribuirGrupoModal');
           const modalAtribuirGrupo = bootstrap.Modal.getInstance(modalAtribuirGrupoEl) || new bootstrap.Modal(modalAtribuirGrupoEl);
           
           carregarGrupoRegras();
-
+          
           document.getElementById('paciente-id').value = result.id_paciente;
-
+          
           modalAtribuirGrupo.show();
 
+          listarPacientes();
+          atualizarCardPaciente(result.id_paciente);
+          
         } else {
           alert(result.erro || 'Erro ao cadastrar paciente.');
         }
