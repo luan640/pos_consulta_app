@@ -29,7 +29,7 @@ class Consulta(models.Model):
 ### Materiais e Anotações
 
 class Material(models.Model):
-    descricao = models.CharField(max_length=20, null=True, blank=True)
+    descricao = models.CharField(max_length=100, null=True, blank=True)
     dono = models.ForeignKey(User, on_delete=models.CASCADE, related_name='materiais_criados')
     criado_em = models.DateTimeField(auto_now_add=True)
 
