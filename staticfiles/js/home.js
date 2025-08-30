@@ -977,17 +977,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const telefone = document.getElementById('phone').value.trim();
       const dataConsulta = document.getElementById('lastConsultation').value;
       const tipoConsulta = document.getElementById('tipoConsulta').value;
-
-      const hoje = new Date();
-
-      if (new Date(dataConsulta) > hoje) {
-        showToast('A data da última consulta não pode ser no futuro.', 'error');
-        submitBtn.disabled = false;
-        if (submitBtn.querySelector('#saving-spinner')) {
-          submitBtn.removeChild(submitBtn.querySelector('#saving-spinner'));
-        }
-        return;
-      } 
+      
+      // ========= DESABILITANDO A VERIFICAÇÃO DE DATA MAIOR QUE HOJE PARA CONSULTA
+      
+      // const hoje = new Date();
+      // if (new Date(dataConsulta) > hoje) {
+      //   showToast('A data da última consulta não pode ser no futuro.', 'error');
+      //   submitBtn.disabled = false;
+      //   if (submitBtn.querySelector('#saving-spinner')) {
+      //     submitBtn.removeChild(submitBtn.querySelector('#saving-spinner'));
+      //   }
+      //   return;
+      // } 
 
       const payload = {
         nome: nome,

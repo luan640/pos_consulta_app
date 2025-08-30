@@ -54,6 +54,8 @@ INSTALLED_APPS = [
 
     'users',
     'paciente',
+    'wpp',
+    
 
 ]
 
@@ -196,3 +198,8 @@ LOGIN_URL = '/login/'
 #         },
 #     },
 # }
+
+WHATSAPP_VERIFY_TOKEN = "token"
+WHATSAPP_PHONE_NUMBER_ID = "458377177351953"  # seu phone number ID (não é o número de telefone)
+WHATSAPP_ACCESS_TOKEN   = "EAAIu2Xax89oBPAt8Pl7wV0XntumZAdCDgljVYmPFvHSTQiqVOjZBWCayQzCwDAqAOOgqRQe6ELhhy4mcJoSifgHrKYrMpGVIy6LLV7uV2umZCNYTD7vODXK1nHCvXvu5RopXz9WscrxWtAZAMnF7AesfZB0dOqUbxkLZCTki1wUc8niP3gybQU8DUvsZC398pdhL7D0DbWIAEf6tuadQ9T1mZBRKpXZBPU4ZBNyFzq683M"           # token de acesso (Bearer)
+WHATSAPP_TEMPLATE_LANG  = "en_US"             # hello_world padrão da Meta é en_US

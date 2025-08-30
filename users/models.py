@@ -21,6 +21,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     nome = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    telefone = models.CharField(max_length=20, null=True, blank=True)
 
     objects = CustomUserManager()
 
