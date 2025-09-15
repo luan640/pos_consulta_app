@@ -54,7 +54,6 @@ INSTALLED_APPS = [
 
     'users',
     'paciente',
-    'wpp',
     
 
 ]
