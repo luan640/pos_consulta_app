@@ -64,35 +64,35 @@ function alterarMesCalendario(offset) {
   renderCalendarioPacientes(pacientesCache);
 }
 
-function atualizarVisibilidadeVisualizacao(forceEmpty = false) {
+function atualizarVisibilidadeVisualizacao({
+  hasPatients = pacientesCache.length > 0,
+  showListContainer = hasPatients,
+} = {}) {
   const listSection = document.getElementById('patients-list');
   const calendarSection = document.getElementById('calendar-section');
+  const emptyState = document.getElementById('empty-state');
   const toggleButtons = document.querySelectorAll('[data-view-toggle]');
 
-  if (forceEmpty) {
-    currentView = 'list';
-    if (listSection) listSection.classList.add('d-none');
-    if (calendarSection) calendarSection.classList.add('d-none');
-    toggleButtons.forEach((button) => {
-      button.classList.toggle('active', button.dataset.viewToggle === 'list');
-      button.setAttribute('aria-pressed', button.dataset.viewToggle === 'list' ? 'true' : 'false');
-      button.setAttribute('disabled', 'disabled');
-    });
-    return;
-  }
-
   toggleButtons.forEach((button) => {
-    button.classList.toggle('active', button.dataset.viewToggle === currentView);
-    button.setAttribute('aria-pressed', button.dataset.viewToggle === currentView ? 'true' : 'false');
+    const isActive = button.dataset.viewToggle === currentView;
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     button.removeAttribute('disabled');
   });
 
   if (currentView === 'calendar') {
     listSection?.classList.add('d-none');
     calendarSection?.classList.remove('d-none');
+    emptyState?.classList.add('d-none');
   } else {
-    listSection?.classList.remove('d-none');
     calendarSection?.classList.add('d-none');
+    if (showListContainer) {
+      listSection?.classList.remove('d-none');
+      emptyState?.classList.add('d-none');
+    } else {
+      listSection?.classList.add('d-none');
+      emptyState?.classList.remove('d-none');
+    }
   }
 }
 
@@ -328,27 +328,24 @@ export function listarPacientes() {
     })
     .then((data) => {
       pacientesCache = data.pacientes || [];
+      const hasPatients = pacientesCache.length > 0;
 
-      if (pacientesCache.length === 0) {
-        container.innerHTML = '';
-        emptyState?.classList.remove('d-none');
-        listSection?.classList.add('d-none');
-        calendarSection?.classList.add('d-none');
-        if (calendarLoading) {
-          calendarLoading.classList.add('d-none');
-        }
-        atualizarVisibilidadeVisualizacao(true);
-        return;
+      container.innerHTML = '';
+
+      if (hasPatients) {
+        renderListaPacientes(pacientesCache);
       }
 
-      renderListaPacientes(pacientesCache);
       renderCalendarioPacientes(pacientesCache);
 
-      emptyState?.classList.add('d-none');
       if (calendarSection) {
         calendarSection.classList.remove('d-none');
       }
-      atualizarVisibilidadeVisualizacao();
+
+      atualizarVisibilidadeVisualizacao({
+        hasPatients,
+        showListContainer: hasPatients,
+      });
     })
     .catch(() => {
       showToast('Erro ao carregar pacientes', 'error');
@@ -361,7 +358,10 @@ export function listarPacientes() {
         calendarEmptyState.textContent = 'Erro ao carregar pacientes.';
         calendarEmptyState.classList.remove('d-none');
       }
-      atualizarVisibilidadeVisualizacao(true);
+      atualizarVisibilidadeVisualizacao({
+        hasPatients: pacientesCache.length > 0,
+        showListContainer: true,
+      });
     });
 }
 
