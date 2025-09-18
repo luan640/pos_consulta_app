@@ -1,6 +1,12 @@
 import { showToast } from './message.js';
 
+let pacientesCache = [];
+let currentView = 'list';
+let currentCalendarDate = new Date();
+currentCalendarDate.setDate(1);
+
 document.addEventListener('DOMContentLoaded', () => {
+  inicializarVisualizacaoPacientes();
   listarPacientes();
   atualizarCards();
 
@@ -18,25 +24,246 @@ document.addEventListener('DOMContentLoaded', () => {
 
 });
 
+function inicializarVisualizacaoPacientes() {
+  const toggleButtons = document.querySelectorAll('[data-view-toggle]');
+
+  toggleButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      if (button.disabled) return;
+      const targetView = button.dataset.viewToggle;
+      if (!targetView || targetView === currentView) return;
+
+      currentView = targetView;
+      atualizarVisibilidadeVisualizacao();
+
+      if (currentView === 'calendar') {
+        renderCalendarioPacientes(pacientesCache);
+      }
+    });
+  });
+
+  const prevBtn = document.getElementById('calendar-prev');
+  prevBtn?.addEventListener('click', () => alterarMesCalendario(-1));
+
+  const nextBtn = document.getElementById('calendar-next');
+  nextBtn?.addEventListener('click', () => alterarMesCalendario(1));
+
+  const todayBtn = document.getElementById('calendar-today');
+  todayBtn?.addEventListener('click', () => {
+    currentCalendarDate = new Date();
+    currentCalendarDate.setDate(1);
+    renderCalendarioPacientes(pacientesCache);
+  });
+
+  atualizarVisibilidadeVisualizacao();
+}
+
+function alterarMesCalendario(offset) {
+  currentCalendarDate.setMonth(currentCalendarDate.getMonth() + offset);
+  currentCalendarDate.setDate(1);
+  renderCalendarioPacientes(pacientesCache);
+}
+
+function atualizarVisibilidadeVisualizacao(forceEmpty = false) {
+  const listSection = document.getElementById('patients-list');
+  const calendarSection = document.getElementById('calendar-section');
+  const toggleButtons = document.querySelectorAll('[data-view-toggle]');
+
+  if (forceEmpty) {
+    currentView = 'list';
+    if (listSection) listSection.classList.add('d-none');
+    if (calendarSection) calendarSection.classList.add('d-none');
+    toggleButtons.forEach((button) => {
+      button.classList.toggle('active', button.dataset.viewToggle === 'list');
+      button.setAttribute('aria-pressed', button.dataset.viewToggle === 'list' ? 'true' : 'false');
+      button.setAttribute('disabled', 'disabled');
+    });
+    return;
+  }
+
+  toggleButtons.forEach((button) => {
+    button.classList.toggle('active', button.dataset.viewToggle === currentView);
+    button.setAttribute('aria-pressed', button.dataset.viewToggle === currentView ? 'true' : 'false');
+    button.removeAttribute('disabled');
+  });
+
+  if (currentView === 'calendar') {
+    listSection?.classList.add('d-none');
+    calendarSection?.classList.remove('d-none');
+  } else {
+    listSection?.classList.remove('d-none');
+    calendarSection?.classList.add('d-none');
+  }
+}
+
+function renderListaPacientes(lista) {
+  const container = document.getElementById('patients-container');
+  if (!container) return;
+
+  container.innerHTML = '';
+  lista.forEach((paciente) => {
+    const card = renderizarCardPaciente(paciente, 'list');
+    container.appendChild(card);
+  });
+}
+
+function renderCalendarioPacientes(pacientes) {
+  const calendarGrid = document.getElementById('calendar-grid');
+  const calendarDays = document.getElementById('calendar-days');
+  const calendarEmptyState = document.getElementById('calendar-empty-state');
+  const calendarLoading = document.getElementById('calendar-loading');
+  const monthLabel = document.getElementById('calendar-current-month');
+
+  if (!calendarGrid || !calendarDays || !monthLabel) {
+    return;
+  }
+
+  if (calendarEmptyState?.dataset.defaultText) {
+    calendarEmptyState.textContent = calendarEmptyState.dataset.defaultText;
+  }
+
+  calendarDays.innerHTML = '';
+  calendarGrid.classList.remove('d-none');
+  calendarLoading?.classList.add('d-none');
+
+  const referenceDate = new Date(currentCalendarDate);
+  referenceDate.setDate(1);
+
+  monthLabel.textContent = referenceDate.toLocaleDateString('pt-BR', {
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const eventosPorData = new Map();
+  const hojeIso = new Date().toISOString().split('T')[0];
+
+  pacientes.forEach((paciente) => {
+    const chave =
+      normalizarDataString(paciente.proximo_lembrete) ||
+      hojeIso;
+
+    if (!eventosPorData.has(chave)) {
+      eventosPorData.set(chave, []);
+    }
+
+    eventosPorData.get(chave).push(paciente);
+  });
+
+  const firstDayOfMonth = new Date(referenceDate);
+  const startWeekDay = (firstDayOfMonth.getDay() + 6) % 7; // semana começa na segunda
+  const firstVisibleDate = new Date(referenceDate);
+  firstVisibleDate.setDate(1 - startWeekDay);
+
+  const totalCells = 42; // 6 semanas
+  const today = new Date();
+  const month = referenceDate.getMonth();
+  const year = referenceDate.getFullYear();
+
+  let hasEventsInMonth = false;
+
+  for (let i = 0; i < totalCells; i += 1) {
+    const cellDate = new Date(firstVisibleDate);
+    cellDate.setDate(firstVisibleDate.getDate() + i);
+    const isoDate = cellDate.toISOString().split('T')[0];
+
+    const cell = document.createElement('div');
+    cell.className = 'calendar-cell';
+
+    if (cellDate.getMonth() !== month) {
+      cell.classList.add('calendar-other-month');
+    }
+
+    if (isSameDay(cellDate, today)) {
+      cell.classList.add('calendar-today');
+    }
+
+    const dayLabel = document.createElement('div');
+    dayLabel.className = 'calendar-date';
+    dayLabel.textContent = cellDate.getDate();
+    cell.appendChild(dayLabel);
+
+    const eventsContainer = document.createElement('div');
+    eventsContainer.className = 'calendar-events';
+
+    const dayPatients = eventosPorData.get(isoDate) || [];
+
+    dayPatients.forEach((paciente) => {
+      const card = renderizarCardPaciente(paciente, 'calendar');
+      eventsContainer.appendChild(card);
+
+      if (cellDate.getMonth() === month && cellDate.getFullYear() === year) {
+        hasEventsInMonth = true;
+      }
+    });
+
+    if (dayPatients.length === 0) {
+      eventsContainer.classList.add('calendar-events-empty');
+    }
+
+    cell.appendChild(eventsContainer);
+    calendarDays.appendChild(cell);
+  }
+
+  if (calendarEmptyState) {
+    if (hasEventsInMonth) {
+      calendarEmptyState.classList.add('d-none');
+    } else {
+      calendarEmptyState.classList.remove('d-none');
+    }
+  }
+}
+
+function normalizarDataString(dataString) {
+  if (!dataString) return null;
+  const data = new Date(`${dataString}T00:00:00`);
+  if (Number.isNaN(data.getTime())) return null;
+  return data.toISOString().split('T')[0];
+}
+
+function isSameDay(dateA, dateB) {
+  return (
+    dateA.getFullYear() === dateB.getFullYear() &&
+    dateA.getMonth() === dateB.getMonth() &&
+    dateA.getDate() === dateB.getDate()
+  );
+}
+
 // Atualiza o card do paciente na lista pelo id, mostrando loading apenas no card alterado
 export function atualizarCardPaciente(pacienteId) {
   const container = document.getElementById('patients-container');
-  const oldCard = container.querySelector(`[data-paciente-id="${pacienteId}"]`);
+  const oldCard = container?.querySelector(`[data-paciente-id="${pacienteId}"]`);
   if (oldCard) {
-    // Mostra loading no próprio card
     oldCard.innerHTML = `
       <div class="d-flex justify-content-center align-items-center" style="min-height: 120px;">
         <div class="spinner-border text-primary" role="status"></div>
       </div>
     `;
   }
+
   fetch(`/api/paciente/${pacienteId}/`)
-    .then(res => res.json())
-    .then(updated => {
-      const newCard = renderizarCardPaciente(updated);
-      if (oldCard) {
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error('Erro ao atualizar paciente');
+      }
+      return res.json();
+    })
+    .then((updated) => {
+      if (container && oldCard) {
+        const newCard = renderizarCardPaciente(updated, 'list');
         container.replaceChild(newCard, oldCard);
       }
+
+      const index = pacientesCache.findIndex((paciente) => paciente.id === updated.id);
+      if (index !== -1) {
+        pacientesCache[index] = updated;
+      } else {
+        pacientesCache.push(updated);
+      }
+
+      renderCalendarioPacientes(pacientesCache);
+    })
+    .catch(() => {
+      showToast('Erro ao atualizar paciente.', 'error');
     });
 
   atualizarCards();
@@ -46,14 +273,19 @@ export function atualizarCardPaciente(pacienteId) {
 export function listarPacientes() {
   const container = document.getElementById('patients-container');
   const listSection = document.getElementById('patients-list');
+  const calendarSection = document.getElementById('calendar-section');
   const emptyState = document.getElementById('empty-state');
+  const calendarLoading = document.getElementById('calendar-loading');
+  const calendarGrid = document.getElementById('calendar-grid');
+  const calendarDays = document.getElementById('calendar-days');
+  const calendarEmptyState = document.getElementById('calendar-empty-state');
 
-  // Campos de filtro
+  if (!container) return;
+
   const filtroNome = document.getElementById('filter-name')?.value || '';
   const filtroStatus = document.getElementById('filter-reminder')?.value || '';
   const filtroSort = document.getElementById('filter-sort')?.value || '';
 
-  // Constrói a query string com filtros, se houver
   const params = new URLSearchParams();
 
   if (filtroNome.trim() !== '') {
@@ -68,42 +300,72 @@ export function listarPacientes() {
     params.append('sort', filtroSort.trim());
   }
 
-  // Mostra spinner de loading enquanto carrega
   container.innerHTML = `
     <div class="text-center py-4">
       <div class="spinner-border text-primary" role="status"></div>
       <div class="mt-2 text-secondary">Carregando pacientes...</div>
     </div>
   `;
-  emptyState.classList.add('d-none');
-  listSection.classList.remove('d-none');
+
+  emptyState?.classList.add('d-none');
+  listSection?.classList.remove('d-none');
+
+  if (calendarLoading) {
+    calendarLoading.classList.remove('d-none');
+  }
+  calendarGrid?.classList.add('d-none');
+  calendarEmptyState?.classList.add('d-none');
+  if (calendarDays) {
+    calendarDays.innerHTML = '';
+  }
 
   fetch(`/api/pacientes/?${params.toString()}`)
-    .then(response => response.json())
-    .then(data => {
-      const lista = data.pacientes;
-      container.innerHTML = ''; // Limpa o container antes de renderizar
-      
-      if (lista.length === 0) {
-        emptyState.classList.remove('d-none');
-        listSection.classList.add('d-none');
-      } else {
-        emptyState.classList.add('d-none');
-        listSection.classList.remove('d-none');
-
-        lista.forEach(paciente => {
-          const card = renderizarCardPaciente(paciente);
-          container.appendChild(card);
-        });
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error('Erro ao carregar pacientes');
       }
+      return response.json();
     })
-    .catch(err => {
+    .then((data) => {
+      pacientesCache = data.pacientes || [];
+
+      if (pacientesCache.length === 0) {
+        container.innerHTML = '';
+        emptyState?.classList.remove('d-none');
+        listSection?.classList.add('d-none');
+        calendarSection?.classList.add('d-none');
+        if (calendarLoading) {
+          calendarLoading.classList.add('d-none');
+        }
+        atualizarVisibilidadeVisualizacao(true);
+        return;
+      }
+
+      renderListaPacientes(pacientesCache);
+      renderCalendarioPacientes(pacientesCache);
+
+      emptyState?.classList.add('d-none');
+      if (calendarSection) {
+        calendarSection.classList.remove('d-none');
+      }
+      atualizarVisibilidadeVisualizacao();
+    })
+    .catch(() => {
       showToast('Erro ao carregar pacientes', 'error');
       container.innerHTML = '<div class="text-danger text-center py-4">Erro ao carregar pacientes.</div>';
+      if (calendarLoading) {
+        calendarLoading.classList.add('d-none');
+      }
+      calendarGrid?.classList.add('d-none');
+      if (calendarEmptyState) {
+        calendarEmptyState.textContent = 'Erro ao carregar pacientes.';
+        calendarEmptyState.classList.remove('d-none');
+      }
+      atualizarVisibilidadeVisualizacao(true);
     });
 }
 
-export function renderizarCardPaciente(paciente) {
+export function renderizarCardPaciente(paciente, view = 'list') {
 
   // Ordena as consultas por id
   const consultasOrdenadas = paciente.consultas.sort((a, b) => b.id - a.id);
@@ -158,7 +420,21 @@ export function renderizarCardPaciente(paciente) {
   }
 
   const card = document.createElement('div');
-  card.className = 'card patient-card mb-3' + (atrasado ? ' alert-active' : '');
+  const cardClasses = ['card', 'patient-card'];
+
+  if (view === 'list') {
+    cardClasses.push('mb-3');
+  }
+
+  if (atrasado) {
+    cardClasses.push('alert-active');
+  }
+
+  if (view === 'calendar') {
+    cardClasses.push('calendar-patient-card');
+  }
+
+  card.className = cardClasses.join(' ');
   card.dataset.pacienteId = paciente.id;
 
   const header = document.createElement('div');
@@ -213,7 +489,7 @@ export function renderizarCardPaciente(paciente) {
   body.className = 'card-body';
 
   const topRow = document.createElement('div');
-  topRow.className = 'd-flex justify-content-between align-items-center mb-3';
+  topRow.className = 'd-flex justify-content-between align-items-center mb-3 card-actions-row';
 
   const contato = document.createElement('div');
   contato.className = 'd-flex align-items-center gap-3'; // Para alinhar lado a lado
