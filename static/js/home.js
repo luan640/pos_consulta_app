@@ -118,6 +118,8 @@ export function listarPacientes() {
 
 export function renderizarCardPaciente(paciente) {
 
+  console.log(paciente);
+
   // Ordena as consultas por id
   const consultasOrdenadas = paciente.consultas.sort((a, b) => b.id - a.id);
 

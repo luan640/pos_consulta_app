@@ -59,21 +59,48 @@ def listar_pacientes_com_consultas(request):
 
     dados = []
     for paciente in pacientes:
-        lembrete = paciente.lembretes.filter(concluido=False).select_related('regra').order_by('data_lembrete').first()
+        lembretes_pend = list(
+            paciente.lembretes
+            .filter(concluido=False)
+            .order_by('data_lembrete')[:2]
+        )
 
-        dados.append({
+        ultimo = lembretes_pend[0] if len(lembretes_pend) >= 1 else None
+        penultimo = lembretes_pend[1] if len(lembretes_pend) >= 2 else None
+
+        # 2) Se não há penúltimo pendente, usar o último concluído (histórico)
+        if ultimo and not penultimo:
+            penultimo = (
+                paciente.lembretes
+                .filter(concluido=True)
+                .order_by('-data_lembrete')  # mais recente no passado
+                .first()
+            )
+
+        igual_ao_ultimo = bool(ultimo and penultimo and (penultimo.regra_id == ultimo.regra_id))
+
+        item = {
             'id': paciente.id,
             'nome': paciente.nome,
             'telefone': paciente.telefone,
             'ultima_consulta': consulta_map.get(paciente.id),
-            'proximo_lembrete': lembrete.data_lembrete if lembrete else None,
-            'texto_lembrete': lembrete.regra.descricao if lembrete and lembrete.regra else lembrete.texto if lembrete else None,
+            'proximo_lembrete': ultimo.data_lembrete if ultimo else None,
+            'penultimo_lembrete': penultimo.data_lembrete if penultimo else None,
             'nome_lembrete': None,
             'lembretes_ativos': paciente.lembretes_ativos,
             'paciente_ativo': paciente.ativo,
             'grupo_regra_atual': paciente.grupo_lembrete.nome if paciente.grupo_lembrete else None,
-            'consultas': consultas_por_paciente.get(paciente.id, [])
-        })
+            'consultas': consultas_por_paciente.get(paciente.id, []),
+        }
+    
+        if not igual_ao_ultimo and ultimo:
+            item['texto_lembrete'] = (
+                ultimo.regra.descricao if ultimo and ultimo.regra else ultimo.texto
+            )
+        else:
+            item['texto_lembrete'] = "Você já enviou todos os materiais necessários."
+            
+        dados.append(item)
 
     ordenar_por = request.GET.get('sort', '')
 
