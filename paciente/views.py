@@ -6,8 +6,9 @@ from django.db.models import Max, Min
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.dateparse import parse_date
 from django.utils.timezone import now
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 from django.shortcuts import get_object_or_404
+from django.db import transaction, IntegrityError
 
 from .models import (
     Paciente, Lembrete, ContatoNutricionista,
@@ -90,39 +91,47 @@ def listar_pacientes_com_consultas(request):
 
     return JsonResponse({'pacientes': dados})
 
-@csrf_exempt
+@csrf_exempt  # prefira manter CSRF se estiver autenticando por sessão/cookies
 @login_required
+@require_POST
 def cadastrar_paciente(request):
-    if request.method == 'POST':
+    # Tente decodificar JSON
+    try:
+        data = json.loads(request.body or b'{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'erro': 'JSON inválido'}, status=400)
 
-        data = json.loads(request.body)
+    nome = data.get('nome')
+    telefone = data.get('telefone')
+    data_ultima_consulta = data.get('data_ultima_consulta')
+    tipo_consulta = data.get('tipo_consulta', 'consulta')
 
-        nome = data.get('nome')
-        telefone = data.get('telefone')
-        data_ultima_consulta = data.get('data_ultima_consulta')
-        tipo_consulta = data.get('tipo_consulta', 'consulta') 
+    # Valida campos obrigatórios
+    if not nome or not data_ultima_consulta:
+        return JsonResponse({'erro': 'Nome e data da última consulta são obrigatórios'}, status=400)
 
-        if not nome or not data_ultima_consulta:
-            return JsonResponse({'erro': 'Nome e data da última consulta são obrigatórios'}, status=400)
+    # Valida formato de data (YYYY-MM-DD esperado pelo parse_date)
+    data_consulta = parse_date(str(data_ultima_consulta))
+    if data_consulta is None:
+        return JsonResponse({'erro': 'Data da última consulta inválida. Use o formato YYYY-MM-DD.'}, status=400)
 
-        # Criar paciente
-        paciente = Paciente.objects.create(
-            nome=nome,
-            telefone=telefone,
-            dono=request.user
-        )
+    try:
+        with transaction.atomic():
+            paciente = Paciente.objects.create(
+                nome=nome,
+                telefone=telefone,
+                dono=request.user
+            )
+            Consulta.objects.create(
+                paciente=paciente,
+                data_consulta=data_consulta,
+                tipo_consulta=tipo_consulta
+            )
+    except IntegrityError:
+        # Ex.: constraint NOT NULL/FK/unique
+        return JsonResponse({'erro': 'Falha de integridade ao salvar os dados. Verifique os campos enviados.'}, status=422)
 
-        # Criar consulta
-        data_consulta = parse_date(data_ultima_consulta)
-        Consulta.objects.create(
-            paciente=paciente,
-            data_consulta=data_consulta,
-            tipo_consulta= tipo_consulta
-        )
-
-        return JsonResponse({'mensagem': 'Paciente cadastrado com sucesso', 'id_paciente':paciente.id})
-    
-    return JsonResponse({'erro': 'Método não permitido'}, status=405)
+    return JsonResponse({'mensagem': 'Paciente cadastrado com sucesso', 'id_paciente': paciente.id}, status=201)
 
 @csrf_exempt
 @login_required
@@ -596,15 +605,16 @@ def registrar_consulta_retorno(request, pk):
 
     data = json.loads(request.body)
     data_consulta = data.get('dataConsulta')
+    tipo_consulta = data.get('tipoConsulta')
 
-    if not data_consulta:
-        return JsonResponse({'erro': 'Data da consulta é obrigatória'}, status=400)
+    if not data_consulta or not tipo_consulta:
+        return JsonResponse({'erro': 'Todos os campos são obrigatórios'}, status=400)
 
     # Criar nova consulta
     Consulta.objects.create(
         paciente=paciente,
         data_consulta=parse_date(data_consulta),
-        tipo_consulta=data.get('tipoConsulta')
+        tipo_consulta=tipo_consulta
     )
 
     return JsonResponse({'mensagem': 'Consulta registrada com sucesso'})

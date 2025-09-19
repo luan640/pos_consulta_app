@@ -618,10 +618,12 @@ function inicializarEdicaoPaciente() {
           atualizarCardPaciente(id);
           showToast('Paciente atualizado com sucesso!', 'success');
         } else {
-          alert('Erro ao atualizar paciente.');
+          showToast('Erro ao atualizar paciente.', 'error');
+
         }
       } catch (e) {
-        alert('Erro de conexão ao atualizar paciente.');
+        showToast('Erro de conexão ao atualizar paciente.', 'error');
+
       } finally {
         btn.disabled = false;
         const existingSpinner = btn.querySelector('#saving-spinner');
@@ -1108,7 +1110,7 @@ document.addEventListener('DOMContentLoaded', () => {
           atualizarCardPaciente(result.id_paciente);
           
         } else {
-          alert(result.erro || 'Erro ao cadastrar paciente.');
+          showToast(result.erro, 'error');
         }
       } catch (err) {
         showToast('Erro inesperado ao cadastrar paciente.', 'error');
