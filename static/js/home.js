@@ -926,6 +926,7 @@ function inicializarExcluirPaciente() {
           modalInstance?.hide();
           // listarPacientes();
           removerCardPaciente(idPaciente);
+          atualizarCards();
           showToast(result.mensagem, 'success');
         } else {
           showToast(result.erro || 'Erro ao excluir paciente.', 'error');

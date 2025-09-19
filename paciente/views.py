@@ -559,6 +559,7 @@ def status_paciente(request, pk):
         estado = True
 
         paciente.lembretes_ativos = estado
+        paciente.save()
 
     elif req == 'desabilitar':
         paciente.grupo_lembrete = None
@@ -570,11 +571,10 @@ def status_paciente(request, pk):
         estado = False
 
         paciente.lembretes_ativos = estado
+        paciente.save()
 
     else: # excluir
         paciente.delete()
-
-    paciente.save()
 
     if estado == True:
         return JsonResponse({'mensagem': 'Lembretes ativados com sucesso'})
