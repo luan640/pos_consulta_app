@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="{% static 'css/modal-historico-consulta.css' %}">
 </head>
 <body class="bg-light">
+
     <div class="container py-4">
 
         <input type="hidden" id="regra-grupo-id">
@@ -553,6 +554,35 @@
                     <div class="modal-footer justify-content-center">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="button" class="btn btn-success" id="confirm-deactivate-patient">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Excluir Paciente Permantente -->
+        <div class="modal fade" id="excluirPacienteModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-md">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Excluir paciente permanentemente</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body text-center py-5">
+                        <input type="hidden" id="excluir-patient-id">
+                        <i class="bi bi-pause-circle-fill text-danger fs-1 mb-3"></i>
+                        <h4 class="fw-bold mb-3">Excluir paciente</h4>
+                        <p class="mb-2">
+                            Deseja <span class="text-danger fw-semibold">excluir permanentemente</span> o paciente 
+                            <span id="patient-name-excluir" class="fw-bold text-primary"></span>?
+                        </p>
+                        <p class="text-secondary mb-3">
+                            O paciente será removido da lista de acompanhamento, e todos seus dados serão perdidos.<br>
+                            Você não poderá resgatá-lo.
+                        </p>
+                    </div>
+                    <div class="modal-footer justify-content-center">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-success" id="confirm-excluir-patient">Salvar</button>
                     </div>
                 </div>
             </div>

@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   inicializarFormularioAtribuirGrupo();
   inicializarEdicaoPaciente();
   inicializarSelecaoMateriais();
+  inicializarExcluirPaciente();
 
 });
 
@@ -42,6 +43,18 @@ export function atualizarCardPaciente(pacienteId) {
   atualizarCards();
 }
 
+function removerCardPaciente(pacienteId) {
+  const container = document.getElementById('patients-container');
+  const card = container?.querySelector(`[data-paciente-id="${pacienteId}"]`);
+  if (!card) return false;
+  // Tente remove(), se não houver suporte, use removeChild
+  if (typeof card.remove === 'function') {
+    card.remove();
+  } else {
+    container.removeChild(card);
+  }
+  return true;
+}
 
 export function listarPacientes() {
   const container = document.getElementById('patients-container');
@@ -356,9 +369,18 @@ export function renderizarCardPaciente(paciente) {
       patient: paciente
   }));
 
+  const ExcluirPaciente = document.createElement('button');
+    ExcluirPaciente.className = 'btn-icon btn-outline-danger';
+    ExcluirPaciente.setAttribute('data-tooltip', 'Excluir Paciente');
+    ExcluirPaciente.innerHTML = '<i class="bi bi-trash"></i>';
+    ExcluirPaciente.addEventListener('click', () => openExcluirPatientModal({
+      patient: paciente
+  }));
+
   secondaryActions.appendChild(historicoConsultaBt);
   secondaryActions.appendChild(historicoContatoBt);
   secondaryActions.appendChild(EditarPacienteBt);
+  secondaryActions.appendChild(ExcluirPaciente);
 
   // Adiciona togglePaciente ao container de ações secundárias para ficar ao lado dos outros botões secundários
   secondaryActions.appendChild(togglePatientBtn);
@@ -648,6 +670,18 @@ function openDeactivatePatientModal(patient) {
   deactivatePatientModal.show();
 }
 
+function openExcluirPatientModal(patient) {
+
+  const excluirPatientModal = new bootstrap.Modal(document.getElementById('excluirPacienteModal'));
+  const nomePaciente = document.getElementById('patient-name-excluir');
+  const idPaciente = document.getElementById('excluir-patient-id');
+
+  nomePaciente.textContent = patient.patient.nome;
+  idPaciente.value = patient.patient.id;
+
+  excluirPatientModal.show();
+}
+
 function openActivatePatientModal(patient) {
 
   const reativarPatientModal = new bootstrap.Modal(document.getElementById('reativarPacienteModal'));
@@ -856,6 +890,48 @@ function inicializarDesativarPaciente() {
         }
       } catch (err) {
         showToast('Erro inesperado ao desativar paciente.', 'error');
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  }
+}
+
+// ao clicar no botão confirm-excluir-patient deve enviar uma requisição post para o servidor
+function inicializarExcluirPaciente() {
+  const btn = document.getElementById('confirm-excluir-patient');
+
+  if (btn && !btn.dataset.listenerAdded) {
+    btn.dataset.listenerAdded = 'true';
+
+    btn.addEventListener('click', async () => {
+      const idPaciente = document.getElementById('excluir-patient-id').value;
+      const submitBtn = btn;
+      submitBtn.disabled = true;
+
+      try {
+        const response = await fetch(`/api/status-paciente/${idPaciente}/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+          },
+          body: JSON.stringify({ estado: 'excluir' }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          const modalInstance = bootstrap.Modal.getInstance(document.getElementById('excluirPacienteModal'));
+          modalInstance?.hide();
+          // listarPacientes();
+          removerCardPaciente(idPaciente);
+          showToast(result.mensagem, 'success');
+        } else {
+          showToast(result.erro || 'Erro ao excluir paciente.', 'error');
+        }
+      } catch (err) {
+        showToast('Erro inesperado ao excluir paciente.', 'error');
       } finally {
         submitBtn.disabled = false;
       }

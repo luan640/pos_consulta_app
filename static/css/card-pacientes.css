@@ -412,7 +412,7 @@ body {
 
 .btn-icon::after {
     content: attr(data-tooltip);
-    position: absolute;
+    position: fixed;
     bottom: -35px;
     left: 50%;
     transform: translateX(-50%);
@@ -425,7 +425,7 @@ body {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
-    z-index: 1000;
+    z-index: 9999;
 }
 
 .btn-icon:hover::after {

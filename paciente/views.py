@@ -529,15 +529,17 @@ def status_paciente(request, pk):
         paciente = Paciente.objects.get(pk=pk, dono=request.user)
     except Paciente.DoesNotExist:
         return JsonResponse({'erro': 'Paciente não encontrado'}, status=404)
-
+    
     try:
         req = json.loads(request.body).get('estado')
     except json.JSONDecodeError:
         return JsonResponse({'erro': 'Estado inválido'}, status=400)
     
-    if req not in ['habilitar', 'desabilitar']:
-        return JsonResponse({'erro': 'Estado deve ser "habilitar" ou "desabilitar"'}, status=400)
+    if req not in ['habilitar', 'desabilitar', 'excluir']:
+        return JsonResponse({'erro': 'Estado deve ser "habilitar" ou "desabilitar" ou "excluir'}, status=400)
     
+    estado = None
+
     if req == 'habilitar':
         # empurar para a primeira regra existente
         regra = RegraLembrete.objects.filter(nutricionista=request.user, grupo=paciente.grupo_lembrete).order_by('ordem').first()
@@ -555,7 +557,10 @@ def status_paciente(request, pk):
 
         paciente.ativo = True
         estado = True
-    else:
+
+        paciente.lembretes_ativos = estado
+
+    elif req == 'desabilitar':
         paciente.grupo_lembrete = None
 
         # excluir lembretes futuros ou ativo
@@ -564,13 +569,19 @@ def status_paciente(request, pk):
         paciente.ativo = False
         estado = False
 
-    paciente.lembretes_ativos = estado
+        paciente.lembretes_ativos = estado
+
+    else: # excluir
+        paciente.delete()
+
     paciente.save()
 
-    if estado:
+    if estado == True:
         return JsonResponse({'mensagem': 'Lembretes ativados com sucesso'})
-    else:
+    elif estado == False:
         return JsonResponse({'mensagem': 'Lembretes desativados com sucesso'})
+    else: 
+        return JsonResponse({'mensagem': 'Paciente excluído com sucesso'})
 
 @csrf_exempt   
 @login_required
