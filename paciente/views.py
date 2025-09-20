@@ -150,7 +150,9 @@ def listar_pacientes_com_consultas(request):
             'consultas': consultas_serializadas,
         }
 
-        if not igual_ao_ultimo and ultimo:
+        if not item['grupo_regra_atual']:
+            item['texto_lembrete'] = "Primeiro atribua um grupo de regras."
+        elif not igual_ao_ultimo and ultimo:
             item['texto_lembrete'] = (
                 ultimo.regra.descricao if ultimo and ultimo.regra else ultimo.texto
             )
