@@ -540,7 +540,7 @@ body {
     font-weight: 500;
 }
 
-.calendar-day-cards {
+.calendar-day-events {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -549,13 +549,155 @@ body {
     padding-right: 0.25rem;
 }
 
-.calendar-day .patient-card {
-    margin-bottom: 0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+.calendar-event {
+    background: #f8faff;
+    border-radius: 12px;
+    border: 1px solid #dbe5f1;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    border-left: 4px solid #0d6efd;
 }
 
-.calendar-day .patient-card .card-body {
-    padding: 1rem;
+.calendar-event:hover {
+    box-shadow: 0 8px 20px rgba(13, 110, 253, 0.15);
+    transform: translateY(-2px);
+}
+
+.calendar-event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.calendar-event-title {
+    font-weight: 600;
+    color: #1f2d3d;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.calendar-event-badge {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.25rem 0.5rem;
+}
+
+.calendar-event-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    color: #51607a;
+}
+
+.calendar-event-info i {
+    color: #6c85b1;
+    margin-right: 0.35rem;
+}
+
+.calendar-event-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.calendar-event-links {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.calendar-event-whatsapp {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    color: #198754;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.calendar-event-whatsapp:hover {
+    color: #0f5132;
+}
+
+.calendar-event-group {
+    font-size: 0.85rem;
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+.calendar-event-group:hover {
+    color: #0a58ca;
+    text-decoration: underline;
+}
+
+.calendar-event-actions .dropdown-menu {
+    min-width: 220px;
+    font-size: 0.9rem;
+    padding: 0.5rem 0;
+}
+
+.calendar-event-actions .dropdown-item i {
+    font-size: 1rem;
+    color: #6c85b1;
+}
+
+.calendar-event-menu {
+    border-radius: 999px;
+    padding: 0.35rem 0.5rem;
+}
+
+.calendar-event-upcoming {
+    border-left-color: #0d6efd;
+}
+
+.calendar-event-overdue {
+    border-left-color: #dc3545;
+    background: #fff5f5;
+}
+
+.calendar-event-reminder-disabled {
+    border-left-color: #6c757d;
+    background: #f3f4f6;
+    opacity: 0.9;
+}
+
+.calendar-event-no-group {
+    border-left-color: #ffc107;
+    background: #fff9e6;
+}
+
+.calendar-event-inactive {
+    border-left-color: #adb5bd;
+    background: #f5f6f8;
+    opacity: 0.75;
+}
+
+.badge-warning {
+    background-color: #ffc107;
+    color: #1f2d3d;
+}
+
+.badge-overdue {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.badge-waiting {
+    background-color: #0d6efd;
+    color: #fff;
 }
 
 .calendar-loading {

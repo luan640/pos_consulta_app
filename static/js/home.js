@@ -572,7 +572,7 @@ function criarDiaCalendario(numeroDia, eventos) {
   cabecalho.appendChild(textoDiaSemana);
 
   const cardsContainer = document.createElement('div');
-  cardsContainer.className = 'calendar-day-cards';
+  cardsContainer.className = 'calendar-day-events';
 
   if (eventos.length === 0) {
     const vazio = document.createElement('span');
@@ -581,8 +581,8 @@ function criarDiaCalendario(numeroDia, eventos) {
     cardsContainer.appendChild(vazio);
   } else {
     eventos.forEach((paciente) => {
-      const card = renderizarCardPaciente(paciente);
-      cardsContainer.appendChild(card);
+      const evento = criarEventoCalendario(paciente);
+      cardsContainer.appendChild(evento);
     });
   }
 
@@ -592,14 +592,189 @@ function criarDiaCalendario(numeroDia, eventos) {
   return elemento;
 }
 
-export function renderizarCardPaciente(paciente) {
+function criarEventoCalendario(paciente) {
+  const dados = obterInformacoesPaciente(paciente);
+  const {
+    status,
+    badgeClass,
+    badgeText,
+    proximoDescricao,
+    ultimaStr,
+    textoUltimo,
+    tipoConsulta,
+    diasAtrasDescricao,
+    telefoneLimpo,
+  } = dados;
 
-  console.log(paciente);
+  const elemento = document.createElement('div');
+  elemento.className = `calendar-event calendar-event-${status}`;
+  elemento.dataset.pacienteId = paciente.id;
 
-  // Ordena as consultas por id
-  const consultasOrdenadas = paciente.consultas.sort((a, b) => b.id - a.id);
+  const cabecalho = document.createElement('div');
+  cabecalho.className = 'calendar-event-header';
 
-  // Pega a última consulta (a primeira do array ordenado)
+  const titulo = document.createElement('div');
+  titulo.className = 'calendar-event-title';
+  titulo.textContent = paciente.nome;
+
+  const statusElemento = document.createElement('span');
+  statusElemento.className = `calendar-event-badge badge ${badgeClass}`;
+  statusElemento.textContent = badgeText;
+
+  cabecalho.appendChild(titulo);
+  cabecalho.appendChild(statusElemento);
+
+  const informacoes = document.createElement('div');
+  informacoes.className = 'calendar-event-info-list';
+
+  const infoProximo = document.createElement('div');
+  infoProximo.className = 'calendar-event-info';
+  infoProximo.innerHTML = `<i class="bi bi-calendar-event"></i> Próximo contato: ${proximoDescricao}`;
+
+  const infoUltima = document.createElement('div');
+  infoUltima.className = 'calendar-event-info';
+  infoUltima.innerHTML = `<i class="bi bi-calendar-check"></i> ${textoUltimo} ${tipoConsulta}: ${ultimaStr}`;
+
+  const infoDias = document.createElement('div');
+  infoDias.className = 'calendar-event-info';
+  infoDias.innerHTML = `<i class="bi bi-clock-history"></i> ${diasAtrasDescricao}`;
+
+  informacoes.appendChild(infoProximo);
+  informacoes.appendChild(infoUltima);
+  informacoes.appendChild(infoDias);
+
+  if (paciente.texto_lembrete) {
+    const infoAcao = document.createElement('div');
+    infoAcao.className = 'calendar-event-info';
+    infoAcao.innerHTML = `<i class="bi bi-chat-left-text"></i> ${paciente.texto_lembrete}`;
+    informacoes.appendChild(infoAcao);
+  }
+
+  const rodape = document.createElement('div');
+  rodape.className = 'calendar-event-footer';
+
+  const acoesEsquerda = document.createElement('div');
+  acoesEsquerda.className = 'calendar-event-links';
+
+  if (telefoneLimpo) {
+    const whatsapp = document.createElement('a');
+    whatsapp.href = `https://wa.me/55${telefoneLimpo}`;
+    whatsapp.target = '_blank';
+    whatsapp.className = 'calendar-event-whatsapp';
+    whatsapp.innerHTML = '<i class="bi bi-whatsapp"></i> WhatsApp';
+    acoesEsquerda.appendChild(whatsapp);
+  }
+
+  const grupoBtn = document.createElement('button');
+  grupoBtn.type = 'button';
+  grupoBtn.className = 'btn btn-link p-0 calendar-event-group';
+  grupoBtn.innerHTML = `<i class="bi bi-people"></i> ${paciente.grupo_regra_atual || 'Atribuir grupo'}`;
+  grupoBtn.addEventListener('click', () => openAtribuirGrupoModal(paciente.id));
+  acoesEsquerda.appendChild(grupoBtn);
+
+  const menuAcoes = criarMenuAcoesCalendario(paciente);
+
+  rodape.appendChild(acoesEsquerda);
+  rodape.appendChild(menuAcoes);
+
+  elemento.appendChild(cabecalho);
+  elemento.appendChild(informacoes);
+  elemento.appendChild(rodape);
+
+  return elemento;
+}
+
+function criarMenuAcoesCalendario(paciente) {
+  const dropdownWrapper = document.createElement('div');
+  dropdownWrapper.className = 'dropdown calendar-event-actions';
+
+  const toggle = document.createElement('button');
+  toggle.className = 'btn btn-sm btn-outline-secondary calendar-event-menu';
+  toggle.type = 'button';
+  toggle.setAttribute('data-bs-toggle', 'dropdown');
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.innerHTML = '<i class="bi bi-three-dots"></i>';
+
+  const menu = document.createElement('div');
+  menu.className = 'dropdown-menu dropdown-menu-end';
+
+  const registrarAcao = (label, icon, handler) => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'dropdown-item d-flex align-items-center gap-2';
+    item.innerHTML = `<i class="bi ${icon}"></i><span>${label}</span>`;
+    item.addEventListener('click', (event) => {
+      event.preventDefault();
+      const dropdown = bootstrap.Dropdown.getOrCreateInstance(toggle);
+      dropdown.hide();
+      handler();
+    });
+    menu.appendChild(item);
+  };
+
+  if (paciente.paciente_ativo && paciente.grupo_regra_atual && paciente.lembretes_ativos) {
+    registrarAcao('Registrar contato', 'bi-check-circle', () => openContactModal({
+      id: paciente.id,
+      name: paciente.nome,
+      type: paciente.nome_lembrete,
+    }));
+
+    registrarAcao('Desativar lembretes', 'bi-bell-slash', () => openDisableLembreteModal({
+      id: paciente.id,
+      name: paciente.nome,
+    }));
+  } else if (paciente.paciente_ativo && paciente.grupo_regra_atual && !paciente.lembretes_ativos) {
+    registrarAcao('Reativar lembretes', 'bi-bell', () => openEnableLembreteModal({
+      id: paciente.id,
+      name: paciente.nome,
+    }));
+  }
+
+  if (paciente.paciente_ativo) {
+    registrarAcao('Registrar consulta', 'bi-calendar-plus', () => openRegistrarConsultaModal({
+      id: paciente.id,
+      name: paciente.nome,
+    }));
+  }
+
+  registrarAcao('Alterar grupo de regras', 'bi-people', () => openAtribuirGrupoModal(paciente.id));
+
+  registrarAcao('Histórico de consultas', 'bi-journal-medical', () => openHistoricoConsultaModal({
+    patient: paciente.id,
+  }));
+
+  registrarAcao('Histórico de contatos', 'bi-chat-dots', () => openHistoricoContatoModal({
+    patient: paciente.id,
+  }));
+
+  registrarAcao('Editar informações', 'bi-pencil', () => openEditarInfoPacientesModal({
+    patient: paciente,
+  }));
+
+  if (paciente.paciente_ativo) {
+    registrarAcao('Desativar paciente', 'bi-person-dash', () => openDeactivatePatientModal({
+      id: paciente.id,
+      name: paciente.nome,
+    }));
+  } else {
+    registrarAcao('Reativar paciente', 'bi-person-check', () => openActivatePatientModal({
+      id: paciente.id,
+      name: paciente.nome,
+    }));
+  }
+
+  registrarAcao('Excluir paciente', 'bi-trash', () => openExcluirPatientModal({
+    patient: paciente,
+  }));
+
+  dropdownWrapper.appendChild(toggle);
+  dropdownWrapper.appendChild(menu);
+
+  return dropdownWrapper;
+}
+
+function obterInformacoesPaciente(paciente) {
+  const consultasOrdenadas = [...(paciente.consultas || [])].sort((a, b) => b.id - a.id);
   const ultimaConsulta = consultasOrdenadas[0];
   const tipoConsulta = ultimaConsulta?.tipo_consulta || 'consulta';
   const textoUltimo = tipoConsulta === 'retorno' ? 'Último' : 'Última';
@@ -607,46 +782,74 @@ export function renderizarCardPaciente(paciente) {
   const ultimaRaw = ultimaConsulta?.data_consulta || paciente.ultima_consulta;
   const proximoRaw = paciente.proximo_lembrete;
 
-  const ultima = ultimaRaw ? new Date(ultimaRaw + 'T00:00:00') : null;
-  const proximo = proximoRaw ? new Date(proximoRaw + 'T00:00:00') : null;
+  const ultima = ultimaRaw ? new Date(`${ultimaRaw}T00:00:00`) : null;
+  const proximo = proximoRaw ? new Date(`${proximoRaw}T00:00:00`) : null;
 
-  const diasAtras = ultima
-    ? Math.floor((new Date() - ultima) / (1000 * 60 * 60 * 24))
-    : null;
-
-  const diasParaProximo = proximo
-    ? Math.ceil((proximo - new Date()) / (1000 * 60 * 60 * 24))
-    : null;
-
+  const hoje = new Date();
+  const diasAtras = ultima ? Math.floor((hoje - ultima) / (1000 * 60 * 60 * 24)) : null;
+  const diasParaProximo = proximo ? Math.ceil((proximo - hoje) / (1000 * 60 * 60 * 24)) : null;
   const atrasado = diasParaProximo !== null && diasParaProximo < 0;
 
-  // Formatação de datas para o formato brasileiro
-  const ultimaStr = ultima
-    ? ultima.toLocaleDateString('pt-BR')
-    : '---';
-  const proximoStr = proximo
-    ? proximo.toLocaleDateString('pt-BR')
-    : '---';
-  const diasAtrasStr = diasAtras !== null ? `${diasAtras} dias atrás` : '---';
+  const ultimaStr = ultima ? ultima.toLocaleDateString('pt-BR') : '---';
+  const proximoStr = proximo ? proximo.toLocaleDateString('pt-BR') : '---';
+  const proximoDescricao = proximo ? proximo.toLocaleDateString('pt-BR') : 'Sem agendamento';
+  const diasAtrasResumo = diasAtras !== null ? `${diasAtras} dias atrás` : '---';
+  const diasAtrasDescricao = diasAtras !== null ? `${diasAtras} dias desde a última consulta` : '---';
 
-  let badgeClass, badgeText;
-  
+  let badgeClass = 'badge-waiting';
+  let badgeText = diasParaProximo === null ? 'Sem próximo contato' : `Próximo contato em ${diasParaProximo} dias`;
+  let status = 'upcoming';
+
   if (!paciente.paciente_ativo) {
     badgeClass = 'badge-warning';
     badgeText = 'Paciente desativado';
+    status = 'inactive';
   } else if (!paciente.grupo_regra_atual) {
     badgeClass = 'badge-warning';
     badgeText = 'Atribua um grupo de regras';
+    status = 'no-group';
   } else if (!paciente.lembretes_ativos) {
     badgeClass = 'badge-warning';
     badgeText = 'Habilite lembretes';
+    status = 'reminder-disabled';
   } else if (atrasado) {
     badgeClass = 'badge-overdue';
     badgeText = `Atrasado ${Math.abs(diasParaProximo)} dias`;
-  } else {
-    badgeClass = 'badge-waiting';
-    badgeText = `Próximo contato em ${diasParaProximo} dias`;
+    status = 'overdue';
   }
+
+  const telefoneLimpo = paciente.telefone?.replace(/\D/g, '') || '';
+
+  return {
+    tipoConsulta,
+    textoUltimo,
+    ultimaStr,
+    proximoStr,
+    proximoDescricao,
+    diasAtrasResumo,
+    diasAtrasDescricao,
+    diasParaProximo,
+    atrasado,
+    badgeClass,
+    badgeText,
+    status,
+    telefoneLimpo,
+  };
+}
+
+export function renderizarCardPaciente(paciente) {
+  const dados = obterInformacoesPaciente(paciente);
+  const {
+    tipoConsulta,
+    textoUltimo,
+    ultimaStr,
+    proximoStr,
+    diasAtrasResumo,
+    atrasado,
+    badgeClass,
+    badgeText,
+    telefoneLimpo,
+  } = dados;
 
   const card = document.createElement('div');
   card.className = 'card patient-card mb-3' + (atrasado ? ' alert-active' : '');
@@ -673,7 +876,7 @@ export function renderizarCardPaciente(paciente) {
       <i class="bi bi-calendar"></i> 
       ${textoUltimo} ${tipoConsulta}: ${ultimaStr}
     </div>
-    <div class="patient-info"><i class="bi bi-clock"></i> ${diasAtrasStr}</div>
+    <div class="patient-info"><i class="bi bi-clock"></i> ${diasAtrasResumo}</div>
     <div class="patient-info"><i class="bi bi-calendar text-primary"></i> Próximo contato: ${proximoStr}</div>
     <button class="btn btn-link p-0" id="btnAlterarGrupo" data-patient-id="${paciente.id}">
       <div class="patient-info">
@@ -710,8 +913,6 @@ export function renderizarCardPaciente(paciente) {
   contato.className = 'd-flex align-items-center gap-3'; // Para alinhar lado a lado
 
   // Garante que o telefone esteja em formato apenas números
-  const telefoneLimpo = paciente.telefone?.replace(/\D/g, '');
-
   // Bloco WhatsApp
   let whatsappHtml = '';
   if (telefoneLimpo) {
