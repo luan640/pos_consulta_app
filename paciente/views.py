@@ -42,10 +42,31 @@ def listar_pacientes_com_consultas(request):
         tamanho_pagina = int(request.GET.get('page_size', 10))
     except (TypeError, ValueError):
         tamanho_pagina = 10
-    tamanho_pagina = max(1, min(tamanho_pagina, 50))
+
+    modo_visualizacao = request.GET.get('modo', '').strip().lower()
+    limite_tamanho = 200 if modo_visualizacao == 'calendario' else 50
+    tamanho_pagina = max(1, min(tamanho_pagina, limite_tamanho))
 
     nome = request.GET.get('nome', '').strip()
     status_lembrete = request.GET.get('status_lembrete', '').strip()
+    mes = request.GET.get('mes')
+    ano = request.GET.get('ano')
+
+    try:
+        mes = int(mes)
+    except (TypeError, ValueError):
+        mes = None
+
+    try:
+        ano = int(ano)
+    except (TypeError, ValueError):
+        ano = None
+
+    if mes is not None and not (1 <= mes <= 12):
+        mes = None
+
+    if ano is not None and ano < 1900:
+        ano = None
 
     if nome:
         pacientes = pacientes.filter(nome__icontains=nome)
@@ -63,6 +84,12 @@ def listar_pacientes_com_consultas(request):
         ),
         ultima_consulta_data=Max('consultas__data_consulta')
     )
+
+    if mes and ano:
+        pacientes = pacientes.filter(
+            proximo_lembrete_data__month=mes,
+            proximo_lembrete_data__year=ano
+        )
 
     ordenar_por = request.GET.get('sort', '')
 

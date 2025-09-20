@@ -6,6 +6,16 @@ let carregandoPacientes = false;
 let listaCompletaCarregada = false;
 let botaoCarregarMais;
 let wrapperCarregarMais;
+let modoVisualizacao = 'lista';
+let calendarioMesAtual = null;
+let calendarioAnoAtual = null;
+
+const MESES_PT_BR = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+];
+
+const DIAS_SEMANA_PT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
 document.addEventListener('DOMContentLoaded', () => {
   botaoCarregarMais = document.getElementById('load-more-patients');
@@ -15,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     botaoCarregarMais.addEventListener('click', () => listarPacientes(false));
   }
 
+  inicializarControleVisualizacao();
   listarPacientes();
   atualizarCards();
 
@@ -70,7 +81,24 @@ function removerCardPaciente(pacienteId) {
   return true;
 }
 
+function obterFiltrosPacientes() {
+  const nome = document.getElementById('filter-name')?.value?.trim() || '';
+  const status = document.getElementById('filter-reminder')?.value?.trim() || '';
+  const sort = document.getElementById('filter-sort')?.value?.trim() || '';
+
+  return {
+    nome,
+    status,
+    sort,
+  };
+}
+
 export function listarPacientes(reset = true) {
+  if (modoVisualizacao === 'calendario') {
+    carregarCalendario();
+    return;
+  }
+
   if (carregandoPacientes || (!reset && listaCompletaCarregada)) {
     return;
   }
@@ -83,27 +111,27 @@ export function listarPacientes(reset = true) {
     return;
   }
 
+  mostrarVisualizacaoLista();
+
   if (reset) {
     paginaAtual = 0;
     listaCompletaCarregada = false;
   }
 
-  const filtroNome = document.getElementById('filter-name')?.value || '';
-  const filtroStatus = document.getElementById('filter-reminder')?.value || '';
-  const filtroSort = document.getElementById('filter-sort')?.value || '';
+  const { nome: filtroNome, status: filtroStatus, sort: filtroSort } = obterFiltrosPacientes();
 
   const params = new URLSearchParams();
 
-  if (filtroNome.trim() !== '') {
-    params.append('nome', filtroNome.trim());
+  if (filtroNome !== '') {
+    params.append('nome', filtroNome);
   }
 
-  if (filtroStatus.trim() !== '') {
-    params.append('status_lembrete', filtroStatus.trim());
+  if (filtroStatus !== '') {
+    params.append('status_lembrete', filtroStatus);
   }
 
-  if (filtroSort.trim() !== '') {
-    params.append('sort', filtroSort.trim());
+  if (filtroSort !== '') {
+    params.append('sort', filtroSort);
   }
 
   const proximaPagina = reset ? 1 : paginaAtual + 1;
@@ -211,6 +239,357 @@ export function listarPacientes(reset = true) {
         botaoCarregarMais.disabled = false;
       }
     });
+}
+
+function inicializarControleVisualizacao() {
+  const botaoLista = document.getElementById('view-toggle-list');
+  const botaoCalendario = document.getElementById('view-toggle-calendar');
+  const botaoAnterior = document.getElementById('calendar-prev');
+  const botaoProximo = document.getElementById('calendar-next');
+
+  const hoje = new Date();
+  calendarioMesAtual = hoje.getMonth();
+  calendarioAnoAtual = hoje.getFullYear();
+  atualizarCabecalhoCalendario();
+
+  if (botaoLista && botaoCalendario) {
+    atualizarEstadoBotoesVisualizacao(botaoLista, botaoCalendario);
+
+    botaoLista.addEventListener('click', () => {
+      if (modoVisualizacao === 'lista') {
+        return;
+      }
+      modoVisualizacao = 'lista';
+      atualizarEstadoBotoesVisualizacao(botaoLista, botaoCalendario);
+      listarPacientes();
+    });
+
+    botaoCalendario.addEventListener('click', () => {
+      if (modoVisualizacao === 'calendario') {
+        return;
+      }
+      modoVisualizacao = 'calendario';
+      atualizarEstadoBotoesVisualizacao(botaoLista, botaoCalendario);
+      carregarCalendario();
+    });
+  }
+
+  if (botaoAnterior) {
+    botaoAnterior.addEventListener('click', () => {
+      let mes = calendarioMesAtual;
+      let ano = calendarioAnoAtual;
+
+      if (mes === null || ano === null) {
+        const agora = new Date();
+        mes = agora.getMonth();
+        ano = agora.getFullYear();
+      }
+
+      mes -= 1;
+      if (mes < 0) {
+        mes = 11;
+        ano -= 1;
+      }
+
+      carregarCalendario(mes, ano);
+    });
+  }
+
+  if (botaoProximo) {
+    botaoProximo.addEventListener('click', () => {
+      let mes = calendarioMesAtual;
+      let ano = calendarioAnoAtual;
+
+      if (mes === null || ano === null) {
+        const agora = new Date();
+        mes = agora.getMonth();
+        ano = agora.getFullYear();
+      }
+
+      mes += 1;
+      if (mes > 11) {
+        mes = 0;
+        ano += 1;
+      }
+
+      carregarCalendario(mes, ano);
+    });
+  }
+}
+
+function atualizarEstadoBotoesVisualizacao(botaoLista, botaoCalendario) {
+  if (!botaoLista || !botaoCalendario) {
+    return;
+  }
+
+  const botaoAtivo = modoVisualizacao === 'lista' ? botaoLista : botaoCalendario;
+  const botaoInativo = modoVisualizacao === 'lista' ? botaoCalendario : botaoLista;
+
+  botaoAtivo.classList.add('active', 'btn-primary');
+  botaoAtivo.classList.remove('btn-outline-primary');
+  botaoAtivo.setAttribute('aria-pressed', 'true');
+
+  botaoInativo.classList.remove('active', 'btn-primary');
+  botaoInativo.classList.add('btn-outline-primary');
+  botaoInativo.setAttribute('aria-pressed', 'false');
+}
+
+function mostrarVisualizacaoLista() {
+  const listSection = document.getElementById('patients-list');
+  const calendarSection = document.getElementById('calendar-view');
+
+  if (calendarSection) {
+    calendarSection.classList.add('d-none');
+  }
+
+  if (listSection) {
+    listSection.classList.remove('d-none');
+  }
+}
+
+function mostrarVisualizacaoCalendario() {
+  const listSection = document.getElementById('patients-list');
+  const calendarSection = document.getElementById('calendar-view');
+  const emptyState = document.getElementById('empty-state');
+
+  if (listSection) {
+    listSection.classList.add('d-none');
+  }
+
+  if (calendarSection) {
+    calendarSection.classList.remove('d-none');
+  }
+
+  if (emptyState) {
+    emptyState.classList.add('d-none');
+  }
+
+  if (wrapperCarregarMais) {
+    wrapperCarregarMais.classList.add('d-none');
+  }
+
+  if (botaoCarregarMais) {
+    botaoCarregarMais.classList.add('d-none');
+  }
+}
+
+function atualizarCabecalhoCalendario() {
+  const titulo = document.getElementById('calendar-month-label');
+
+  if (!titulo) {
+    return;
+  }
+
+  if (calendarioMesAtual === null || calendarioAnoAtual === null) {
+    titulo.textContent = '\u00A0';
+    return;
+  }
+
+  titulo.textContent = `${MESES_PT_BR[calendarioMesAtual]} de ${calendarioAnoAtual}`;
+}
+
+function obterIndiceSemana(data) {
+  return (data.getDay() + 6) % 7;
+}
+
+async function carregarCalendario(mes = calendarioMesAtual, ano = calendarioAnoAtual) {
+  if (carregandoPacientes) {
+    return;
+  }
+
+  const botaoLista = document.getElementById('view-toggle-list');
+  const botaoCalendario = document.getElementById('view-toggle-calendar');
+
+  if (typeof mes === 'number' && typeof ano === 'number') {
+    calendarioMesAtual = mes;
+    calendarioAnoAtual = ano;
+  } else {
+    const hoje = new Date();
+    calendarioMesAtual = hoje.getMonth();
+    calendarioAnoAtual = hoje.getFullYear();
+  }
+
+  atualizarCabecalhoCalendario();
+  mostrarVisualizacaoCalendario();
+
+  if (botaoLista && botaoCalendario) {
+    atualizarEstadoBotoesVisualizacao(botaoLista, botaoCalendario);
+  }
+
+  const calendarGrid = document.getElementById('calendar-grid');
+  const emptyState = document.getElementById('calendar-empty-state');
+
+  if (!calendarGrid || !emptyState) {
+    return;
+  }
+
+  calendarGrid.innerHTML = `
+    <div class="calendar-loading text-center py-4 w-100">
+      <div class="spinner-border text-primary" role="status"></div>
+      <div class="mt-2 text-secondary">Carregando pacientes...</div>
+    </div>
+  `;
+  emptyState.classList.add('d-none');
+
+  const { nome, status, sort } = obterFiltrosPacientes();
+  const pacientesMes = [];
+  let pagina = 1;
+  let possuiMais = true;
+
+  carregandoPacientes = true;
+
+  try {
+    while (possuiMais) {
+      const params = new URLSearchParams();
+
+      if (nome) {
+        params.append('nome', nome);
+      }
+
+      if (status) {
+        params.append('status_lembrete', status);
+      }
+
+      if (sort) {
+        params.append('sort', sort);
+      }
+
+      params.append('page', pagina.toString());
+      params.append('page_size', '200');
+      params.append('modo', 'calendario');
+      params.append('mes', String(calendarioMesAtual + 1));
+      params.append('ano', String(calendarioAnoAtual));
+
+      const response = await fetch(`/api/pacientes/?${params.toString()}`);
+
+      if (!response.ok) {
+        throw new Error('Erro ao carregar pacientes do calendário');
+      }
+
+      const data = await response.json();
+      pacientesMes.push(...(data?.pacientes || []));
+      possuiMais = Boolean(data?.has_more);
+      pagina += 1;
+
+      if (!possuiMais || pagina > 20) {
+        break;
+      }
+    }
+  } catch (error) {
+    calendarGrid.innerHTML = '<div class="calendar-loading text-danger text-center py-4 w-100">Erro ao carregar pacientes.</div>';
+    showToast('Erro ao carregar pacientes do calendário', 'error');
+    carregandoPacientes = false;
+    return;
+  }
+
+  carregandoPacientes = false;
+
+  if (pacientesMes.length === 0) {
+    calendarGrid.innerHTML = '';
+    emptyState.classList.remove('d-none');
+    return;
+  }
+
+  emptyState.classList.add('d-none');
+  renderizarCalendario(pacientesMes);
+}
+
+function renderizarCalendario(pacientes) {
+  const calendarGrid = document.getElementById('calendar-grid');
+
+  if (!calendarGrid) {
+    return;
+  }
+
+  calendarGrid.innerHTML = '';
+
+  DIAS_SEMANA_PT.forEach((dia) => {
+    const coluna = document.createElement('div');
+    coluna.className = 'calendar-weekday';
+    coluna.textContent = dia;
+    calendarGrid.appendChild(coluna);
+  });
+
+  const primeiroDiaMes = new Date(calendarioAnoAtual, calendarioMesAtual, 1);
+  const diasNoMes = new Date(calendarioAnoAtual, calendarioMesAtual + 1, 0).getDate();
+  const indicePrimeiroDia = obterIndiceSemana(primeiroDiaMes);
+  const eventosAgrupados = agruparPacientesPorDia(pacientes);
+
+  for (let i = 0; i < indicePrimeiroDia; i += 1) {
+    const vazio = document.createElement('div');
+    vazio.className = 'calendar-day empty';
+    calendarGrid.appendChild(vazio);
+  }
+
+  for (let dia = 1; dia <= diasNoMes; dia += 1) {
+    const chaveData = `${calendarioAnoAtual}-${String(calendarioMesAtual + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+    const eventos = eventosAgrupados[chaveData] || [];
+    const elementoDia = criarDiaCalendario(dia, eventos);
+    calendarGrid.appendChild(elementoDia);
+  }
+}
+
+function agruparPacientesPorDia(pacientes) {
+  const mapa = {};
+
+  pacientes.forEach((paciente) => {
+    const data = paciente?.proximo_lembrete;
+    if (!data) {
+      return;
+    }
+
+    if (!mapa[data]) {
+      mapa[data] = [];
+    }
+
+    mapa[data].push(paciente);
+  });
+
+  Object.values(mapa).forEach((lista) => {
+    lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  });
+
+  return mapa;
+}
+
+function criarDiaCalendario(numeroDia, eventos) {
+  const elemento = document.createElement('div');
+  elemento.className = 'calendar-day';
+
+  const cabecalho = document.createElement('div');
+  cabecalho.className = 'calendar-day-header';
+
+  const numero = document.createElement('span');
+  numero.className = 'calendar-day-number';
+  numero.textContent = numeroDia;
+
+  const textoDiaSemana = document.createElement('span');
+  textoDiaSemana.className = 'calendar-day-week';
+  const dataReferencia = new Date(calendarioAnoAtual, calendarioMesAtual, numeroDia);
+  textoDiaSemana.textContent = DIAS_SEMANA_PT[obterIndiceSemana(dataReferencia)];
+
+  cabecalho.appendChild(numero);
+  cabecalho.appendChild(textoDiaSemana);
+
+  const cardsContainer = document.createElement('div');
+  cardsContainer.className = 'calendar-day-cards';
+
+  if (eventos.length === 0) {
+    const vazio = document.createElement('span');
+    vazio.className = 'text-secondary small';
+    vazio.textContent = 'Sem lembretes';
+    cardsContainer.appendChild(vazio);
+  } else {
+    eventos.forEach((paciente) => {
+      const card = renderizarCardPaciente(paciente);
+      cardsContainer.appendChild(card);
+    });
+  }
+
+  elemento.appendChild(cabecalho);
+  elemento.appendChild(cardsContainer);
+
+  return elemento;
 }
 
 export function renderizarCardPaciente(paciente) {
