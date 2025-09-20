@@ -1,6 +1,20 @@
 import { showToast } from './message.js';
 
+const TAMANHO_PAGINA = 10;
+let paginaAtual = 0;
+let carregandoPacientes = false;
+let listaCompletaCarregada = false;
+let botaoCarregarMais;
+let wrapperCarregarMais;
+
 document.addEventListener('DOMContentLoaded', () => {
+  botaoCarregarMais = document.getElementById('load-more-patients');
+  wrapperCarregarMais = document.getElementById('load-more-wrapper');
+
+  if (botaoCarregarMais) {
+    botaoCarregarMais.addEventListener('click', () => listarPacientes(false));
+  }
+
   listarPacientes();
   atualizarCards();
 
@@ -56,17 +70,28 @@ function removerCardPaciente(pacienteId) {
   return true;
 }
 
-export function listarPacientes() {
+export function listarPacientes(reset = true) {
+  if (carregandoPacientes || (!reset && listaCompletaCarregada)) {
+    return;
+  }
+
   const container = document.getElementById('patients-container');
   const listSection = document.getElementById('patients-list');
   const emptyState = document.getElementById('empty-state');
 
-  // Campos de filtro
+  if (!container || !listSection || !emptyState) {
+    return;
+  }
+
+  if (reset) {
+    paginaAtual = 0;
+    listaCompletaCarregada = false;
+  }
+
   const filtroNome = document.getElementById('filter-name')?.value || '';
   const filtroStatus = document.getElementById('filter-reminder')?.value || '';
   const filtroSort = document.getElementById('filter-sort')?.value || '';
 
-  // Constrói a query string com filtros, se houver
   const params = new URLSearchParams();
 
   if (filtroNome.trim() !== '') {
@@ -81,38 +106,110 @@ export function listarPacientes() {
     params.append('sort', filtroSort.trim());
   }
 
-  // Mostra spinner de loading enquanto carrega
-  container.innerHTML = `
-    <div class="text-center py-4">
-      <div class="spinner-border text-primary" role="status"></div>
-      <div class="mt-2 text-secondary">Carregando pacientes...</div>
-    </div>
-  `;
-  emptyState.classList.add('d-none');
-  listSection.classList.remove('d-none');
+  const proximaPagina = reset ? 1 : paginaAtual + 1;
+  params.append('page', proximaPagina.toString());
+  params.append('page_size', TAMANHO_PAGINA.toString());
+
+  if (botaoCarregarMais) {
+    botaoCarregarMais.disabled = true;
+  }
+
+  if (reset) {
+    container.innerHTML = `
+      <div class="text-center py-4">
+        <div class="spinner-border text-primary" role="status"></div>
+        <div class="mt-2 text-secondary">Carregando pacientes...</div>
+      </div>
+    `;
+    emptyState.classList.add('d-none');
+    listSection.classList.remove('d-none');
+    if (wrapperCarregarMais) {
+      wrapperCarregarMais.classList.add('d-none');
+    }
+  } else {
+    const indicadorCarregando = document.createElement('div');
+    indicadorCarregando.id = 'patients-loading-indicator';
+    indicadorCarregando.className = 'text-center py-3';
+    indicadorCarregando.innerHTML = '<div class="spinner-border text-primary" role="status"></div>';
+    container.appendChild(indicadorCarregando);
+    if (wrapperCarregarMais) {
+      wrapperCarregarMais.classList.add('d-none');
+    }
+  }
+
+  carregandoPacientes = true;
 
   fetch(`/api/pacientes/?${params.toString()}`)
     .then(response => response.json())
     .then(data => {
-      const lista = data.pacientes;
-      container.innerHTML = ''; // Limpa o container antes de renderizar
-      
-      if (lista.length === 0) {
+      const lista = data?.pacientes || [];
+      const possuiMais = Boolean(data?.has_more);
+
+      if (reset) {
+        container.innerHTML = '';
+      } else {
+        const indicador = document.getElementById('patients-loading-indicator');
+        if (indicador) {
+          indicador.remove();
+        }
+      }
+
+      if (reset && lista.length === 0) {
         emptyState.classList.remove('d-none');
         listSection.classList.add('d-none');
-      } else {
-        emptyState.classList.add('d-none');
-        listSection.classList.remove('d-none');
+        listaCompletaCarregada = true;
+        paginaAtual = 0;
+        if (wrapperCarregarMais) {
+          wrapperCarregarMais.classList.add('d-none');
+        }
+        return;
+      }
 
-        lista.forEach(paciente => {
-          const card = renderizarCardPaciente(paciente);
-          container.appendChild(card);
-        });
+      emptyState.classList.add('d-none');
+      listSection.classList.remove('d-none');
+
+      lista.forEach(paciente => {
+        const card = renderizarCardPaciente(paciente);
+        container.appendChild(card);
+      });
+
+      if (lista.length > 0) {
+        paginaAtual = proximaPagina;
+      }
+
+      listaCompletaCarregada = !possuiMais;
+
+      if (!listaCompletaCarregada && lista.length > 0) {
+        if (wrapperCarregarMais) {
+          wrapperCarregarMais.classList.remove('d-none');
+        }
+        if (botaoCarregarMais) {
+          botaoCarregarMais.classList.remove('d-none');
+        }
+      } else if (wrapperCarregarMais) {
+        wrapperCarregarMais.classList.add('d-none');
       }
     })
     .catch(err => {
       showToast('Erro ao carregar pacientes', 'error');
-      container.innerHTML = '<div class="text-danger text-center py-4">Erro ao carregar pacientes.</div>';
+
+      if (reset) {
+        container.innerHTML = '<div class="text-danger text-center py-4">Erro ao carregar pacientes.</div>';
+      } else {
+        const indicador = document.getElementById('patients-loading-indicator');
+        if (indicador) {
+          indicador.remove();
+        }
+        if (wrapperCarregarMais && container.children.length > 0) {
+          wrapperCarregarMais.classList.remove('d-none');
+        }
+      }
+    })
+    .finally(() => {
+      carregandoPacientes = false;
+      if (botaoCarregarMais) {
+        botaoCarregarMais.disabled = false;
+      }
     });
 }
 

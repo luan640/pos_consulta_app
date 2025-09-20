@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from datetime import date
 from django.http import JsonResponse, HttpResponseNotAllowed
-from django.db.models import Max, Min
+from django.db.models import Max, Min, Prefetch, Q, F
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.dateparse import parse_date
 from django.utils.timezone import now
@@ -26,97 +26,148 @@ def home(request):
 
 @login_required
 def listar_pacientes_com_consultas(request):
-    pacientes = Paciente.objects.filter(dono=request.user)
+    pacientes = (
+        Paciente.objects
+        .filter(dono=request.user)
+        .select_related('grupo_lembrete')
+    )
+
+    try:
+        pagina = int(request.GET.get('page', 1))
+    except (TypeError, ValueError):
+        pagina = 1
+    pagina = max(pagina, 1)
+
+    try:
+        tamanho_pagina = int(request.GET.get('page_size', 10))
+    except (TypeError, ValueError):
+        tamanho_pagina = 10
+    tamanho_pagina = max(1, min(tamanho_pagina, 50))
 
     nome = request.GET.get('nome', '').strip()
     status_lembrete = request.GET.get('status_lembrete', '').strip()
 
-    # Aplica os filtros se existirem
     if nome:
         pacientes = pacientes.filter(nome__icontains=nome)
 
     if status_lembrete:
-        pacientes = pacientes.filter(lembretes_ativos=status_lembrete)
+        if status_lembrete.lower() in {'true', 'false'}:
+            pacientes = pacientes.filter(lembretes_ativos=status_lembrete.lower() == 'true')
+        else:
+            pacientes = pacientes.filter(lembretes_ativos=status_lembrete)
 
-    # Última consulta por paciente
-    ultimas_consultas = (
-        Consulta.objects
-        .filter(paciente__in=pacientes)
-        .values('paciente_id')
-        .annotate(ultima=Max('data_consulta'))
+    pacientes = pacientes.annotate(
+        proximo_lembrete_data=Min(
+            'lembretes__data_lembrete',
+            filter=Q(lembretes__concluido=False)
+        ),
+        ultima_consulta_data=Max('consultas__data_consulta')
     )
-    consulta_map = {uc['paciente_id']: uc['ultima'] for uc in ultimas_consultas}
 
-    # Buscar todas as consultas dos pacientes para trazer tipo_consulta
-    consultas = Consulta.objects.filter(paciente__in=pacientes).order_by('-id')
-    consultas_por_paciente = {}
-    for consulta in consultas:
-        consultas_por_paciente.setdefault(consulta.paciente_id, []).append({
-            'id': consulta.id,
-            'data_consulta': consulta.data_consulta,
-            'tipo_consulta': consulta.tipo_consulta,
-        })
+    ordenar_por = request.GET.get('sort', '')
 
-    dados = []
-    for paciente in pacientes:
-        lembretes_pend = list(
-            paciente.lembretes
-            .filter(concluido=False)
-            .order_by('data_lembrete')[:2]
+    if ordenar_por == 'name-asc':
+        pacientes = pacientes.order_by('nome', 'id')
+    elif ordenar_por == 'name-desc':
+        pacientes = pacientes.order_by('-nome', '-id')
+    elif ordenar_por == 'contact-farthest':
+        pacientes = pacientes.order_by(
+            F('proximo_lembrete_data').desc(nulls_last=True),
+            'id'
+        )
+    else:
+        pacientes = pacientes.order_by(
+            F('proximo_lembrete_data').asc(nulls_last=True),
+            'id'
         )
 
-        ultimo = lembretes_pend[0] if len(lembretes_pend) >= 1 else None
-        penultimo = lembretes_pend[1] if len(lembretes_pend) >= 2 else None
+    total_pacientes = pacientes.count()
 
-        # 2) Se não há penúltimo pendente, usar o último concluído (histórico)
+    offset = (pagina - 1) * tamanho_pagina
+    limite = offset + tamanho_pagina
+
+    pacientes = pacientes[offset:limite]
+
+    lembretes_prefetch = Prefetch(
+        'lembretes',
+        queryset=Lembrete.objects.order_by('data_lembrete')
+    )
+    consultas_prefetch = Prefetch(
+        'consultas',
+        queryset=Consulta.objects.order_by('-id')
+    )
+
+    pacientes = pacientes.prefetch_related(lembretes_prefetch, consultas_prefetch)
+
+    pacientes_lista = list(pacientes)
+
+    dados = []
+    for paciente in pacientes_lista:
+        lembretes = list(paciente.lembretes.all())
+
+        lembretes_pendentes = [
+            lembrete for lembrete in lembretes
+            if not lembrete.concluido
+        ]
+
+        lembretes_pendentes.sort(key=lambda lembrete: lembrete.data_lembrete or date.max)
+
+        ultimo = lembretes_pendentes[0] if len(lembretes_pendentes) >= 1 else None
+        penultimo = lembretes_pendentes[1] if len(lembretes_pendentes) >= 2 else None
+
         if ultimo and not penultimo:
-            penultimo = (
-                paciente.lembretes
-                .filter(concluido=True)
-                .order_by('-data_lembrete')  # mais recente no passado
-                .first()
-            )
+            concluidos = [
+                lembrete for lembrete in lembretes
+                if lembrete.concluido
+            ]
+            concluidos.sort(key=lambda lembrete: lembrete.data_lembrete or date.min, reverse=True)
+            penultimo = concluidos[0] if concluidos else None
 
-        igual_ao_ultimo = bool(ultimo and penultimo and (penultimo.regra_id == ultimo.regra_id))
+        igual_ao_ultimo = bool(
+            ultimo and penultimo and (penultimo.regra_id == ultimo.regra_id)
+        )
+
+        consultas_serializadas = [
+            {
+                'id': consulta.id,
+                'data_consulta': consulta.data_consulta,
+                'tipo_consulta': consulta.tipo_consulta,
+            }
+            for consulta in paciente.consultas.all()
+        ]
 
         item = {
             'id': paciente.id,
             'nome': paciente.nome,
             'telefone': paciente.telefone,
-            'ultima_consulta': consulta_map.get(paciente.id),
+            'ultima_consulta': paciente.ultima_consulta_data,
             'proximo_lembrete': ultimo.data_lembrete if ultimo else None,
             'penultimo_lembrete': penultimo.data_lembrete if penultimo else None,
             'nome_lembrete': None,
             'lembretes_ativos': paciente.lembretes_ativos,
             'paciente_ativo': paciente.ativo,
             'grupo_regra_atual': paciente.grupo_lembrete.nome if paciente.grupo_lembrete else None,
-            'consultas': consultas_por_paciente.get(paciente.id, []),
+            'consultas': consultas_serializadas,
         }
-    
+
         if not igual_ao_ultimo and ultimo:
             item['texto_lembrete'] = (
                 ultimo.regra.descricao if ultimo and ultimo.regra else ultimo.texto
             )
         else:
             item['texto_lembrete'] = "Você já enviou todos os materiais necessários."
-            
+
         dados.append(item)
 
-    ordenar_por = request.GET.get('sort', '')
+    possui_mais = (offset + len(dados)) < total_pacientes
 
-    # ordenar pelo próximo contato mais próximo
-    dados.sort(key=lambda p: p['proximo_lembrete'] or date.max)
-
-    if ordenar_por == 'name-asc':
-        dados.sort(key=lambda p: p['nome'].lower())
-    elif ordenar_por == 'name-desc':
-        dados.sort(key=lambda p: p['nome'].lower(), reverse=True)
-    elif ordenar_por == 'contact-nearest':
-        dados.sort(key=lambda p: p['proximo_lembrete'] or date.max)
-    elif ordenar_por == 'contact-farthest':
-        dados.sort(key=lambda p: p['proximo_lembrete'] or date.min, reverse=True)
-
-    return JsonResponse({'pacientes': dados})
+    return JsonResponse({
+        'pacientes': dados,
+        'total': total_pacientes,
+        'page': pagina,
+        'page_size': tamanho_pagina,
+        'has_more': possui_mais,
+    })
 
 @csrf_exempt  # prefira manter CSRF se estiver autenticando por sessão/cookies
 @login_required
