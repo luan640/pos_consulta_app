@@ -9,13 +9,12 @@ let wrapperCarregarMais;
 let modoVisualizacao = 'lista';
 let calendarioMesAtual = null;
 let calendarioAnoAtual = null;
+let calendarioInstancia = null;
 
 const MESES_PT_BR = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
-
-const DIAS_SEMANA_PT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
 document.addEventListener('DOMContentLoaded', () => {
   botaoCarregarMais = document.getElementById('load-more-patients');
@@ -261,6 +260,7 @@ function inicializarControleVisualizacao() {
       }
       modoVisualizacao = 'lista';
       atualizarEstadoBotoesVisualizacao(botaoLista, botaoCalendario);
+      mostrarVisualizacaoLista();
       listarPacientes();
     });
 
@@ -276,43 +276,25 @@ function inicializarControleVisualizacao() {
 
   if (botaoAnterior) {
     botaoAnterior.addEventListener('click', () => {
-      let mes = calendarioMesAtual;
-      let ano = calendarioAnoAtual;
-
-      if (mes === null || ano === null) {
-        const agora = new Date();
-        mes = agora.getMonth();
-        ano = agora.getFullYear();
+      if (modoVisualizacao !== 'calendario') {
+        return;
       }
-
-      mes -= 1;
-      if (mes < 0) {
-        mes = 11;
-        ano -= 1;
+      inicializarCalendario();
+      if (calendarioInstancia) {
+        calendarioInstancia.prev();
       }
-
-      carregarCalendario(mes, ano);
     });
   }
 
   if (botaoProximo) {
     botaoProximo.addEventListener('click', () => {
-      let mes = calendarioMesAtual;
-      let ano = calendarioAnoAtual;
-
-      if (mes === null || ano === null) {
-        const agora = new Date();
-        mes = agora.getMonth();
-        ano = agora.getFullYear();
+      if (modoVisualizacao !== 'calendario') {
+        return;
       }
-
-      mes += 1;
-      if (mes > 11) {
-        mes = 0;
-        ano += 1;
+      inicializarCalendario();
+      if (calendarioInstancia) {
+        calendarioInstancia.next();
       }
-
-      carregarCalendario(mes, ano);
     });
   }
 }
@@ -388,50 +370,115 @@ function atualizarCabecalhoCalendario() {
   titulo.textContent = `${MESES_PT_BR[calendarioMesAtual]} de ${calendarioAnoAtual}`;
 }
 
-function obterIndiceSemana(data) {
-  return (data.getDay() + 6) % 7;
-}
-
-async function carregarCalendario(mes = calendarioMesAtual, ano = calendarioAnoAtual) {
-  if (carregandoPacientes) {
-    return;
-  }
-
+function carregarCalendario(mes = calendarioMesAtual, ano = calendarioAnoAtual) {
   const botaoLista = document.getElementById('view-toggle-list');
   const botaoCalendario = document.getElementById('view-toggle-calendar');
+  const emptyState = document.getElementById('calendar-empty-state');
 
-  if (typeof mes === 'number' && typeof ano === 'number') {
-    calendarioMesAtual = mes;
-    calendarioAnoAtual = ano;
-  } else {
-    const hoje = new Date();
-    calendarioMesAtual = hoje.getMonth();
-    calendarioAnoAtual = hoje.getFullYear();
-  }
-
-  atualizarCabecalhoCalendario();
   mostrarVisualizacaoCalendario();
 
   if (botaoLista && botaoCalendario) {
     atualizarEstadoBotoesVisualizacao(botaoLista, botaoCalendario);
   }
 
-  const calendarGrid = document.getElementById('calendar-grid');
-  const emptyState = document.getElementById('calendar-empty-state');
+  if (emptyState) {
+    emptyState.classList.add('d-none');
+  }
 
-  if (!calendarGrid || !emptyState) {
+  if (typeof mes === 'number' && typeof ano === 'number') {
+    calendarioMesAtual = mes;
+    calendarioAnoAtual = ano;
+  }
+
+  atualizarCabecalhoCalendario();
+  inicializarCalendario();
+
+  if (!calendarioInstancia) {
     return;
   }
 
-  calendarGrid.innerHTML = `
-    <div class="calendar-loading text-center py-4 w-100">
-      <div class="spinner-border text-primary" role="status"></div>
-      <div class="mt-2 text-secondary">Carregando pacientes...</div>
-    </div>
-  `;
-  emptyState.classList.add('d-none');
+  if (typeof mes === 'number' && typeof ano === 'number') {
+    const dataReferencia = new Date(ano, mes, 1);
+    calendarioInstancia.gotoDate(dataReferencia);
+  }
 
+  calendarioInstancia.refetchEvents();
+}
+
+function inicializarCalendario() {
+  if (calendarioInstancia) {
+    return;
+  }
+
+  const elementoCalendario = document.getElementById('calendar-grid');
+  const fullcalendarGlobal = window.FullCalendar;
+
+  if (!elementoCalendario) {
+    return;
+  }
+
+  if (!fullcalendarGlobal || typeof fullcalendarGlobal.Calendar !== 'function') {
+    console.error('FullCalendar não foi carregado corretamente.');
+    showToast('Não foi possível carregar o calendário.', 'error');
+    return;
+  }
+
+  calendarioInstancia = new fullcalendarGlobal.Calendar(elementoCalendario, {
+    initialView: 'dayGridMonth',
+    locale: 'pt-br',
+    firstDay: 1,
+    height: 'auto',
+    headerToolbar: false,
+    fixedWeekCount: false,
+    editable: false,
+    selectable: false,
+    dayMaxEventRows: false,
+    eventDisplay: 'block',
+    events: buscarEventosCalendario,
+    datesSet: (info) => {
+      const referencia = obterDataReferenciaDoIntervalo(info.start, info.end);
+      calendarioMesAtual = referencia.getMonth();
+      calendarioAnoAtual = referencia.getFullYear();
+      atualizarCabecalhoCalendario();
+    },
+    eventContent: (arg) => {
+      const paciente = arg.event.extendedProps?.paciente;
+
+      if (!paciente) {
+        const span = document.createElement('span');
+        span.textContent = arg.event.title || '';
+        return { domNodes: [span] };
+      }
+
+      const elemento = criarEventoCalendario(paciente);
+      return { domNodes: [elemento] };
+    },
+  });
+
+  calendarioInstancia.render();
+}
+
+function obterDataReferenciaDoIntervalo(inicio, fim) {
+  if (!(inicio instanceof Date) || !(fim instanceof Date)) {
+    return new Date();
+  }
+  const meio = inicio.getTime() + Math.floor((fim.getTime() - inicio.getTime()) / 2);
+  return new Date(meio);
+}
+
+async function buscarEventosCalendario(info, successCallback, failureCallback) {
+  const emptyState = document.getElementById('calendar-empty-state');
+  const referencia = obterDataReferenciaDoIntervalo(info.start, info.end);
   const { nome, status, sort } = obterFiltrosPacientes();
+
+  calendarioMesAtual = referencia.getMonth();
+  calendarioAnoAtual = referencia.getFullYear();
+  atualizarCabecalhoCalendario();
+
+  if (emptyState) {
+    emptyState.classList.add('d-none');
+  }
+
   const pacientesMes = [];
   let pagina = 1;
   let possuiMais = true;
@@ -475,121 +522,42 @@ async function carregarCalendario(mes = calendarioMesAtual, ano = calendarioAnoA
         break;
       }
     }
+
+    const eventos = pacientesMes
+      .filter((paciente) => Boolean(paciente?.proximo_lembrete))
+      .map((paciente) => ({
+        id: `paciente-${paciente.id}`,
+        title: paciente.nome,
+        start: paciente.proximo_lembrete,
+        allDay: true,
+        extendedProps: {
+          paciente,
+        },
+      }));
+
+    if (emptyState) {
+      if (eventos.length === 0) {
+        emptyState.classList.remove('d-none');
+      } else {
+        emptyState.classList.add('d-none');
+      }
+    }
+
+    if (typeof successCallback === 'function') {
+      successCallback(eventos);
+    }
   } catch (error) {
-    calendarGrid.innerHTML = '<div class="calendar-loading text-danger text-center py-4 w-100">Erro ao carregar pacientes.</div>';
+    if (emptyState) {
+      emptyState.classList.remove('d-none');
+    }
+    if (typeof failureCallback === 'function') {
+      failureCallback(error);
+    }
+    console.error(error);
     showToast('Erro ao carregar pacientes do calendário', 'error');
+  } finally {
     carregandoPacientes = false;
-    return;
   }
-
-  carregandoPacientes = false;
-
-  if (pacientesMes.length === 0) {
-    calendarGrid.innerHTML = '';
-    emptyState.classList.remove('d-none');
-    return;
-  }
-
-  emptyState.classList.add('d-none');
-  renderizarCalendario(pacientesMes);
-}
-
-function renderizarCalendario(pacientes) {
-  const calendarGrid = document.getElementById('calendar-grid');
-
-  if (!calendarGrid) {
-    return;
-  }
-
-  calendarGrid.innerHTML = '';
-
-  DIAS_SEMANA_PT.forEach((dia) => {
-    const coluna = document.createElement('div');
-    coluna.className = 'calendar-weekday';
-    coluna.textContent = dia;
-    calendarGrid.appendChild(coluna);
-  });
-
-  const primeiroDiaMes = new Date(calendarioAnoAtual, calendarioMesAtual, 1);
-  const diasNoMes = new Date(calendarioAnoAtual, calendarioMesAtual + 1, 0).getDate();
-  const indicePrimeiroDia = obterIndiceSemana(primeiroDiaMes);
-  const eventosAgrupados = agruparPacientesPorDia(pacientes);
-
-  for (let i = 0; i < indicePrimeiroDia; i += 1) {
-    const vazio = document.createElement('div');
-    vazio.className = 'calendar-day empty';
-    calendarGrid.appendChild(vazio);
-  }
-
-  for (let dia = 1; dia <= diasNoMes; dia += 1) {
-    const chaveData = `${calendarioAnoAtual}-${String(calendarioMesAtual + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-    const eventos = eventosAgrupados[chaveData] || [];
-    const elementoDia = criarDiaCalendario(dia, eventos);
-    calendarGrid.appendChild(elementoDia);
-  }
-}
-
-function agruparPacientesPorDia(pacientes) {
-  const mapa = {};
-
-  pacientes.forEach((paciente) => {
-    const data = paciente?.proximo_lembrete;
-    if (!data) {
-      return;
-    }
-
-    if (!mapa[data]) {
-      mapa[data] = [];
-    }
-
-    mapa[data].push(paciente);
-  });
-
-  Object.values(mapa).forEach((lista) => {
-    lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-  });
-
-  return mapa;
-}
-
-function criarDiaCalendario(numeroDia, eventos) {
-  const elemento = document.createElement('div');
-  elemento.className = 'calendar-day';
-
-  const cabecalho = document.createElement('div');
-  cabecalho.className = 'calendar-day-header';
-
-  const numero = document.createElement('span');
-  numero.className = 'calendar-day-number';
-  numero.textContent = numeroDia;
-
-  const textoDiaSemana = document.createElement('span');
-  textoDiaSemana.className = 'calendar-day-week';
-  const dataReferencia = new Date(calendarioAnoAtual, calendarioMesAtual, numeroDia);
-  textoDiaSemana.textContent = DIAS_SEMANA_PT[obterIndiceSemana(dataReferencia)];
-
-  cabecalho.appendChild(numero);
-  cabecalho.appendChild(textoDiaSemana);
-
-  const cardsContainer = document.createElement('div');
-  cardsContainer.className = 'calendar-day-events';
-
-  if (eventos.length === 0) {
-    const vazio = document.createElement('span');
-    vazio.className = 'text-secondary small';
-    vazio.textContent = 'Sem lembretes';
-    cardsContainer.appendChild(vazio);
-  } else {
-    eventos.forEach((paciente) => {
-      const evento = criarEventoCalendario(paciente);
-      cardsContainer.appendChild(evento);
-    });
-  }
-
-  elemento.appendChild(cabecalho);
-  elemento.appendChild(cardsContainer);
-
-  return elemento;
 }
 
 function criarEventoCalendario(paciente) {
