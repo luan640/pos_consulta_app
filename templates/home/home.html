@@ -133,6 +133,17 @@
 
         <!-- Patients List -->
         <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div class="btn-group" role="group" aria-label="Alternar visualização dos pacientes">
+                    <button type="button" class="btn btn-outline-primary active" data-view-toggle="list" id="view-toggle-list">
+                        <i class="bi bi-view-stacked me-1"></i> Lista
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" data-view-toggle="calendar" id="view-toggle-calendar">
+                        <i class="bi bi-calendar-week me-1"></i> Calendário
+                    </button>
+                </div>
+            </div>
+
             <div id="empty-state" class="card text-center p-5">
                 <i class="bi bi-calendar3 fs-1 text-secondary mx-auto mb-3"></i>
                 <h3 class="fs-5 fw-medium mb-2">Nenhum paciente encontrado</h3>
@@ -144,11 +155,46 @@
             </div>
 
             <div id="patients-list" class="d-none">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-
-                </div>
                 <div id="patients-container" class="patients-container">
                 <!-- Patient cards will be inseridos via JavaScript -->
+                </div>
+            </div>
+
+            <div id="calendar-section" class="d-none">
+                <div class="card card-body shadow-sm border-light-subtle">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Navegação do calendário">
+                            <button type="button" class="btn btn-outline-primary" id="calendar-prev" title="Mês anterior">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="calendar-today" title="Voltar para o mês atual">
+                                Hoje
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" id="calendar-next" title="Próximo mês">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                        <h5 id="calendar-current-month" class="mb-0 text-capitalize"></h5>
+                    </div>
+                    <div id="calendar-loading" class="text-center py-5 d-none">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <div class="mt-2 text-secondary">Carregando pacientes...</div>
+                    </div>
+                    <div id="calendar-grid" class="calendar-grid d-none">
+                        <div class="calendar-weekdays">
+                            <div>Seg</div>
+                            <div>Ter</div>
+                            <div>Qua</div>
+                            <div>Qui</div>
+                            <div>Sex</div>
+                            <div>Sáb</div>
+                            <div>Dom</div>
+                        </div>
+                        <div class="calendar-days" id="calendar-days"></div>
+                    </div>
+                    <div id="calendar-empty-state" data-default-text="Nenhum contato agendado para este mês." class="text-center text-secondary py-5 d-none">
+                        Nenhum contato agendado para este mês.
+                    </div>
                 </div>
             </div>
         </div>

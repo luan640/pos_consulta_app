@@ -1,4 +1,4 @@
-import { renderizarCardPaciente } from './home.js';
+import { atualizarCardPaciente } from './home.js';
 import { showToast } from './message.js';
 
 document.getElementById('contact-form').addEventListener('submit', function (e) {
@@ -46,19 +46,7 @@ document.getElementById('contact-form').addEventListener('submit', function (e) 
         document.getElementById('contact-form').reset();
         if (contactModal) contactModal.hide();
 
-        // Atualiza apenas o card do paciente
-        fetch(`/api/paciente/${patientId}/`)
-        .then(res => res.json())
-        .then(updated => {
-            
-            const container = document.getElementById('patients-container');
-            const oldCard = container.querySelector(`[data-paciente-id="${updated.id}"]`);
-            const newCard = renderizarCardPaciente(updated);
-
-            if (oldCard) {
-                container.replaceChild(newCard, oldCard);
-            }
-        });
+        atualizarCardPaciente(patientId);
     })
     .catch(err => {
         showToast(err.message, 'error');

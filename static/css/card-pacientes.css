@@ -471,11 +471,163 @@ body {
         width: 100%;
         margin-top: 1rem;
     }
-    
+
     .primary-actions,
     .secondary-actions {
         flex-wrap: wrap;
         justify-content: center;
+    }
+}
+
+/* Calendário de pacientes */
+.calendar-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+    overflow-x: auto;
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(140px, 1fr));
+    gap: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #6c757d;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+}
+
+.calendar-weekdays div {
+    text-align: center;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(140px, 1fr));
+    gap: 0.75rem;
+}
+
+.calendar-cell {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 0.75rem;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.calendar-cell:hover {
+    border-color: rgba(13, 110, 253, 0.35);
+    box-shadow: 0 8px 16px rgba(13, 110, 253, 0.08);
+}
+
+.calendar-other-month {
+    background: #f8f9fa;
+    color: #adb5bd;
+}
+
+.calendar-other-month .calendar-date {
+    color: #adb5bd;
+}
+
+.calendar-date {
+    font-weight: 600;
+    color: #495057;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.calendar-today {
+    border: 2px solid rgba(13, 110, 253, 0.35);
+}
+
+.calendar-events {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    overflow-y: auto;
+}
+
+.calendar-events-empty {
+    min-height: 32px;
+}
+
+.calendar-patient-card {
+    margin-bottom: 0;
+    border: 1px solid #dee2e6;
+    box-shadow: none;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fc 100%);
+}
+
+.calendar-patient-card .card-header,
+.calendar-patient-card .card-body {
+    padding: 0.75rem;
+}
+
+.calendar-patient-card .card-header .d-flex {
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.calendar-patient-card .card-title {
+    font-size: 1rem;
+}
+
+.calendar-patient-card .patient-info {
+    font-size: 0.8rem;
+}
+
+.calendar-patient-card .whatsapp-contact {
+    width: 100%;
+    justify-content: flex-start;
+}
+
+.calendar-patient-card .card-actions-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+}
+
+.calendar-patient-card .action-buttons {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+}
+
+.calendar-patient-card .primary-actions,
+.calendar-patient-card .secondary-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+
+.calendar-patient-card .secondary-actions {
+    gap: 0.5rem;
+}
+
+.calendar-patient-card .btn-icon {
+    width: 36px;
+    height: 36px;
+}
+
+@media (max-width: 992px) {
+    .calendar-weekdays,
+    .calendar-days {
+        grid-template-columns: repeat(7, minmax(120px, 1fr));
+    }
+}
+
+@media (max-width: 576px) {
+    .calendar-weekdays,
+    .calendar-days {
+        grid-template-columns: repeat(7, minmax(100px, 1fr));
     }
 }
 
