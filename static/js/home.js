@@ -735,6 +735,21 @@ function criarMenuAcoesCalendario(paciente) {
     patient: paciente,
   }));
 
+  const toggleCalendarEventMenuState = (action) => {
+    const calendarEventElement = dropdownWrapper.closest('.calendar-event');
+    if (calendarEventElement) {
+      calendarEventElement.classList[action]('calendar-event--menu-open');
+    }
+  };
+
+  dropdownWrapper.addEventListener('show.bs.dropdown', () => {
+    toggleCalendarEventMenuState('add');
+  });
+
+  dropdownWrapper.addEventListener('hidden.bs.dropdown', () => {
+    toggleCalendarEventMenuState('remove');
+  });
+
   dropdownWrapper.appendChild(toggle);
   dropdownWrapper.appendChild(menu);
 

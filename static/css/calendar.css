@@ -90,6 +90,7 @@
 }
 
 .calendar-event {
+    position: relative;
     background: #f8faff;
     border-radius: 12px;
     border: 1px solid #dbe5f1;
@@ -194,6 +195,14 @@
     font-size: 0.9rem;
     padding: 0.5rem 0;
     z-index: 1080;
+}
+
+.calendar-event--menu-open {
+    z-index: 2000;
+}
+
+.calendar-event--menu-open .calendar-event-actions .dropdown-menu {
+    z-index: 2100;
 }
 
 .calendar-event-actions .dropdown-item i {
