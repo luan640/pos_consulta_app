@@ -411,56 +411,11 @@ function inicializarCalendario() {
   }
 
   const elementoCalendario = document.getElementById('calendar-grid');
-  const fullcalendarGlobal = window.FullCalendar;
 
   if (!elementoCalendario) {
     return;
   }
 
-  if (!fullcalendarGlobal || typeof fullcalendarGlobal.Calendar !== 'function') {
-    console.error('FullCalendar não foi carregado corretamente.');
-    showToast('Não foi possível carregar o calendário.', 'error');
-    return;
-  }
-
-  calendarioInstancia = new fullcalendarGlobal.Calendar(elementoCalendario, {
-    initialView: 'dayGridMonth',
-    locale: 'pt-br',
-    firstDay: 1,
-    height: 'auto',
-    headerToolbar: false,
-    fixedWeekCount: false,
-    editable: false,
-    selectable: false,
-    dayMaxEventRows: false,
-    eventDisplay: 'block',
-    events: buscarEventosCalendario,
-    datesSet: (info) => {
-      const referencia = obterDataReferenciaDoIntervalo(info.start, info.end);
-      calendarioMesAtual = referencia.getMonth();
-      calendarioAnoAtual = referencia.getFullYear();
-      atualizarCabecalhoCalendario();
-    },
-    eventContent: (arg) => {
-      const paciente = arg.event.extendedProps?.paciente;
-
-      if (!paciente) {
-        const span = document.createElement('span');
-        span.textContent = arg.event.title || '';
-        return { domNodes: [span] };
-      }
-
-      const elemento = criarEventoCalendario(paciente);
-      return { domNodes: [elemento] };
-    },
-    eventDidMount(info) {
-      // <a class="fc-daygrid-event ...">
-      info.el.style.position = 'relative';
-      info.el.style.zIndex = '1';        // inline
-    },
-  });
-
-  calendarioInstancia.render();
 }
 
 function obterDataReferenciaDoIntervalo(inicio, fim) {
@@ -669,7 +624,7 @@ function criarEventoCalendario(paciente) {
 
 function criarMenuAcoesCalendario(paciente) {
   const dropdownWrapper = document.createElement('div');
-  dropdownWrapper.className = 'dropdown calendar-event-actions';
+  dropdownWrapper.className = 'dropdown calendar-event-actions'; // Use 'dropup' em vez de 'dropdown'
 
   const toggle = document.createElement('button');
   toggle.className = 'btn btn-sm btn-outline-secondary calendar-event-menu';
