@@ -585,31 +585,31 @@ function criarEventoCalendario(paciente) {
   titulo.className = 'calendar-event-title';
   titulo.textContent = paciente.nome;
 
-  const statusElemento = document.createElement('span');
-  statusElemento.className = `calendar-event-badge badge ${badgeClass}`;
-  statusElemento.textContent = badgeText;
+  // const statusElemento = document.createElement('span');
+  // statusElemento.className = `calendar-event-badge badge ${badgeClass}`;
+  // statusElemento.textContent = badgeText;
 
   cabecalho.appendChild(titulo);
-  cabecalho.appendChild(statusElemento);
+  // cabecalho.appendChild(statusElemento);
 
   const informacoes = document.createElement('div');
   informacoes.className = 'calendar-event-info-list';
 
-  const infoProximo = document.createElement('div');
-  infoProximo.className = 'calendar-event-info';
-  infoProximo.innerHTML = `<i class="bi bi-calendar-event"></i> Próximo contato: ${proximoDescricao}`;
+  // const infoProximo = document.createElement('div');
+  // infoProximo.className = 'calendar-event-info';
+  // infoProximo.innerHTML = `<i class="bi bi-calendar-event"></i> Próximo contato: ${proximoDescricao}`;
 
-  const infoUltima = document.createElement('div');
-  infoUltima.className = 'calendar-event-info';
-  infoUltima.innerHTML = `<i class="bi bi-calendar-check"></i> ${textoUltimo} ${tipoConsulta}: ${ultimaStr}`;
+  // const infoUltima = document.createElement('div');
+  // infoUltima.className = 'calendar-event-info';
+  // infoUltima.innerHTML = `<i class="bi bi-calendar-check"></i> ${textoUltimo} ${tipoConsulta}: ${ultimaStr}`;
 
-  const infoDias = document.createElement('div');
-  infoDias.className = 'calendar-event-info';
-  infoDias.innerHTML = `<i class="bi bi-clock-history"></i> ${diasAtrasDescricao}`;
+  // const infoDias = document.createElement('div');
+  // infoDias.className = 'calendar-event-info';
+  // infoDias.innerHTML = `<i class="bi bi-clock-history"></i> ${diasAtrasDescricao}`;
 
-  informacoes.appendChild(infoProximo);
-  informacoes.appendChild(infoUltima);
-  informacoes.appendChild(infoDias);
+  // informacoes.appendChild(infoProximo);
+  // informacoes.appendChild(infoUltima);
+  // informacoes.appendChild(infoDias);
 
   if (paciente.texto_lembrete) {
     const infoAcao = document.createElement('div');
