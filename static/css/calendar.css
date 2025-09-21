@@ -184,10 +184,16 @@
     text-decoration: underline;
 }
 
+.calendar-event-actions {
+    position: relative;
+    z-index: 20;
+}
+
 .calendar-event-actions .dropdown-menu {
     min-width: 220px;
     font-size: 0.9rem;
     padding: 0.5rem 0;
+    z-index: 1080;
 }
 
 .calendar-event-actions .dropdown-item i {
