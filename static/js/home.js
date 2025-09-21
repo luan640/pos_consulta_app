@@ -453,6 +453,11 @@ function inicializarCalendario() {
       const elemento = criarEventoCalendario(paciente);
       return { domNodes: [elemento] };
     },
+    eventDidMount(info) {
+      // <a class="fc-daygrid-event ...">
+      info.el.style.position = 'relative';
+      info.el.style.zIndex = '1';        // inline
+    },
   });
 
   calendarioInstancia.render();
@@ -613,9 +618,19 @@ function criarEventoCalendario(paciente) {
 
   if (paciente.texto_lembrete) {
     const infoAcao = document.createElement('div');
-    infoAcao.className = 'calendar-event-info';
-    infoAcao.innerHTML = `<i class="bi bi-chat-left-text"></i> ${paciente.texto_lembrete}`;
+    infoAcao.className = 'calendar-event-info'; // ou 'calendar-event-info calendar-event-info--clamp'
+
+    const icone = document.createElement('i');
+    icone.className = 'bi bi-chat-left-text';
+    icone.style.marginRight = '0.35rem';
+
+    const span = document.createElement('span');
+    span.textContent = paciente.texto_lembrete; // evita HTML injection e respeita quebras
+
+    infoAcao.appendChild(icone);
+    infoAcao.appendChild(span);
     informacoes.appendChild(infoAcao);
+
   }
 
   const rodape = document.createElement('div');

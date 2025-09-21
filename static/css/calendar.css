@@ -97,9 +97,9 @@
     padding: 0.75rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
     transition: box-shadow 0.2s ease, transform 0.2s ease;
     border-left: 4px solid #0d6efd;
+    min-width: 0;
 }
 
 .calendar-event:hover {
@@ -138,11 +138,16 @@
     gap: 0.35rem;
     font-size: 0.85rem;
     color: #51607a;
+    min-width: 0;
 }
 
 .calendar-event-info i {
     color: #6c85b1;
     margin-right: 0.35rem;
+    min-width: 0;
+    white-space: normal;           /* garante quebra em espaços */
+    overflow-wrap: anywhere;       /* quebra em qualquer ponto se necessário */
+    word-break: break-word;        /* fallback */
 }
 
 .calendar-event-footer {
@@ -187,23 +192,21 @@
 
 .calendar-event-actions {
     position: relative;
-    z-index: 20;
 }
 
 .calendar-event-actions .dropdown-menu {
     min-width: 220px;
     font-size: 0.9rem;
     padding: 0.5rem 0;
-    z-index: 1080;
 }
 
-.calendar-event--menu-open {
+/* .calendar-event--menu-open {
     z-index: 2000;
 }
 
 .calendar-event--menu-open .calendar-event-actions .dropdown-menu {
     z-index: 2100;
-}
+} */
 
 .calendar-event-actions .dropdown-item i {
     font-size: 1rem;
