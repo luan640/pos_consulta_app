@@ -9,12 +9,16 @@ let wrapperCarregarMais;
 let modoVisualizacao = 'lista';
 let calendarioMesAtual = null;
 let calendarioAnoAtual = null;
-let calendarioInstancia = null;
 
 const MESES_PT_BR = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
+
+const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+let carregandoCalendario = false;
+let calendarioRequisicaoAtual = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
   botaoCarregarMais = document.getElementById('load-more-patients');
@@ -279,10 +283,7 @@ function inicializarControleVisualizacao() {
       if (modoVisualizacao !== 'calendario') {
         return;
       }
-      inicializarCalendario();
-      if (calendarioInstancia) {
-        calendarioInstancia.prev();
-      }
+      navegarCalendario(-1);
     });
   }
 
@@ -291,10 +292,7 @@ function inicializarControleVisualizacao() {
       if (modoVisualizacao !== 'calendario') {
         return;
       }
-      inicializarCalendario();
-      if (calendarioInstancia) {
-        calendarioInstancia.next();
-      }
+      navegarCalendario(1);
     });
   }
 }
@@ -370,10 +368,11 @@ function atualizarCabecalhoCalendario() {
   titulo.textContent = `${MESES_PT_BR[calendarioMesAtual]} de ${calendarioAnoAtual}`;
 }
 
-function carregarCalendario(mes = calendarioMesAtual, ano = calendarioAnoAtual) {
+async function carregarCalendario(mes = calendarioMesAtual, ano = calendarioAnoAtual) {
   const botaoLista = document.getElementById('view-toggle-list');
   const botaoCalendario = document.getElementById('view-toggle-calendar');
   const emptyState = document.getElementById('calendar-empty-state');
+  const grid = document.getElementById('calendar-grid');
 
   mostrarVisualizacaoCalendario();
 
@@ -381,119 +380,44 @@ function carregarCalendario(mes = calendarioMesAtual, ano = calendarioAnoAtual) 
     atualizarEstadoBotoesVisualizacao(botaoLista, botaoCalendario);
   }
 
-  if (emptyState) {
-    emptyState.classList.add('d-none');
+  if (typeof mes !== 'number' || Number.isNaN(mes) || typeof ano !== 'number' || Number.isNaN(ano)) {
+    const hoje = new Date();
+    mes = hoje.getMonth();
+    ano = hoje.getFullYear();
   }
 
-  if (typeof mes === 'number' && typeof ano === 'number') {
-    calendarioMesAtual = mes;
-    calendarioAnoAtual = ano;
-  }
+  calendarioMesAtual = mes;
+  calendarioAnoAtual = ano;
 
-  atualizarCabecalhoCalendario();
-  inicializarCalendario();
-
-  if (!calendarioInstancia) {
-    return;
-  }
-
-  if (typeof mes === 'number' && typeof ano === 'number') {
-    const dataReferencia = new Date(ano, mes, 1);
-    calendarioInstancia.gotoDate(dataReferencia);
-  }
-
-  calendarioInstancia.refetchEvents();
-}
-
-function inicializarCalendario() {
-  if (calendarioInstancia) {
-    return;
-  }
-
-  const elementoCalendario = document.getElementById('calendar-grid');
-
-  if (!elementoCalendario) {
-    return;
-  }
-
-}
-
-function obterDataReferenciaDoIntervalo(inicio, fim) {
-  if (!(inicio instanceof Date) || !(fim instanceof Date)) {
-    return new Date();
-  }
-  const meio = inicio.getTime() + Math.floor((fim.getTime() - inicio.getTime()) / 2);
-  return new Date(meio);
-}
-
-async function buscarEventosCalendario(info, successCallback, failureCallback) {
-  const emptyState = document.getElementById('calendar-empty-state');
-  const referencia = obterDataReferenciaDoIntervalo(info.start, info.end);
-  const { nome, status, sort } = obterFiltrosPacientes();
-
-  calendarioMesAtual = referencia.getMonth();
-  calendarioAnoAtual = referencia.getFullYear();
   atualizarCabecalhoCalendario();
 
   if (emptyState) {
     emptyState.classList.add('d-none');
   }
 
-  const pacientesMes = [];
-  let pagina = 1;
-  let possuiMais = true;
+  if (grid) {
+    grid.className = 'calendar-grid';
+    grid.innerHTML = `
+      <div class="calendar-loading">
+        <div class="spinner-border text-primary" role="status"></div>
+        <span>Carregando lembretes...</span>
+      </div>
+    `;
+  }
 
-  carregandoPacientes = true;
+  const requisicaoId = ++calendarioRequisicaoAtual;
+  carregandoCalendario = true;
 
   try {
-    while (possuiMais) {
-      const params = new URLSearchParams();
+    const pacientesMes = await buscarEventosCalendario(calendarioMesAtual, calendarioAnoAtual);
 
-      if (nome) {
-        params.append('nome', nome);
-      }
-
-      if (status) {
-        params.append('status_lembrete', status);
-      }
-
-      if (sort) {
-        params.append('sort', sort);
-      }
-
-      params.append('page', pagina.toString());
-      params.append('page_size', '200');
-      params.append('modo', 'calendario');
-      params.append('mes', String(calendarioMesAtual + 1));
-      params.append('ano', String(calendarioAnoAtual));
-
-      const response = await fetch(`/api/pacientes/?${params.toString()}`);
-
-      if (!response.ok) {
-        throw new Error('Erro ao carregar pacientes do calendário');
-      }
-
-      const data = await response.json();
-      pacientesMes.push(...(data?.pacientes || []));
-      possuiMais = Boolean(data?.has_more);
-      pagina += 1;
-
-      if (!possuiMais || pagina > 20) {
-        break;
-      }
+    if (requisicaoId !== calendarioRequisicaoAtual) {
+      return;
     }
 
     const eventos = pacientesMes
-      .filter((paciente) => Boolean(paciente?.proximo_lembrete))
-      .map((paciente) => ({
-        id: `paciente-${paciente.id}`,
-        title: paciente.nome,
-        start: paciente.proximo_lembrete,
-        allDay: true,
-        extendedProps: {
-          paciente,
-        },
-      }));
+      .map((paciente) => formatarEventoCalendario(paciente))
+      .filter(Boolean);
 
     if (emptyState) {
       if (eventos.length === 0) {
@@ -503,21 +427,256 @@ async function buscarEventosCalendario(info, successCallback, failureCallback) {
       }
     }
 
-    if (typeof successCallback === 'function') {
-      successCallback(eventos);
-    }
+    renderizarCalendario(eventos);
   } catch (error) {
+    console.error(error);
+
+    if (requisicaoId !== calendarioRequisicaoAtual) {
+      return;
+    }
+
+    if (grid) {
+      grid.innerHTML = `
+        <div class="calendar-error">
+          <i class="bi bi-emoji-frown"></i>
+          <p>Não foi possível carregar os lembretes.</p>
+        </div>
+      `;
+    }
+
     if (emptyState) {
       emptyState.classList.remove('d-none');
     }
-    if (typeof failureCallback === 'function') {
-      failureCallback(error);
-    }
-    console.error(error);
+
     showToast('Erro ao carregar pacientes do calendário', 'error');
   } finally {
-    carregandoPacientes = false;
+    if (requisicaoId === calendarioRequisicaoAtual) {
+      carregandoCalendario = false;
+    }
   }
+}
+
+function navegarCalendario(offset) {
+  if (typeof offset !== 'number' || Number.isNaN(offset)) {
+    return;
+  }
+
+  if (calendarioMesAtual === null || calendarioAnoAtual === null) {
+    const hoje = new Date();
+    calendarioMesAtual = hoje.getMonth();
+    calendarioAnoAtual = hoje.getFullYear();
+  }
+
+  let novoMes = calendarioMesAtual + offset;
+  let novoAno = calendarioAnoAtual;
+
+  if (novoMes < 0) {
+    novoMes = 11;
+    novoAno -= 1;
+  } else if (novoMes > 11) {
+    novoMes = 0;
+    novoAno += 1;
+  }
+
+  carregarCalendario(novoMes, novoAno);
+}
+
+async function buscarEventosCalendario(mes, ano) {
+  if (typeof mes !== 'number' || Number.isNaN(mes) || typeof ano !== 'number' || Number.isNaN(ano)) {
+    const hoje = new Date();
+    mes = hoje.getMonth();
+    ano = hoje.getFullYear();
+  }
+
+  const { nome, status, sort } = obterFiltrosPacientes();
+  const pacientesMes = [];
+  let pagina = 1;
+  let possuiMais = true;
+
+  while (possuiMais) {
+    const params = new URLSearchParams();
+
+    if (nome) {
+      params.append('nome', nome);
+    }
+
+    if (status) {
+      params.append('status_lembrete', status);
+    }
+
+    if (sort) {
+      params.append('sort', sort);
+    }
+
+    params.append('page', pagina.toString());
+    params.append('page_size', '200');
+    params.append('modo', 'calendario');
+    params.append('mes', String(mes + 1));
+    params.append('ano', String(ano));
+
+    const response = await fetch(`/api/pacientes/?${params.toString()}`);
+
+    if (!response.ok) {
+      throw new Error('Erro ao carregar pacientes do calendário');
+    }
+
+    const data = await response.json();
+    pacientesMes.push(...(data?.pacientes || []));
+    possuiMais = Boolean(data?.has_more);
+    pagina += 1;
+
+    if (!possuiMais || pagina > 20) {
+      break;
+    }
+  }
+
+  return pacientesMes;
+}
+
+function formatarEventoCalendario(paciente) {
+  if (!paciente || !paciente.proximo_lembrete) {
+    return null;
+  }
+
+  const dataIso = paciente.proximo_lembrete.split('T')[0];
+
+  if (!dataIso) {
+    return null;
+  }
+
+  const [anoStr, mesStr, diaStr] = dataIso.split('-');
+
+  if (!anoStr || !mesStr || !diaStr) {
+    return null;
+  }
+
+  const ano = Number(anoStr);
+  const mes = Number(mesStr) - 1;
+  const dia = Number(diaStr);
+
+  if ([ano, mes, dia].some((valor) => Number.isNaN(valor))) {
+    return null;
+  }
+
+  const data = new Date(ano, mes, dia);
+
+  return {
+    dataISO: formatarDataISO(data),
+    data,
+    paciente,
+  };
+}
+
+function formatarDataISO(data) {
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, '0');
+  const dia = String(data.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
+
+function renderizarCalendario(eventos = []) {
+  const grid = document.getElementById('calendar-grid');
+
+  if (!grid) {
+    return;
+  }
+
+  const hoje = new Date();
+  const anoReferencia = typeof calendarioAnoAtual === 'number' ? calendarioAnoAtual : hoje.getFullYear();
+  const mesReferencia = typeof calendarioMesAtual === 'number' ? calendarioMesAtual : hoje.getMonth();
+
+  const primeiroDiaDoMes = new Date(anoReferencia, mesReferencia, 1);
+  const offsetPrimeiroDia = primeiroDiaDoMes.getDay();
+  const diasNoMes = new Date(anoReferencia, mesReferencia + 1, 0).getDate();
+  const totalCelulas = Math.ceil((offsetPrimeiroDia + diasNoMes) / 7) * 7;
+  const dataInicial = new Date(anoReferencia, mesReferencia, 1 - offsetPrimeiroDia);
+
+  const eventosPorDia = eventos.reduce((acc, evento) => {
+    if (!evento || !evento.dataISO) {
+      return acc;
+    }
+
+    if (!acc[evento.dataISO]) {
+      acc[evento.dataISO] = [];
+    }
+
+    acc[evento.dataISO].push(evento.paciente);
+    return acc;
+  }, {});
+
+  grid.className = 'calendar-grid';
+  grid.innerHTML = '';
+
+  const fragment = document.createDocumentFragment();
+
+  DIAS_SEMANA.forEach((dia) => {
+    const cabecalho = document.createElement('div');
+    cabecalho.className = 'calendar-weekday';
+    cabecalho.textContent = dia;
+    fragment.appendChild(cabecalho);
+  });
+
+  for (let indice = 0; indice < totalCelulas; indice += 1) {
+    const dataAtual = new Date(dataInicial);
+    dataAtual.setDate(dataInicial.getDate() + indice);
+
+    const diaDaSemana = dataAtual.getDay();
+    const dataISO = formatarDataISO(dataAtual);
+    const pacientesDoDia = eventosPorDia[dataISO] || [];
+
+    const celula = document.createElement('div');
+    celula.className = 'calendar-day';
+    celula.dataset.date = dataISO;
+
+    if (dataAtual.getMonth() !== mesReferencia) {
+      celula.classList.add('is-outside-month');
+    }
+
+    if (diaDaSemana === 0 || diaDaSemana === 6) {
+      celula.classList.add('is-weekend');
+    }
+
+    if (
+      dataAtual.getFullYear() === hoje.getFullYear() &&
+      dataAtual.getMonth() === hoje.getMonth() &&
+      dataAtual.getDate() === hoje.getDate()
+    ) {
+      celula.classList.add('is-today');
+    }
+
+    const cabecalhoDia = document.createElement('div');
+    cabecalhoDia.className = 'calendar-day-date';
+    cabecalhoDia.innerHTML = `<span>${dataAtual.getDate()}</span>`;
+
+    if (pacientesDoDia.length > 0) {
+      celula.classList.add('has-events');
+      const contador = document.createElement('span');
+      contador.className = 'calendar-day-count';
+      contador.textContent = pacientesDoDia.length;
+      cabecalhoDia.appendChild(contador);
+    }
+
+    celula.appendChild(cabecalhoDia);
+
+    if (pacientesDoDia.length > 0) {
+      const listaEventos = document.createElement('div');
+      listaEventos.className = 'calendar-day-events';
+
+      pacientesDoDia
+        .slice()
+        .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+        .forEach((paciente) => {
+          const evento = criarEventoCalendario(paciente);
+          listaEventos.appendChild(evento);
+        });
+
+      celula.appendChild(listaEventos);
+    }
+
+    fragment.appendChild(celula);
+  }
+
+  grid.appendChild(fragment);
 }
 
 function criarEventoCalendario(paciente) {

@@ -497,26 +497,3 @@ body {
     color: #fff;
 }
 
-@media (max-width: 992px) {
-    .calendar-grid-wrapper {
-        padding: 1rem;
-    }
-
-    #calendar-grid .fc-daygrid-day {
-        min-height: 140px;
-    }
-}
-
-@media (max-width: 768px) {
-    .calendar-grid-wrapper {
-        padding: 0.75rem;
-    }
-
-    #calendar-grid .fc-daygrid-day-top {
-        padding: 0.65rem 0.65rem 0;
-    }
-
-    #calendar-grid .fc-daygrid-day-events {
-        padding: 0 0.65rem 0.65rem;
-    }
-}
