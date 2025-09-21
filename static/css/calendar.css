@@ -127,7 +127,7 @@
   background: #ffffff;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .calendar-event:hover {
