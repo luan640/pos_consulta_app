@@ -107,6 +107,15 @@
   padding-right: 0.25rem;
 }
 
+.calendar-day-events--menu-open {
+  overflow: visible !important;
+}
+
+.calendar-day--menu-open {
+  overflow: visible;
+  z-index: 20;
+}
+
 .calendar-day.has-events .calendar-day-events::-webkit-scrollbar {
   width: 6px;
 }

@@ -869,6 +869,16 @@ function criarMenuAcoesCalendario(paciente) {
     if (calendarEventElement) {
       calendarEventElement.classList[action]('calendar-event--menu-open');
     }
+
+    const calendarDayEventsElement = dropdownWrapper.closest('.calendar-day-events');
+    if (calendarDayEventsElement) {
+      calendarDayEventsElement.classList[action]('calendar-day-events--menu-open');
+    }
+
+    const calendarDayElement = dropdownWrapper.closest('.calendar-day');
+    if (calendarDayElement) {
+      calendarDayElement.classList[action]('calendar-day--menu-open');
+    }
   };
 
   dropdownWrapper.addEventListener('show.bs.dropdown', () => {
