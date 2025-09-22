@@ -6,7 +6,11 @@ let carregandoPacientes = false;
 let listaCompletaCarregada = false;
 let botaoCarregarMais;
 let wrapperCarregarMais;
-let modoVisualizacao = 'lista';
+
+const MODO_LISTA = 'lista';
+const MODO_CALENDARIO = 'calendario';
+const MODO_VISUALIZACAO_STORAGE_KEY = 'home_view_mode';
+let modoVisualizacao = obterModoVisualizacaoInicial();
 let calendarioMesAtual = null;
 let calendarioAnoAtual = null;
 
@@ -19,6 +23,50 @@ const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 let carregandoCalendario = false;
 let calendarioRequisicaoAtual = 0;
+
+function registrarAvisoLocalStorage(mensagem, erro) {
+  if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+    if (erro) {
+      console.warn(mensagem, erro);
+    } else {
+      console.warn(mensagem);
+    }
+  }
+}
+
+function obterModoVisualizacaoInicial() {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return MODO_LISTA;
+    }
+
+    const armazenado = window.localStorage.getItem(MODO_VISUALIZACAO_STORAGE_KEY);
+
+    if (armazenado === MODO_LISTA || armazenado === MODO_CALENDARIO) {
+      return armazenado;
+    }
+  } catch (error) {
+    registrarAvisoLocalStorage('Não foi possível recuperar o modo de visualização do localStorage.', error);
+  }
+
+  return MODO_LISTA;
+}
+
+function salvarModoVisualizacao(valor) {
+  if (valor !== MODO_LISTA && valor !== MODO_CALENDARIO) {
+    return;
+  }
+
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return;
+    }
+
+    window.localStorage.setItem(MODO_VISUALIZACAO_STORAGE_KEY, valor);
+  } catch (error) {
+    registrarAvisoLocalStorage('Não foi possível salvar o modo de visualização no localStorage.', error);
+  }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   botaoCarregarMais = document.getElementById('load-more-patients');
@@ -137,7 +185,7 @@ function obterFiltrosPacientes() {
 }
 
 export function listarPacientes(reset = true) {
-  if (modoVisualizacao === 'calendario') {
+  if (modoVisualizacao === MODO_CALENDARIO) {
     carregarCalendario();
     return;
   }
@@ -299,20 +347,22 @@ function inicializarControleVisualizacao() {
     atualizarEstadoBotoesVisualizacao(botaoLista, botaoCalendario);
 
     botaoLista.addEventListener('click', () => {
-      if (modoVisualizacao === 'lista') {
+      if (modoVisualizacao === MODO_LISTA) {
         return;
       }
-      modoVisualizacao = 'lista';
+      modoVisualizacao = MODO_LISTA;
+      salvarModoVisualizacao(modoVisualizacao);
       atualizarEstadoBotoesVisualizacao(botaoLista, botaoCalendario);
       mostrarVisualizacaoLista();
       listarPacientes();
     });
 
     botaoCalendario.addEventListener('click', () => {
-      if (modoVisualizacao === 'calendario') {
+      if (modoVisualizacao === MODO_CALENDARIO) {
         return;
       }
-      modoVisualizacao = 'calendario';
+      modoVisualizacao = MODO_CALENDARIO;
+      salvarModoVisualizacao(modoVisualizacao);
       atualizarEstadoBotoesVisualizacao(botaoLista, botaoCalendario);
       carregarCalendario();
     });
@@ -320,7 +370,7 @@ function inicializarControleVisualizacao() {
 
   if (botaoAnterior) {
     botaoAnterior.addEventListener('click', () => {
-      if (modoVisualizacao !== 'calendario') {
+      if (modoVisualizacao !== MODO_CALENDARIO) {
         return;
       }
       navegarCalendario(-1);
@@ -329,7 +379,7 @@ function inicializarControleVisualizacao() {
 
   if (botaoProximo) {
     botaoProximo.addEventListener('click', () => {
-      if (modoVisualizacao !== 'calendario') {
+      if (modoVisualizacao !== MODO_CALENDARIO) {
         return;
       }
       navegarCalendario(1);
@@ -342,8 +392,8 @@ function atualizarEstadoBotoesVisualizacao(botaoLista, botaoCalendario) {
     return;
   }
 
-  const botaoAtivo = modoVisualizacao === 'lista' ? botaoLista : botaoCalendario;
-  const botaoInativo = modoVisualizacao === 'lista' ? botaoCalendario : botaoLista;
+  const botaoAtivo = modoVisualizacao === MODO_LISTA ? botaoLista : botaoCalendario;
+  const botaoInativo = modoVisualizacao === MODO_LISTA ? botaoCalendario : botaoLista;
 
   botaoAtivo.classList.add('active', 'btn-primary');
   botaoAtivo.classList.remove('btn-outline-primary');
@@ -550,7 +600,7 @@ async function buscarEventosCalendario(mes, ano) {
 
     params.append('page', pagina.toString());
     params.append('page_size', '200');
-    params.append('modo', 'calendario');
+    params.append('modo', MODO_CALENDARIO);
     params.append('mes', String(mes + 1));
     params.append('ano', String(ano));
 
