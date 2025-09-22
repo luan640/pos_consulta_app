@@ -68,16 +68,48 @@ function salvarModoVisualizacao(valor) {
   }
 }
 
+function obterBotoesVisualizacao() {
+  return [
+    document.getElementById('view-toggle-list'),
+    document.getElementById('view-toggle-calendar'),
+  ].filter(Boolean);
+}
+
+function definirInteratividadeBotoesVisualizacao(ativado) {
+  obterBotoesVisualizacao().forEach((botao) => {
+    botao.toggleAttribute('disabled', !ativado);
+    botao.setAttribute('aria-disabled', ativado ? 'false' : 'true');
+    botao.classList.toggle('disabled', !ativado);
+  });
+}
+
+function desabilitarBotoesVisualizacao() {
+  definirInteratividadeBotoesVisualizacao(false);
+}
+
+function habilitarBotoesVisualizacao() {
+  definirInteratividadeBotoesVisualizacao(true);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   botaoCarregarMais = document.getElementById('load-more-patients');
   wrapperCarregarMais = document.getElementById('load-more-wrapper');
+
+  desabilitarBotoesVisualizacao();
 
   if (botaoCarregarMais) {
     botaoCarregarMais.addEventListener('click', () => listarPacientes(false));
   }
 
   inicializarControleVisualizacao();
-  listarPacientes();
+  const carregamentoInicial = Promise.resolve(listarPacientes());
+
+  carregamentoInicial
+    .catch(() => {})
+    .finally(() => {
+      habilitarBotoesVisualizacao();
+    });
+
   atualizarCards();
 
   inicializarDesativarPaciente();
@@ -186,12 +218,11 @@ function obterFiltrosPacientes() {
 
 export function listarPacientes(reset = true) {
   if (modoVisualizacao === MODO_CALENDARIO) {
-    carregarCalendario();
-    return;
+    return carregarCalendario();
   }
 
   if (carregandoPacientes || (!reset && listaCompletaCarregada)) {
-    return;
+    return Promise.resolve();
   }
 
   const container = document.getElementById('patients-container');
@@ -199,7 +230,7 @@ export function listarPacientes(reset = true) {
   const emptyState = document.getElementById('empty-state');
 
   if (!container || !listSection || !emptyState) {
-    return;
+    return Promise.resolve();
   }
 
   mostrarVisualizacaoLista();
@@ -258,7 +289,7 @@ export function listarPacientes(reset = true) {
 
   carregandoPacientes = true;
 
-  fetch(`/api/pacientes/?${params.toString()}`)
+  const requisicao = fetch(`/api/pacientes/?${params.toString()}`)
     .then(response => response.json())
     .then(data => {
       const lista = data?.pacientes || [];
@@ -330,6 +361,8 @@ export function listarPacientes(reset = true) {
         botaoCarregarMais.disabled = false;
       }
     });
+
+  return requisicao;
 }
 
 function inicializarControleVisualizacao() {
