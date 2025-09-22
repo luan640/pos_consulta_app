@@ -13,6 +13,7 @@ const MODO_VISUALIZACAO_STORAGE_KEY = 'home_view_mode';
 let modoVisualizacao = obterModoVisualizacaoInicial();
 let calendarioMesAtual = null;
 let calendarioAnoAtual = null;
+let bloqueiosBotoesVisualizacao = 0;
 
 const MESES_PT_BR = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -84,11 +85,38 @@ function definirInteratividadeBotoesVisualizacao(ativado) {
 }
 
 function desabilitarBotoesVisualizacao() {
-  definirInteratividadeBotoesVisualizacao(false);
+  bloqueiosBotoesVisualizacao += 1;
+
+  if (bloqueiosBotoesVisualizacao === 1) {
+    definirInteratividadeBotoesVisualizacao(false);
+  }
 }
 
 function habilitarBotoesVisualizacao() {
-  definirInteratividadeBotoesVisualizacao(true);
+  if (bloqueiosBotoesVisualizacao > 0) {
+    bloqueiosBotoesVisualizacao -= 1;
+  }
+
+  if (bloqueiosBotoesVisualizacao === 0) {
+    definirInteratividadeBotoesVisualizacao(true);
+  }
+}
+
+function executarAcaoVisualizacao(acao) {
+  desabilitarBotoesVisualizacao();
+
+  let resultado;
+
+  try {
+    resultado = acao();
+  } catch (erro) {
+    habilitarBotoesVisualizacao();
+    throw erro;
+  }
+
+  return Promise.resolve(resultado).finally(() => {
+    habilitarBotoesVisualizacao();
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -387,7 +415,7 @@ function inicializarControleVisualizacao() {
       salvarModoVisualizacao(modoVisualizacao);
       atualizarEstadoBotoesVisualizacao(botaoLista, botaoCalendario);
       mostrarVisualizacaoLista();
-      listarPacientes();
+      executarAcaoVisualizacao(() => listarPacientes());
     });
 
     botaoCalendario.addEventListener('click', () => {
@@ -397,7 +425,7 @@ function inicializarControleVisualizacao() {
       modoVisualizacao = MODO_CALENDARIO;
       salvarModoVisualizacao(modoVisualizacao);
       atualizarEstadoBotoesVisualizacao(botaoLista, botaoCalendario);
-      carregarCalendario();
+      executarAcaoVisualizacao(() => carregarCalendario());
     });
   }
 
