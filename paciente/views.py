@@ -332,14 +332,14 @@ def paciente_detalhe(request, pk):
     except Paciente.DoesNotExist:
         return JsonResponse({'erro': 'Paciente não encontrado'}, status=404)
 
-    # Última consulta do paciente
+    # Última consulta do paciente (mantive sua lógica)
     ultima_consulta = (
         Consulta.objects
         .filter(paciente=paciente)
         .aggregate(ultima=Max('data_consulta'))
     )['ultima']
 
-    # Todas as consultas do paciente
+    # Todas as consultas (para serializar como na função 1)
     consultas = Consulta.objects.filter(paciente=paciente).order_by('-data_consulta')
     consultas_list = [
         {
@@ -350,14 +350,41 @@ def paciente_detalhe(request, pk):
         for consulta in consultas
     ]
 
-    # Próximo lembrete
-    lembrete = paciente.lembretes.filter(concluido=False).select_related('regra').order_by('data_lembrete').first()
-    proximo_lembrete = lembrete.data_lembrete if lembrete else None
-    texto_lembrete = (
-        lembrete.regra.descricao if lembrete and lembrete.regra
-        else lembrete.texto if lembrete
-        else None
+    # === Lógica espelhada da função 1 ===
+    # Carrega todos os lembretes (com regra)
+    lembretes = list(paciente.lembretes.all().select_related('regra'))
+
+    # PENDENTES ordenados por data (nulos vão pro fim usando date.max)
+    lembretes_pendentes = [l for l in lembretes if not l.concluido]
+    lembretes_pendentes.sort(key=lambda l: l.data_lembrete or date.max)
+
+    ultimo = lembretes_pendentes[0] if len(lembretes_pendentes) >= 1 else None
+    penultimo = lembretes_pendentes[1] if len(lembretes_pendentes) >= 2 else None
+
+    # Fallback: se só existe "último", pega penúltimo dentre concluídos (mais recente)
+    if ultimo and not penultimo:
+        concluidos = [l for l in lembretes if l.concluido]
+        concluidos.sort(key=lambda l: l.data_lembrete or date.min, reverse=True)
+        penultimo = concluidos[0] if concluidos else None
+
+    igual_ao_ultimo = bool(
+        ultimo and penultimo and (penultimo.regra_id == ultimo.regra_id)
     )
+
+    # Grupo atual (como na função 1)
+    grupo_regra_atual = paciente.grupo_lembrete.nome if paciente.grupo_lembrete else None
+
+    # Texto do lembrete (mesma decisão da função 1)
+    if not grupo_regra_atual:
+        texto_lembrete = "Primeiro atribua um grupo de regras."
+    elif not igual_ao_ultimo and ultimo:
+        texto_lembrete = (ultimo.regra.descricao if (ultimo and ultimo.regra) else ultimo.texto)
+    else:
+        texto_lembrete = "Você já enviou todos os materiais necessários."
+
+    # Proximo/Penúltimo para resposta (iguais à função 1)
+    proximo_lembrete = ultimo.data_lembrete if ultimo else None
+    penultimo_lembrete = penultimo.data_lembrete if penultimo else None
 
     dados = {
         'id': paciente.id,
@@ -365,12 +392,13 @@ def paciente_detalhe(request, pk):
         'telefone': paciente.telefone,
         'ultima_consulta': ultima_consulta,
         'proximo_lembrete': proximo_lembrete,
+        'penultimo_lembrete': penultimo_lembrete,   # <- incluído para espelhar a função 1
         'texto_lembrete': texto_lembrete,
         'nome_lembrete': None,
         'lembretes_ativos': paciente.lembretes_ativos,
         'paciente_ativo': paciente.ativo,
-        'grupo_regra_atual': paciente.grupo_lembrete.nome if paciente.grupo_lembrete else None,
-        'consultas': consultas_list
+        'grupo_regra_atual': grupo_regra_atual,
+        'consultas': consultas_list,
     }
 
     return JsonResponse(dados)
