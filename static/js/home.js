@@ -50,7 +50,12 @@ document.addEventListener('DOMContentLoaded', () => {
 // Atualiza o card do paciente na lista pelo id, mostrando loading apenas no card alterado
 export function atualizarCardPaciente(pacienteId) {
   const container = document.getElementById('patients-container');
-  const oldCard = container.querySelector(`[data-paciente-id="${pacienteId}"]`);
+  const oldCard = container ? container.querySelector(`[data-paciente-id="${pacienteId}"]`) : null;
+  const calendarEvent = document.querySelector(`.calendar-event[data-paciente-id="${pacienteId}"]`);
+
+  const cardConteudoAnterior = oldCard ? oldCard.innerHTML : null;
+  const eventoConteudoAnterior = calendarEvent ? calendarEvent.innerHTML : null;
+
   if (oldCard) {
     // Mostra loading no próprio card
     oldCard.innerHTML = `
@@ -59,12 +64,46 @@ export function atualizarCardPaciente(pacienteId) {
       </div>
     `;
   }
+
+  if (calendarEvent) {
+    calendarEvent.classList.add('calendar-event--loading');
+    calendarEvent.innerHTML = `
+      <div class="d-flex justify-content-center align-items-center py-4">
+        <div class="spinner-border text-primary" role="status"></div>
+      </div>
+    `;
+  }
+
   fetch(`/api/paciente/${pacienteId}/`)
-    .then(res => res.json())
-    .then(updated => {
-      const newCard = renderizarCardPaciente(updated);
-      if (oldCard) {
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error('Erro ao buscar paciente');
+      }
+      return res.json();
+    })
+    .then((updated) => {
+      if (oldCard && container) {
+        const newCard = renderizarCardPaciente(updated);
         container.replaceChild(newCard, oldCard);
+      }
+
+      atualizarEventoCalendario(updated);
+    })
+    .catch((error) => {
+      console.error(error);
+
+      if (oldCard && cardConteudoAnterior !== null) {
+        oldCard.innerHTML = cardConteudoAnterior;
+      }
+
+      if (calendarEvent && eventoConteudoAnterior !== null) {
+        calendarEvent.innerHTML = eventoConteudoAnterior;
+        calendarEvent.classList.remove('calendar-event--loading');
+      }
+    })
+    .finally(() => {
+      if (calendarEvent && calendarEvent.isConnected) {
+        calendarEvent.classList.remove('calendar-event--loading');
       }
     });
 
@@ -81,6 +120,7 @@ function removerCardPaciente(pacienteId) {
   } else {
     container.removeChild(card);
   }
+  removerEventoCalendario(pacienteId);
   return true;
 }
 
@@ -779,6 +819,157 @@ function criarEventoCalendario(paciente) {
   elemento.appendChild(rodape);
 
   return elemento;
+}
+
+function atualizarEventoCalendario(paciente) {
+  if (!paciente || typeof paciente.id === 'undefined') {
+    return;
+  }
+
+  const grid = document.getElementById('calendar-grid');
+
+  if (!grid) {
+    return;
+  }
+
+  const eventoExistente = grid.querySelector(`.calendar-event[data-paciente-id="${paciente.id}"]`);
+  const eventoFormatado = formatarEventoCalendario(paciente);
+
+  if (!eventoFormatado) {
+    if (eventoExistente) {
+      const diaAnterior = eventoExistente.closest('.calendar-day');
+      eventoExistente.remove();
+      atualizarEstadoDiaCalendario(diaAnterior);
+    }
+    atualizarEstadoCalendarioGlobal();
+    return;
+  }
+
+  const novoDiaISO = eventoFormatado.dataISO;
+  const novoDiaElemento = grid.querySelector(`.calendar-day[data-date="${novoDiaISO}"]`);
+  const novoEventoElemento = criarEventoCalendario(paciente);
+
+  if (eventoExistente) {
+    const diaAnterior = eventoExistente.closest('.calendar-day');
+    if (diaAnterior?.dataset.date === novoDiaISO) {
+      eventoExistente.replaceWith(novoEventoElemento);
+      atualizarEstadoDiaCalendario(diaAnterior);
+      atualizarEstadoCalendarioGlobal();
+      return;
+    }
+
+    eventoExistente.remove();
+    atualizarEstadoDiaCalendario(diaAnterior);
+  }
+
+  if (!novoDiaElemento) {
+    atualizarEstadoCalendarioGlobal();
+    return;
+  }
+
+  let eventosContainer = novoDiaElemento.querySelector('.calendar-day-events');
+  if (!eventosContainer) {
+    eventosContainer = document.createElement('div');
+    eventosContainer.className = 'calendar-day-events';
+    novoDiaElemento.appendChild(eventosContainer);
+  }
+
+  inserirEventoCalendarioOrdenado(eventosContainer, novoEventoElemento);
+  atualizarEstadoDiaCalendario(novoDiaElemento);
+  atualizarEstadoCalendarioGlobal();
+}
+
+function removerEventoCalendario(pacienteId) {
+  if (typeof pacienteId === 'undefined' || pacienteId === null) {
+    return;
+  }
+
+  const grid = document.getElementById('calendar-grid');
+
+  if (!grid) {
+    return;
+  }
+
+  const eventoExistente = grid.querySelector(`.calendar-event[data-paciente-id="${pacienteId}"]`);
+
+  if (!eventoExistente) {
+    atualizarEstadoCalendarioGlobal();
+    return;
+  }
+
+  const diaAnterior = eventoExistente.closest('.calendar-day');
+  eventoExistente.remove();
+  atualizarEstadoDiaCalendario(diaAnterior);
+  atualizarEstadoCalendarioGlobal();
+}
+
+function inserirEventoCalendarioOrdenado(container, novoEvento) {
+  const novoTitulo = (novoEvento.querySelector('.calendar-event-title')?.textContent || '').trim();
+  const eventosExistentes = Array.from(container.querySelectorAll('.calendar-event'));
+
+  const referencia = eventosExistentes.find((evento) => {
+    const titulo = (evento.querySelector('.calendar-event-title')?.textContent || '').trim();
+    return titulo.localeCompare(novoTitulo, 'pt-BR') > 0;
+  });
+
+  if (referencia) {
+    container.insertBefore(novoEvento, referencia);
+  } else {
+    container.appendChild(novoEvento);
+  }
+}
+
+function atualizarEstadoDiaCalendario(diaElemento) {
+  if (!diaElemento) {
+    return;
+  }
+
+  const eventosContainer = diaElemento.querySelector('.calendar-day-events');
+  const eventos = eventosContainer ? Array.from(eventosContainer.querySelectorAll('.calendar-event')) : [];
+
+  if (eventos.length > 0) {
+    diaElemento.classList.add('has-events');
+  } else {
+    diaElemento.classList.remove('has-events');
+    if (eventosContainer) {
+      eventosContainer.remove();
+    }
+  }
+
+  const cabecalho = diaElemento.querySelector('.calendar-day-date');
+  if (!cabecalho) {
+    return;
+  }
+
+  let contador = cabecalho.querySelector('.calendar-day-count');
+
+  if (eventos.length > 0) {
+    if (!contador) {
+      contador = document.createElement('span');
+      contador.className = 'calendar-day-count';
+      cabecalho.appendChild(contador);
+    }
+    contador.textContent = eventos.length;
+  } else if (contador) {
+    contador.remove();
+  }
+}
+
+function atualizarEstadoCalendarioGlobal() {
+  const grid = document.getElementById('calendar-grid');
+  const emptyState = document.getElementById('calendar-empty-state');
+
+  if (!grid || !emptyState) {
+    return;
+  }
+
+  const possuiEventos = Boolean(grid.querySelector('.calendar-event'));
+
+  if (possuiEventos) {
+    emptyState.classList.add('d-none');
+  } else {
+    emptyState.classList.remove('d-none');
+  }
 }
 
 function criarMenuAcoesCalendario(paciente) {
