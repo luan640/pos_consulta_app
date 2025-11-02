@@ -594,6 +594,46 @@ def regras_detail_update(request, pk_regra, pk_grupo):
         regra.delete()
         return JsonResponse({'mensagem': 'Regra excluída'})
 
+@login_required
+@require_http_methods(["GET"])
+def materiais_regra_atual(request, pk):
+    try:
+        paciente = Paciente.objects.get(pk=pk, dono=request.user)
+    except Paciente.DoesNotExist:
+        return JsonResponse({'erro': 'Paciente nǜo encontrado'}, status=404)
+
+    lembrete = (
+        Lembrete.objects
+        .filter(paciente=paciente, concluido=False)
+        .select_related('regra')
+        .prefetch_related('regra__materiais')
+        .order_by('data_lembrete', 'id')
+        .first()
+    )
+
+    materiais = []
+    regra_info = None
+
+    regra_referencia = None
+    if lembrete and lembrete.regra:
+        regra_referencia = lembrete.regra
+    elif paciente.grupo_lembrete:
+        regra_referencia = (
+            RegraLembrete.objects
+            .filter(nutricionista=request.user, grupo=paciente.grupo_lembrete)
+            .order_by('ordem')
+            .first()
+        )
+
+    if regra_referencia:
+        regra_info = {'id': regra_referencia.id, 'nome': regra_referencia.nome}
+        materiais = [
+            {'id': material.id, 'descricao': material.descricao}
+            for material in regra_referencia.materiais.filter(dono=request.user)
+        ]
+
+    return JsonResponse({'materiais': materiais, 'regra': regra_info})
+
 @csrf_exempt
 @login_required
 def regra_mover_up(request, pk_regra, pk_grupo):

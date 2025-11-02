@@ -1520,6 +1520,46 @@ function openContactModal(patient) {
   contactPatientNameEl.textContent = patient.name;
   contactPatientIdEl.value = patient.id;
 
+  const contactTypeEl = document.getElementById('contact-type');
+  if (contactTypeEl) {
+    contactTypeEl.value = patient.type || '';
+  }
+
+  const notesEl = document.getElementById('contact-notes');
+  if (notesEl) {
+    notesEl.value = '';
+  }
+
+  const selectedContainer = document.getElementById('selected-materials');
+  if (selectedContainer) {
+    selectedContainer.innerHTML = '<span class="text-muted small">Carregando materiais da regra...</span>';
+  }
+
+  const suggestionsContainer = document.getElementById('material-suggestions');
+  if (suggestionsContainer) {
+    suggestionsContainer.innerHTML = '<span class="text-muted small">Carregando sugestões...</span>';
+  }
+
+  fetch(`/api/pacientes/${patient.id}/materiais-regra/`)
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error('Erro ao buscar materiais da regra');
+      }
+      return res.json();
+    })
+    .then((data) => {
+      const preSelecionados = Array.isArray(data.materiais)
+        ? data.materiais
+            .map((material) => (material && material.descricao ? material.descricao.trim() : ''))
+            .filter(Boolean)
+        : [];
+      inicializarSelecaoMateriais(preSelecionados);
+    })
+    .catch((error) => {
+      console.error('Erro ao carregar materiais da regra:', error);
+      inicializarSelecaoMateriais();
+    });
+
   contactModal.show();
 }
 
@@ -2367,52 +2407,94 @@ function getCookie(name) {
   return cookieValue;
 }
 
-export function inicializarSelecaoMateriais() {
-  const suggestionsContainer = document.getElementById("material-suggestions");
-  const selectedContainer = document.getElementById("selected-materials");
-  const selectedMaterials = new Set();
-  
-  suggestionsContainer.innerHTML = '';
-  selectedContainer.innerHTML = '';
-
-  // Carrega sugestões
-  fetch("/api/materiais/")
-    .then((res) => res.json())
-    .then((data) => {
-      data.materiais.forEach((material) => {
-        const chip = document.createElement("div");
-        chip.className = "material-chip";
-        chip.textContent = material.descricao;
-        chip.dataset.materialId = material.id; // se precisar do id mais tarde
-        chip.addEventListener("click", () => addMaterial(material.descricao));
-        suggestionsContainer.appendChild(chip);
-      });
-    });
-
-  // Adiciona ao input visual
-  function addMaterial(nome) {
-    if (selectedMaterials.has(nome)) return;
-
-    selectedMaterials.add(nome);
-    renderSelected();
+export function inicializarSelecaoMateriais(preSelecionados = []) {
+  const suggestionsContainer = document.getElementById('material-suggestions');
+  const selectedContainer = document.getElementById('selected-materials');
+  if (!suggestionsContainer || !selectedContainer) {
+    return;
   }
 
-  // Renderiza os selecionados
+  const normalizar = (nome) => (nome || '').trim();
+  const selectedMaterials = new Set();
+
   function renderSelected() {
-    selectedContainer.innerHTML = "";
+    selectedContainer.innerHTML = '';
+
+    if (!selectedMaterials.size) {
+      const vazio = document.createElement('span');
+      vazio.className = 'text-muted small';
+      vazio.textContent = 'Nenhum material selecionado.';
+      selectedContainer.appendChild(vazio);
+      return;
+    }
+
     selectedMaterials.forEach((nome) => {
-      const pill = document.createElement("div");
-      pill.className = "material-pill";
+      const pill = document.createElement('div');
+      pill.className = 'material-pill';
+      pill.dataset.materialName = nome;
       pill.innerHTML = `${nome} <i class="bi bi-x-circle-fill" title="Remover"></i>`;
 
-      pill.querySelector("i").addEventListener("click", () => {
-        selectedMaterials.delete(nome);
-        renderSelected();
-      });
+      const removerBtn = pill.querySelector('i');
+      if (removerBtn) {
+        removerBtn.addEventListener('click', () => {
+          selectedMaterials.delete(nome);
+          renderSelected();
+        });
+      }
 
       selectedContainer.appendChild(pill);
     });
   }
+
+  function addMaterial(nome) {
+    const valor = normalizar(nome);
+    if (!valor || selectedMaterials.has(valor)) {
+      return;
+    }
+    selectedMaterials.add(valor);
+    renderSelected();
+  }
+
+  suggestionsContainer.innerHTML = '';
+  selectedContainer.innerHTML = '';
+
+  preSelecionados
+    .map(normalizar)
+    .filter(Boolean)
+    .forEach((nome) => selectedMaterials.add(nome));
+
+  renderSelected();
+
+  suggestionsContainer.innerHTML = '<span class="text-muted small">Carregando sugestões...</span>';
+
+  fetch('/api/materiais/')
+    .then((res) => res.json())
+    .then((data) => {
+      suggestionsContainer.innerHTML = '';
+
+      if (!data.materiais || !data.materiais.length) {
+        suggestionsContainer.innerHTML = '<span class="text-muted small">Nenhum material cadastrado.</span>';
+        return;
+      }
+
+      data.materiais.forEach((material) => {
+        const descricao = normalizar(material.descricao);
+        if (!descricao) {
+          return;
+        }
+
+        const chip = document.createElement('div');
+        chip.className = 'material-chip';
+        chip.textContent = descricao;
+        chip.dataset.materialId = material.id;
+        chip.addEventListener('click', () => addMaterial(descricao));
+        suggestionsContainer.appendChild(chip);
+      });
+    })
+    .catch((error) => {
+      console.error('Erro ao carregar materiais:', error);
+      suggestionsContainer.innerHTML = '<span class="text-danger small">Erro ao carregar materiais.</span>';
+    });
 }
 
 function atualizarCards() {

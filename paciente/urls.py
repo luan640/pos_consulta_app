@@ -11,6 +11,7 @@ urlpatterns += [
     path('api/pacientes/novo/', views.cadastrar_paciente, name='api_cadastrar_paciente'),
     path('api/registrar-contato/', views.registrar_contato, name='api_resistrar_contato'),
     path('api/paciente/<int:pk>/', views.paciente_detalhe, name='paciente_detalhe'),
+    path('api/pacientes/<int:pk>/materiais-regra/', views.materiais_regra_atual, name='materiais_regra_atual'),
     
     path('api/regras/<int:pk>/', views.regras_list_create, name='regras_list_create'),
     path('api/regras/update/<int:pk_regra>/<int:pk_grupo>/', views.regras_detail_update, name='regras_detail_update'),
