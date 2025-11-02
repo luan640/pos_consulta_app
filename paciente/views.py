@@ -467,14 +467,27 @@ def regras_list_create(request, pk):
         return JsonResponse({'erro': 'Grupo de regras não especificado'}, status=400)
     
     if request.method == 'GET':
-        regras = RegraLembrete.objects.filter(nutricionista=request.user, grupo=pk).order_by('ordem')
-        data = [{
-            'id': r.id,
-            'nome': r.nome,
-            'dias_apos': r.dias_apos,
-            'descricao': r.descricao,
-            'ordem': r.ordem,
-        } for r in regras]
+        regras = (
+            RegraLembrete.objects
+            .filter(nutricionista=request.user, grupo=pk)
+            .order_by('ordem')
+            .prefetch_related('materiais')
+        )
+        data = []
+        for regra in regras:
+            materiais = [
+                {'id': material.id, 'descricao': material.descricao}
+                for material in regra.materiais.all()
+            ]
+            data.append({
+                'id': regra.id,
+                'nome': regra.nome,
+                'dias_apos': regra.dias_apos,
+                'descricao': regra.descricao,
+                'ordem': regra.ordem,
+                'materiais': materiais,
+                'materiais_ids': [material['id'] for material in materiais],
+            })
         return JsonResponse({'regras': data})
 
     elif request.method == 'POST':
@@ -485,6 +498,14 @@ def regras_list_create(request, pk):
         # busca a ordem da ultima regra
         ultima_ordem = RegraLembrete.objects.filter(nutricionista=request.user, grupo=grupo_lembrete).aggregate(Max('ordem'))['ordem__max']
 
+        materiais_ids = data.get('materiais') or []
+        if not isinstance(materiais_ids, list):
+            return JsonResponse({'erro': 'Formato de materiais inválido'}, status=400)
+
+        materiais_queryset = Material.objects.filter(dono=request.user, id__in=materiais_ids)
+        if len(set(materiais_ids)) != materiais_queryset.count():
+            return JsonResponse({'erro': 'Material selecionado inválido'}, status=400)
+
         regra = RegraLembrete.objects.create(
             nutricionista=request.user,
             nome=data.get('nome'),
@@ -493,7 +514,13 @@ def regras_list_create(request, pk):
             ordem=ultima_ordem + 1 if ultima_ordem is not None else 0,
             grupo=grupo_lembrete  
         )
-        return JsonResponse({'id': regra.id, 'mensagem': 'Regra criada com sucesso'})
+        if materiais_queryset:
+            regra.materiais.set(materiais_queryset)
+        return JsonResponse({
+            'id': regra.id,
+            'mensagem': 'Regra criada com sucesso',
+            'materiais': [{'id': material.id, 'descricao': material.descricao} for material in materiais_queryset],
+        })
 
     return HttpResponseNotAllowed(['GET', 'POST'])
 
@@ -508,12 +535,18 @@ def regras_detail_update(request, pk_regra, pk_grupo):
         return JsonResponse({'erro': 'Regra não encontrada'}, status=404)
 
     if request.method == 'GET':
+        materiais = [
+            {'id': material.id, 'descricao': material.descricao}
+            for material in regra.materiais.all()
+        ]
         return JsonResponse({
             'id': regra.id,
             'nome': regra.nome,
             'dias_apos': regra.dias_apos,
             'descricao': regra.descricao,
-            'ordem': regra.ordem
+            'ordem': regra.ordem,
+            'materiais': materiais,
+            'materiais_ids': [material['id'] for material in materiais],
         })
 
     elif request.method == 'PUT':
@@ -522,6 +555,17 @@ def regras_detail_update(request, pk_regra, pk_grupo):
         regra.dias_apos = data.get('dias_apos', regra.dias_apos)
         regra.descricao = data.get('descricao', regra.descricao)
         regra.save()
+
+        materiais_ids = data.get('materiais')
+        if materiais_ids is not None:
+            if not isinstance(materiais_ids, list):
+                return JsonResponse({'erro': 'Formato de materiais invǭlido'}, status=400)
+
+            materiais_queryset = Material.objects.filter(dono=request.user, id__in=materiais_ids)
+            if len(set(materiais_ids)) != materiais_queryset.count():
+                return JsonResponse({'erro': 'Material selecionado invǭlido'}, status=400)
+
+            regra.materiais.set(materiais_queryset)
 
         # ver se tem algum lembrete ativo com essa regra e atualizar a data
         lembretes = Lembrete.objects.filter(regra=regra, concluido=False)
@@ -538,7 +582,13 @@ def regras_detail_update(request, pk_regra, pk_grupo):
             lembrete.texto = regra.descricao
             lembrete.save()
         
-        return JsonResponse({'mensagem': 'Regra atualizada'})
+        return JsonResponse({
+            'mensagem': 'Regra atualizada',
+            'materiais': [
+                {'id': material.id, 'descricao': material.descricao}
+                for material in regra.materiais.all()
+            ],
+        })
 
     elif request.method == 'DELETE':
         regra.delete()
@@ -982,3 +1032,5 @@ def filtrar_home(request):
     nome = request.GET.get('nome_paciente')
     status_lembrete = request.GET.get('status_lembrete')
 
+
+    

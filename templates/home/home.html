@@ -371,6 +371,7 @@
                                                     <th>Nome</th>
                                                     <th>Dias Após</th>
                                                     <th>Descrição</th>
+                                                    <th>Materiais</th>
                                                     <th>Ações</th>
                                                 </tr>
                                             </thead>
@@ -510,6 +511,11 @@
                             <div class="form-floating mb-3">
                                 <textarea class="form-control" id="nova-regra-descricao" placeholder="Descrição" style="height: 100px"></textarea>
                                 <label for="nova-regra-descricao">Descrição</label>
+                            </div>
+                            <div class="mb-3">
+                                <label for="nova-regra-materiais" class="form-label">Materiais (opcional)</label>
+                                <select class="form-select" id="nova-regra-materiais" multiple aria-describedby="nova-regra-materiais-help"></select>
+                                <div id="nova-regra-materiais-help" class="form-text">Selecione os materiais que acompanham esta regra ou deixe em branco.</div>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Voltar</button>

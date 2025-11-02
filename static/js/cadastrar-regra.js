@@ -5,6 +5,102 @@ document.addEventListener('DOMContentLoaded', () => {
   const tbody = document.getElementById('regras-tbody');
 
   const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+  const novaRegraModalEl = document.getElementById('novaRegraModal');
+  const novaRegraModal = novaRegraModalEl ? new bootstrap.Modal(novaRegraModalEl) : null;
+  const materiaisSelect = document.getElementById('nova-regra-materiais');
+
+  let materiaisCache = [];
+  let materiaisCacheCarregado = false;
+  let materiaisCachePromise = null;
+
+  function atualizarMateriaisCache(force = false) {
+    if (materiaisCacheCarregado && !force) {
+      return Promise.resolve(materiaisCache);
+    }
+    if (materiaisCachePromise && !force) {
+      return materiaisCachePromise;
+    }
+
+    materiaisCachePromise = fetch('/api/materiais/')
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('Falha ao buscar materiais');
+        }
+        return res.json();
+      })
+      .then(data => {
+        materiaisCache = data?.materiais || [];
+        materiaisCacheCarregado = true;
+        return materiaisCache;
+      })
+      .catch(err => {
+        materiaisCache = [];
+        materiaisCacheCarregado = true;
+        throw err;
+      })
+      .finally(() => {
+        materiaisCachePromise = null;
+      });
+
+    return materiaisCachePromise;
+  }
+
+  function carregarMateriaisSelect() {
+    if (!materiaisSelect) {
+      return;
+    }
+
+    materiaisSelect.innerHTML = '';
+    const loadingOption = document.createElement('option');
+    loadingOption.disabled = true;
+    loadingOption.textContent = 'Carregando...';
+    materiaisSelect.appendChild(loadingOption);
+    materiaisSelect.disabled = true;
+
+    atualizarMateriaisCache(true)
+      .then(materiais => {
+        materiaisSelect.innerHTML = '';
+
+        if (!materiais.length) {
+          const option = document.createElement('option');
+          option.disabled = true;
+          option.textContent = 'Nenhum material cadastrado';
+          materiaisSelect.appendChild(option);
+          materiaisSelect.disabled = true;
+          return;
+        }
+
+        materiais.forEach(material => {
+          const option = document.createElement('option');
+          option.value = material.id;
+          option.textContent = material.descricao;
+          materiaisSelect.appendChild(option);
+        });
+
+        materiaisSelect.disabled = false;
+      })
+      .catch(err => {
+        console.error('Erro ao carregar materiais:', err);
+        materiaisSelect.innerHTML = '';
+        const option = document.createElement('option');
+        option.disabled = true;
+        option.textContent = 'Erro ao carregar materiais';
+        materiaisSelect.appendChild(option);
+        materiaisSelect.disabled = true;
+      });
+  }
+
+  if (novaRegraModalEl) {
+    novaRegraModalEl.addEventListener('show.bs.modal', () => {
+      carregarMateriaisSelect();
+    });
+
+    novaRegraModalEl.addEventListener('hidden.bs.modal', function () {
+      if (regraModal) {
+        regraModal.show();
+      }
+    });
+  }
 
   function carregarGrupoRegras() {
     fetch('/api/grupo-regras/')
@@ -70,14 +166,16 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(err => console.error('Erro ao carregar grupos de regras:', err));
   }
 
-  function carregarRegras() {
-    const idGrupo = document.getElementById('regra-grupo-id').value;
+  function carregarRegras(grupoIdParam) {
+    const idGrupo = (typeof grupoIdParam === 'number' || typeof grupoIdParam === 'string')
+      ? grupoIdParam
+      : document.getElementById('regra-grupo-id').value;
     const tbody = document.getElementById('regras-tbody');
     
     // Mostra um loading na tabela
     tbody.innerHTML = `
       <tr>
-        <td colspan="4" class="text-center">
+        <td colspan="5" class="text-center">
           <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Carregando...</span>
           </div>
@@ -93,11 +191,14 @@ document.addEventListener('DOMContentLoaded', () => {
         data.regras.forEach(regra => {
           const tr = document.createElement('tr');
           tr.dataset.regraId = regra.id;
+          tr.dataset.materiaisIds = (regra.materiais_ids || []).join(',');
+          tr.dataset.materiaisJson = JSON.stringify(regra.materiais || []);
 
           tr.innerHTML = `
-            <td class="nome">${regra.nome}</td>
-            <td class="dias">${regra.dias_apos}</td>
-            <td class="descricao">${regra.descricao}</td>
+            <td class="nome"></td>
+            <td class="dias"></td>
+            <td class="descricao"></td>
+            <td class="materiais"></td>
             <td class="acoes d-flex gap-2">
               <button class="btn btn-sm btn-info btn-editar" title="Editar">
                 <i class="bi bi-pencil"></i>
@@ -114,22 +215,65 @@ document.addEventListener('DOMContentLoaded', () => {
             </td>
           `;
 
+          tr.querySelector('.nome').textContent = regra.nome || '';
+          tr.querySelector('.dias').textContent = regra.dias_apos ?? '';
+          tr.querySelector('.descricao').textContent = regra.descricao || '';
+
+          const materiaisTd = tr.querySelector('.materiais');
+          materiaisTd.innerHTML = '';
+          const materiais = Array.isArray(regra.materiais) ? regra.materiais : [];
+          if (materiais.length) {
+            materiais.forEach(material => {
+              const badge = document.createElement('span');
+              badge.className = 'badge bg-light text-dark border me-1';
+              badge.textContent = material.descricao;
+              materiaisTd.appendChild(badge);
+            });
+          } else {
+            materiaisTd.innerHTML = '<span class="text-muted">Nenhum</span>';
+          }
+
           tbody.appendChild(tr);
         });
 
         // Adiciona o comportamento de edição inline
         tbody.querySelectorAll('.btn-editar').forEach(btn => {
-          btn.addEventListener('click', function () {
+          btn.addEventListener('click', async function () {
             const row = btn.closest('tr');
             const id = row.dataset.regraId;
             const nome = row.querySelector('.nome').textContent;
             const dias = row.querySelector('.dias').textContent;
             const descricao = row.querySelector('.descricao').textContent;
+            const materiaisIds = (row.dataset.materiaisIds || '')
+              .split(',')
+              .filter(Boolean)
+              .map(Number);
+
+            try {
+              await atualizarMateriaisCache();
+            } catch (error) {
+              console.error('Não foi possível atualizar a lista de materiais:', error);
+            }
+
+            const possuiMateriais = materiaisCache.length > 0;
+            const materiaisOptions = possuiMateriais
+              ? materiaisCache.map(material => {
+                  const selected = materiaisIds.includes(Number(material.id)) ? 'selected' : '';
+                  return `<option value="${material.id}" ${selected}>${material.descricao}</option>`;
+                }).join('')
+              : '<option disabled>Nenhum material cadastrado</option>';
+
+            const selectDisabled = possuiMateriais ? '' : 'disabled';
 
             row.innerHTML = `
             <td><input type="text" class="form-control form-control-sm nome-input" value="${nome}"></td>
             <td><input type="number" class="form-control form-control-sm dias-input" value="${dias}"></td>
               <td><input type="text" class="form-control form-control-sm descricao-input" value="${descricao}"></td>
+              <td>
+                <select class="form-select form-select-sm materiais-input" multiple ${selectDisabled}>
+                  ${materiaisOptions}
+                </select>
+              </td>
               <td>
                 <button class="btn btn-sm btn-success btn-salvar" title="Salvar">
                   <i class="bi bi-check"></i>
@@ -184,6 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   carregarGrupoRegras();
   inicializarBotaoEditarGrupoModal();
+  atualizarMateriaisCache().catch(() => {});
 
   function salvarEdicao(id, row) {
     const grupoId = document.getElementById('regra-grupo-id').value;
@@ -203,10 +348,21 @@ document.addEventListener('DOMContentLoaded', () => {
     spinner.style.display = 'inline-block';
     btnSalvar.disabled = true;
 
+    const materiaisSelectInline = row.querySelector('.materiais-input');
+    const materiaisSelecionados = materiaisSelectInline
+      ? Array.from(materiaisSelectInline.selectedOptions)
+          .map(option => Number(option.value))
+          .filter(id => !Number.isNaN(id))
+      : [];
+
+    const diasValue = row.querySelector('.dias-input').value;
+    const diasNumero = diasValue !== '' ? Number(diasValue) : null;
+
     const payload = {
       nome: row.querySelector('.nome-input').value,
-      dias_apos: parseInt(row.querySelector('.dias-input').value, 10),
+      dias_apos: diasNumero,
       descricao: row.querySelector('.descricao-input').value,
+      materiais: materiaisSelecionados,
     };
 
     fetch(`/api/regras/update/${id}/${grupoId}/`, {
@@ -236,19 +392,15 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  const novaRegraModalEl = document.getElementById('novaRegraModal');
-  const novaRegraModal = new bootstrap.Modal(novaRegraModalEl);
-
-  // Reabrir regraModal após fechar novaRegraModal
-  novaRegraModalEl.addEventListener('hidden.bs.modal', function () {
-    
-    regraModal.show();
-  });
-
   // Submissão do formulário
   document.getElementById('nova-regra-form').addEventListener('submit', function (e) {
     e.preventDefault();
     const grupoId = document.getElementById('regra-grupo-id').value;
+    const materiaisSelecionados = materiaisSelect
+      ? Array.from(materiaisSelect.selectedOptions)
+          .map(option => Number(option.value))
+          .filter(id => !Number.isNaN(id))
+      : [];
 
     const submitBtn = document.getElementById('salvarRegraBtn');
     const originalBtnHtml = submitBtn.innerHTML;
@@ -259,7 +411,8 @@ document.addEventListener('DOMContentLoaded', () => {
       nome: document.getElementById('nova-regra-nome').value,
       dias_apos: document.getElementById('nova-regra-dias').value,
       descricao: document.getElementById('nova-regra-descricao').value,
-      grupo: grupoId
+      grupo: grupoId,
+      materiais: materiaisSelecionados,
     };
 
     fetch(`/api/regras/${grupoId}/`, {
@@ -273,7 +426,15 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(res => res.json())
       .then(() => {
         document.getElementById('nova-regra-form').reset();
-        novaRegraModal.hide(); // Ao esconder, o evento 'hidden.bs.modal' reabrirá regraModal
+        if (materiaisSelect) {
+          Array.from(materiaisSelect.options).forEach(option => {
+            option.selected = false;
+          });
+          materiaisSelect.scrollTop = 0;
+        }
+        if (novaRegraModal) {
+          novaRegraModal.hide(); // Ao esconder, o evento 'hidden.bs.modal' reabrirá regraModal
+        }
         showToast('Regra criada com sucesso!', 'success');
         carregarRegras(grupoId); // Atualiza tabela
         carregarGrupoRegras();
@@ -301,7 +462,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('grupo-selecionado-titulo').innerHTML = nomeGrupo;
     document.getElementById('grupo-descricao').innerHTML = descricaoGrupo || 'Sem descrição';
 
-    carregarRegras(grupoId);
+    // carregarRegras(grupoId);
   });
 
   // Função para pegar o CSRF token do cookie

@@ -1151,7 +1151,7 @@ function criarMenuAcoesCalendario(paciente) {
   }));
 
   if (paciente.paciente_ativo) {
-    registrarAcao('Desativar paciente', 'bi-person-dash', () => openDeactivatePatientModal({
+    registrarAcao('Desativar', 'bi-person-dash', () => openDeactivatePatientModal({
       id: paciente.id,
       name: paciente.nome,
     }));
@@ -1162,7 +1162,7 @@ function criarMenuAcoesCalendario(paciente) {
     }));
   }
 
-  registrarAcao('Excluir paciente', 'bi-trash', () => openExcluirPatientModal({
+  registrarAcao('Excluir', 'bi-trash', () => openExcluirPatientModal({
     patient: paciente,
   }));
 
@@ -1426,10 +1426,10 @@ export function renderizarCardPaciente(paciente) {
     }));
     primaryActions.appendChild(registrarConsultaBtn);
 
-    togglePatientBtn.setAttribute('data-tooltip', 'Desativar Paciente');
+    togglePatientBtn.setAttribute('data-tooltip', 'Desativar');
     togglePatientBtn.innerHTML = '<i class="bi bi-person-dash"></i>';
   } else {
-    togglePatientBtn.setAttribute('data-tooltip', 'Reativar Paciente');
+    togglePatientBtn.setAttribute('data-tooltip', 'Reativar');
     togglePatientBtn.innerHTML = '<i class="bi bi-person-check"></i>';
   }
 
@@ -1474,7 +1474,7 @@ export function renderizarCardPaciente(paciente) {
 
   const ExcluirPaciente = document.createElement('button');
     ExcluirPaciente.className = 'btn-icon btn-outline-danger';
-    ExcluirPaciente.setAttribute('data-tooltip', 'Excluir Paciente');
+    ExcluirPaciente.setAttribute('data-tooltip', 'Excluir');
     ExcluirPaciente.innerHTML = '<i class="bi bi-trash"></i>';
     ExcluirPaciente.addEventListener('click', () => openExcluirPatientModal({
       patient: paciente

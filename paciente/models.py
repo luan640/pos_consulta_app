@@ -55,11 +55,11 @@ class RegraLembrete(models.Model):
     ordem = models.IntegerField(help_text="Ordem de prioridade para a regra")
     grupo = models.ForeignKey(GrupoLembrete, on_delete=models.SET_NULL, related_name='regras', null=True)
     created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    # materiais = models.ManyToManyField(
-    #     Material,
-    #     related_name='regras',  # permite material.regras.all()
-    #     blank=True
-    # )
+    materiais = models.ManyToManyField(
+        Material,
+        related_name='regras',  # permite material.regras.all()
+        blank=True
+    )
 
     def __str__(self):
         return f"{self.nome} ({self.dias_apos} dias)"

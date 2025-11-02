@@ -1,0 +1,5 @@
+--- Regras  de envio wpp ---
+
+1. Após registrar o contato, verificar se o próximo contato é < 1 dia, se for, enviar lembrete.
+
+2. Script para rodar todos os dias as 07:00 e varrer tudo que tem para vencer 1 dia antes.
