@@ -514,8 +514,10 @@
                             </div>
                             <div class="mb-3">
                                 <label for="nova-regra-materiais" class="form-label">Materiais (opcional)</label>
-                                <select class="form-select" id="nova-regra-materiais" multiple aria-describedby="nova-regra-materiais-help"></select>
-                                <div id="nova-regra-materiais-help" class="form-text">Selecione os materiais que acompanham esta regra ou deixe em branco.</div>
+                                <div id="nova-regra-materiais" class="materiais-multiselect border rounded p-2 small text-muted" style="max-height: 220px; overflow-y: auto;" aria-describedby="nova-regra-materiais-help" role="group">
+                                    Carregando materiais...
+                                </div>
+                                <div id="nova-regra-materiais-help" class="form-text">Clique nos botões para selecionar os materiais que acompanham esta regra (pode escolher mais de um).</div>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Voltar</button>

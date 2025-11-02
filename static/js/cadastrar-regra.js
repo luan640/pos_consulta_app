@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
   const novaRegraModalEl = document.getElementById('novaRegraModal');
   const novaRegraModal = novaRegraModalEl ? new bootstrap.Modal(novaRegraModalEl) : null;
-  const materiaisSelect = document.getElementById('nova-regra-materiais');
+  const materiaisContainer = document.getElementById('nova-regra-materiais');
 
   let materiaisCache = [];
   let materiaisCacheCarregado = false;
@@ -45,54 +45,97 @@ document.addEventListener('DOMContentLoaded', () => {
     return materiaisCachePromise;
   }
 
-  function carregarMateriaisSelect() {
-    if (!materiaisSelect) {
+  function mostrarMensagemMateriais(container, mensagem, tipo = 'muted') {
+    if (!container) return;
+
+    container.classList.remove('d-flex', 'flex-wrap', 'gap-2');
+    container.classList.remove('materiais-checkbox-group');
+    if (tipo === 'muted') {
+      container.classList.add('text-muted');
+    } else {
+      container.classList.remove('text-muted');
+    }
+    container.innerHTML = '';
+
+    const span = document.createElement('span');
+    span.className = `${tipo === 'danger' ? 'text-danger' : 'text-muted'} small`;
+    span.textContent = mensagem;
+    container.appendChild(span);
+  }
+
+  function renderizarMateriaisCheckbox(container, selecionados = [], prefixo = 'material') {
+    if (!container) return;
+
+    container.innerHTML = '';
+    container.classList.add('materiais-checkbox-group', 'd-flex', 'flex-wrap', 'gap-2');
+    container.classList.remove('text-muted');
+
+    if (!materiaisCache.length) {
+      mostrarMensagemMateriais(container, 'Nenhum material cadastrado.');
       return;
     }
 
-    materiaisSelect.innerHTML = '';
-    const loadingOption = document.createElement('option');
-    loadingOption.disabled = true;
-    loadingOption.textContent = 'Carregando...';
-    materiaisSelect.appendChild(loadingOption);
-    materiaisSelect.disabled = true;
+    const fragment = document.createDocumentFragment();
+
+    materiaisCache.forEach(material => {
+      const inputId = `${prefixo}-${material.id}`;
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.className = 'btn-check';
+      input.id = inputId;
+      input.value = material.id;
+      input.autocomplete = 'off';
+      if (selecionados.includes(Number(material.id))) {
+        input.checked = true;
+      }
+
+      const label = document.createElement('label');
+      label.className = 'btn btn-outline-primary btn-sm materiais-chip me-2 mb-2';
+      label.setAttribute('for', inputId);
+      label.textContent = material.descricao;
+
+      fragment.appendChild(input);
+      fragment.appendChild(label);
+    });
+
+    container.appendChild(fragment);
+  }
+
+  function obterMateriaisSelecionados(container) {
+    if (!container) return [];
+    return Array.from(container.querySelectorAll('input[type="checkbox"]:checked'))
+      .map(input => Number(input.value))
+      .filter(id => !Number.isNaN(id));
+  }
+
+  function limparSelecaoMateriais(container) {
+    if (!container) return;
+    container.querySelectorAll('input[type="checkbox"]').forEach(input => {
+      input.checked = false;
+    });
+  }
+
+  function prepararMateriaisModal() {
+    if (!materiaisContainer) {
+      return;
+    }
+
+    const selecionadosAtuais = obterMateriaisSelecionados(materiaisContainer);
+    mostrarMensagemMateriais(materiaisContainer, 'Carregando materiais...');
 
     atualizarMateriaisCache(true)
-      .then(materiais => {
-        materiaisSelect.innerHTML = '';
-
-        if (!materiais.length) {
-          const option = document.createElement('option');
-          option.disabled = true;
-          option.textContent = 'Nenhum material cadastrado';
-          materiaisSelect.appendChild(option);
-          materiaisSelect.disabled = true;
-          return;
-        }
-
-        materiais.forEach(material => {
-          const option = document.createElement('option');
-          option.value = material.id;
-          option.textContent = material.descricao;
-          materiaisSelect.appendChild(option);
-        });
-
-        materiaisSelect.disabled = false;
+      .then(() => {
+        renderizarMateriaisCheckbox(materiaisContainer, selecionadosAtuais, 'modal-material');
       })
       .catch(err => {
         console.error('Erro ao carregar materiais:', err);
-        materiaisSelect.innerHTML = '';
-        const option = document.createElement('option');
-        option.disabled = true;
-        option.textContent = 'Erro ao carregar materiais';
-        materiaisSelect.appendChild(option);
-        materiaisSelect.disabled = true;
+        mostrarMensagemMateriais(materiaisContainer, 'Erro ao carregar materiais.', 'danger');
       });
   }
 
   if (novaRegraModalEl) {
     novaRegraModalEl.addEventListener('show.bs.modal', () => {
-      carregarMateriaisSelect();
+      prepararMateriaisModal();
     });
 
     novaRegraModalEl.addEventListener('hidden.bs.modal', function () {
@@ -192,7 +235,6 @@ document.addEventListener('DOMContentLoaded', () => {
           const tr = document.createElement('tr');
           tr.dataset.regraId = regra.id;
           tr.dataset.materiaisIds = (regra.materiais_ids || []).join(',');
-          tr.dataset.materiaisJson = JSON.stringify(regra.materiais || []);
 
           tr.innerHTML = `
             <td class="nome"></td>
@@ -249,30 +291,22 @@ document.addEventListener('DOMContentLoaded', () => {
               .filter(Boolean)
               .map(Number);
 
+            let carregamentoOk = true;
             try {
               await atualizarMateriaisCache();
             } catch (error) {
+              carregamentoOk = false;
               console.error('Não foi possível atualizar a lista de materiais:', error);
             }
-
-            const possuiMateriais = materiaisCache.length > 0;
-            const materiaisOptions = possuiMateriais
-              ? materiaisCache.map(material => {
-                  const selected = materiaisIds.includes(Number(material.id)) ? 'selected' : '';
-                  return `<option value="${material.id}" ${selected}>${material.descricao}</option>`;
-                }).join('')
-              : '<option disabled>Nenhum material cadastrado</option>';
-
-            const selectDisabled = possuiMateriais ? '' : 'disabled';
 
             row.innerHTML = `
             <td><input type="text" class="form-control form-control-sm nome-input" value="${nome}"></td>
             <td><input type="number" class="form-control form-control-sm dias-input" value="${dias}"></td>
               <td><input type="text" class="form-control form-control-sm descricao-input" value="${descricao}"></td>
               <td>
-                <select class="form-select form-select-sm materiais-input" multiple ${selectDisabled}>
-                  ${materiaisOptions}
-                </select>
+                <div class="materiais-editor-container border rounded p-2 small text-muted" style="max-height: 200px; overflow-y: auto;">
+                  Carregando materiais...
+                </div>
               </td>
               <td>
                 <button class="btn btn-sm btn-success btn-salvar" title="Salvar">
@@ -283,6 +317,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 </button>
               </td>
             `;
+
+            const editorContainer = row.querySelector('.materiais-editor-container');
+            if (materiaisCache.length) {
+              renderizarMateriaisCheckbox(
+                editorContainer,
+                materiaisIds,
+                `row-${id}-material`
+              );
+            } else if (carregamentoOk) {
+              mostrarMensagemMateriais(editorContainer, 'Nenhum material cadastrado.');
+            } else {
+              mostrarMensagemMateriais(editorContainer, 'Erro ao carregar materiais.', 'danger');
+            }
 
             row.querySelector('.btn-salvar').addEventListener('click', () => salvarEdicao(id, row));
             row.querySelector('.btn-cancelar').addEventListener('click', carregarRegras);
@@ -348,12 +395,8 @@ document.addEventListener('DOMContentLoaded', () => {
     spinner.style.display = 'inline-block';
     btnSalvar.disabled = true;
 
-    const materiaisSelectInline = row.querySelector('.materiais-input');
-    const materiaisSelecionados = materiaisSelectInline
-      ? Array.from(materiaisSelectInline.selectedOptions)
-          .map(option => Number(option.value))
-          .filter(id => !Number.isNaN(id))
-      : [];
+    const materiaisContainerInline = row.querySelector('.materiais-editor-container');
+    const materiaisSelecionados = obterMateriaisSelecionados(materiaisContainerInline);
 
     const diasValue = row.querySelector('.dias-input').value;
     const diasNumero = diasValue !== '' ? Number(diasValue) : null;
@@ -396,11 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('nova-regra-form').addEventListener('submit', function (e) {
     e.preventDefault();
     const grupoId = document.getElementById('regra-grupo-id').value;
-    const materiaisSelecionados = materiaisSelect
-      ? Array.from(materiaisSelect.selectedOptions)
-          .map(option => Number(option.value))
-          .filter(id => !Number.isNaN(id))
-      : [];
+    const materiaisSelecionados = obterMateriaisSelecionados(materiaisContainer);
 
     const submitBtn = document.getElementById('salvarRegraBtn');
     const originalBtnHtml = submitBtn.innerHTML;
@@ -426,11 +465,9 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(res => res.json())
       .then(() => {
         document.getElementById('nova-regra-form').reset();
-        if (materiaisSelect) {
-          Array.from(materiaisSelect.options).forEach(option => {
-            option.selected = false;
-          });
-          materiaisSelect.scrollTop = 0;
+        if (materiaisContainer) {
+          limparSelecaoMateriais(materiaisContainer);
+          materiaisContainer.scrollTop = 0;
         }
         if (novaRegraModal) {
           novaRegraModal.hide(); // Ao esconder, o evento 'hidden.bs.modal' reabrirá regraModal
