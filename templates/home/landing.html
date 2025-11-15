@@ -1,0 +1,385 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LembraPro | Pós-atendimento que encanta pacientes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body>
+    <div class="landing-wrapper">
+        <header class="hero" id="top">
+            <nav class="navbar">
+                <div class="brand">
+                    <img src="{% static 'img/logo.png' %}" alt="LembraPro logo">
+                    <div>
+                        <strong>LembraPro</strong>
+                        <span>Pós-consulta inteligente</span>
+                    </div>
+                </div>
+                <div class="nav-links">
+                    <a href="#features">Funcionalidades</a>
+                    <a href="#como-funciona">Como funciona</a>
+                    <a href="#resultados">Resultados</a>
+                    <a href="#contato" class="btn btn-ghost">Quero conhecer</a>
+                    <a href="{% url 'login' %}" class="btn btn-primary">Entrar</a>
+                </div>
+            </nav>
+
+            <div class="hero-content container">
+                <div class="hero-text fade-up">
+                    <p class="badge">CRM pós-consulta para nutricionistas</p>
+                    <h1>Transforme cada acompanhamento em uma experiência memorável.</h1>
+                    <p class="subtitle">
+                        Automatize lembretes, organize protocolos personalizados e mantenha pacientes engajados entre consultas.
+                        Mostre profissionalismo e aumente a recompra com um fluxo inteligente e humano.
+                    </p>
+                    <div class="hero-ctas">
+                        <a href="#contato" class="btn btn-primary btn-lg">
+                            <i class="bi bi-stars me-2"></i>Quero uma demonstração
+                        </a>
+                        <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg">
+                            <i class="bi bi-play-circle me-2"></i>Ver ambiente de testes
+                        </a>
+                    </div>
+                    <div class="hero-highlights">
+                        <div>
+                            <strong>+42%</strong>
+                            <span>pacientes ativos após 3 meses</span>
+                        </div>
+                        <div>
+                            <strong>8h/sem</strong>
+                            <span>economia média com automações</span>
+                        </div>
+                        <div>
+                            <strong>100%</strong>
+                            <span>histórico centralizado</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-card fade-up delay-1">
+                    <div class="hero-card-header">
+                        <span class="status-pill">Painel ao vivo</span>
+                        <span class="text-muted">Atualizado agora</span>
+                    </div>
+                    <div class="mini-board">
+                        <div>
+                            <p class="label">Pacientes com lembrete hoje</p>
+                            <h3>18</h3>
+                            <small class="text-success"><i class="bi bi-arrow-up"></i> +5 vs. semana passada</small>
+                        </div>
+                        <div>
+                            <p class="label">Planos concluídos</p>
+                            <h3>76%</h3>
+                            <small class="text-muted">+ 12 pacientes celebrando metas</small>
+                        </div>
+                    </div>
+                    <div class="timeline-preview">
+                        <div class="step">
+                            <span class="dot"></span>
+                            <div>
+                                <strong>Reforço hídrico enviado</strong>
+                                <p>Notificação WhatsApp · 09:00</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <span class="dot"></span>
+                            <div>
+                                <strong>Checklist de retorno</strong>
+                                <p>Agendado para 22/08</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <span class="dot"></span>
+                            <div>
+                                <strong>Feedback recebido</strong>
+                                <p>Média 4.9 ⭐</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <span>Quer um painel assim?</span>
+                        <a href="#contato">Vamos conversar <i class="bi bi-arrow-right-short"></i></a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section id="features" class="section container">
+                <div class="section-heading">
+                    <p class="badge">Funcionalidades-chave</p>
+                    <h2>O LembraPro trabalha enquanto você cuida dos seus pacientes.</h2>
+                    <p>Automatizamos o que é repetitivo, mantendo espaço para o cuidado humano.</p>
+                </div>
+                <div class="feature-grid">
+                    <article class="feature-card fade-up">
+                        <div class="icon-circle">
+                            <i class="bi bi-calendar-check"></i>
+                        </div>
+                        <h3>Journeys inteligentes</h3>
+                        <p>Crie fluxos com lembretes, materiais e follow-ups que se adaptam ao perfil de cada paciente.</p>
+                        <ul>
+                            <li>Lembretes multi-canal</li>
+                            <li>Segmentação por objetivos</li>
+                            <li>Monitoramento em tempo real</li>
+                        </ul>
+                    </article>
+                    <article class="feature-card fade-up delay-1">
+                        <div class="icon-circle">
+                            <i class="bi bi-chat-heart"></i>
+                        </div>
+                        <h3>WhatsApp integrado</h3>
+                        <p>Histórico completo dos contatos com marcações de materiais enviados e respostas do paciente.</p>
+                        <ul>
+                            <li>Templates aprovados</li>
+                            <li>Alertas humanizados</li>
+                            <li>Retornos sem fricção</li>
+                        </ul>
+                    </article>
+                    <article class="feature-card fade-up delay-2">
+                        <div class="icon-circle">
+                            <i class="bi bi-graph-up-arrow"></i>
+                        </div>
+                        <h3>Métricas acionáveis</h3>
+                        <p>Saiba quem precisa de atenção antes mesmo de uma mensagem chegar.</p>
+                        <ul>
+                            <li>Progresso por protocolo</li>
+                            <li>Satisfação e NPS</li>
+                            <li>Quedas na adesão</li>
+                        </ul>
+                    </article>
+                </div>
+            </section>
+
+            <section id="como-funciona" class="section workflow">
+                <div class="container">
+                    <div class="section-heading">
+                        <p class="badge">Como funciona</p>
+                        <h2>Em três passos você tem um pós-consulta memorável.</h2>
+                    </div>
+                    <div class="workflow-steps">
+                        <div class="step-card fade-up">
+                            <span class="step-number">1</span>
+                            <h3>Personalize sua jornada</h3>
+                            <p>Importe seus pacientes, defina grupos de lembretes e envie materiais com poucos cliques.</p>
+                        </div>
+                        <div class="step-card fade-up delay-1">
+                            <span class="step-number">2</span>
+                            <h3>Automatize contatos</h3>
+                            <p>O LembraPro dispara e-mails, WhatsApp e SMS no momento certo, sempre com o seu tom de voz.</p>
+                        </div>
+                        <div class="step-card fade-up delay-2">
+                            <span class="step-number">3</span>
+                            <h3>Acompanhe e ajuste</h3>
+                            <p>Veja quem está engajado e ofereça suporte antes do paciente sentir necessidade.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section highlight container">
+                <div class="highlight-card fade-up">
+                    <div>
+                        <p class="badge">Recursos exclusivos</p>
+                        <h2>Organização clínica e comercial no mesmo lugar.</h2>
+                        <p>Dos lembretes pós-consulta ao agendamento do retorno, tudo fica documentado e mensurado.</p>
+                        <ul>
+                            <li><i class="bi bi-check-circle-fill"></i> Biblioteca de materiais com versionamento</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Alertas de pacientes em risco</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Dashboards para equipes e clínicas</li>
+                        </ul>
+                    </div>
+                    <div class="highlight-kpis">
+                        <div>
+                            <strong>3x</strong>
+                            <span>mais reconsultas agendadas</span>
+                        </div>
+                        <div>
+                            <strong>92%</strong>
+                            <span>abertura média dos lembretes</span>
+                        </div>
+                        <div>
+                            <strong>5 min</strong>
+                            <span>para montar um fluxo completo</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="resultados" class="section results">
+                <div class="container">
+                    <div class="section-heading text-center">
+                        <p class="badge">Resultados</p>
+                        <h2>Nutricionistas que já vendem mais acompanhamentos.</h2>
+                    </div>
+                    <div class="results-grid">
+                        <article class="result-card fade-up">
+                            <h3>Atendimento boutique</h3>
+                            <p>“Os lembretes automáticos fazem o paciente sentir que estou sempre presente.”</p>
+                            <div class="author">
+                                <strong>Camila Borges</strong>
+                                <span>Nutricionista clínica · SP</span>
+                            </div>
+                        </article>
+                        <article class="result-card fade-up delay-1">
+                            <h3>Gestão em escala</h3>
+                            <p>“Passei de 40 para 120 pacientes com a mesma equipe e sem perder qualidade.”</p>
+                            <div class="author">
+                                <strong>Equipe Vitta Care</strong>
+                                <span>Clínica especializada</span>
+                            </div>
+                        </article>
+                        <article class="result-card fade-up delay-2">
+                            <h3>Foco na ciência</h3>
+                            <p>“O sistema cuida do operacional e eu fico livre para o planejamento nutricional.”</p>
+                            <div class="author">
+                                <strong>Lucas Andrade</strong>
+                                <span>Nutricionista esportivo</span>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <section id="contato" class="section contact container">
+                <div class="contact-card fade-up">
+                    <div>
+                        <p class="badge">Vamos conversar</p>
+                        <h2>Receba uma apresentação guiada.</h2>
+                        <p>Preencha seus dados e nosso time entra em contato com uma proposta sob medida.</p>
+                        <div class="contact-info">
+                            <div>
+                                <i class="bi bi-patch-check"></i>
+                                Implementação assistida em 7 dias
+                            </div>
+                            <div>
+                                <i class="bi bi-shield-lock"></i>
+                                LGPD & backups automáticos
+                            </div>
+                            <div>
+                                <i class="bi bi-headset"></i>
+                                Suporte humano em horário comercial
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <form id="lead-form" class="lead-form">
+                            {% csrf_token %}
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="lead-name" placeholder="Nome completo" required>
+                                <label for="lead-name">Nome completo</label>
+                            </div>
+                            <div class="form-floating">
+                                <input type="email" class="form-control" id="lead-email" placeholder="email@empresa.com" required>
+                                <label for="lead-email">E-mail profissional</label>
+                            </div>
+                            <div class="form-floating">
+                                <input type="tel" class="form-control" id="lead-whatsapp" placeholder="11999999999" required>
+                                <label for="lead-whatsapp">WhatsApp com DDD</label>
+                            </div>
+                            <button type="submit" id="lead-submit" class="btn btn-primary w-100">
+                                <i class="bi bi-rocket-takeoff me-2"></i>Quero ser cliente
+                            </button>
+                            <p class="small text-muted mt-2">
+                                Enviamos apenas comunicações relevantes. Nada de spam.
+                            </p>
+                            <div id="lead-feedback" class="mt-2 small"></div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <div class="container">
+                <p>© {% now 'Y' %} LembraPro. Pós-atendimento inteligente para nutricionistas.</p>
+                <div>
+                    <a href="#top">Voltar ao topo</a>
+                    <span>•</span>
+                    <a href="{% url 'politica_privacidade' %}" target="_blank">Política de privacidade</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('is-visible');
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                },
+                { threshold: 0.15 }
+            );
+
+            document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+            const form = document.getElementById('lead-form');
+            const feedback = document.getElementById('lead-feedback');
+            const submitBtn = document.getElementById('lead-submit');
+            const csrfInput = form?.querySelector('input[name="csrfmiddlewaretoken"]');
+
+            form?.addEventListener('submit', (event) => {
+                event.preventDefault();
+                if (!csrfInput) {
+                    return;
+                }
+
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                feedback.textContent = '';
+                feedback.classList.remove('text-success', 'text-danger');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Enviando...';
+
+                const payload = {
+                    nome: document.getElementById('lead-name').value.trim(),
+                    email: document.getElementById('lead-email').value.trim(),
+                    whatsapp: document.getElementById('lead-whatsapp').value.trim(),
+                };
+
+                fetch('{% url "solicitar_acesso" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfInput.value,
+                    },
+                    body: JSON.stringify(payload),
+                })
+                    .then(async (response) => {
+                        const data = await response.json();
+                        if (!response.ok) {
+                            throw new Error(data?.erro || 'Não foi possível enviar agora.');
+                        }
+                        feedback.classList.add('text-success');
+                        feedback.textContent = data?.mensagem || 'Recebemos seus dados! Em breve retornamos.';
+                        form.reset();
+                    })
+                    .catch((error) => {
+                        feedback.classList.add('text-danger');
+                        feedback.textContent = error.message;
+                    })
+                    .finally(() => {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="bi bi-rocket-takeoff me-2"></i>Quero ser cliente';
+                    });
+            });
+        });
+    </script>
+</body>
+</html>
