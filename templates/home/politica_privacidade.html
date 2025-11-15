@@ -1,0 +1,171 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Política de Privacidade | LembraPro</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --lp-primary: #0d6efd;
+      --lp-dark: #0f172a;
+    }
+
+    body {
+      background: #f4f6f8;
+      color: #1f2933;
+      min-height: 100vh;
+    }
+
+    .privacy-card {
+      max-width: 960px;
+      margin: 2.5rem auto;
+      background: #fff;
+      border-radius: 1.25rem;
+      box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+      padding: 3rem;
+    }
+
+    .privacy-card h1 {
+      color: var(--lp-dark);
+      font-weight: 700;
+    }
+
+    .privacy-card h2 {
+      font-size: 1.35rem;
+      font-weight: 600;
+      margin-top: 2rem;
+      color: var(--lp-dark);
+    }
+
+    .privacy-card p,
+    .privacy-card li {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: #475467;
+    }
+
+    .privacy-card ul {
+      padding-left: 1.1rem;
+    }
+
+    .badge-section {
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--lp-primary);
+    }
+
+    .toc a {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.5rem 0;
+      color: var(--lp-primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .toc a:hover {
+      color: #0b5ed7;
+      text-decoration: underline;
+    }
+
+    @media (max-width: 576px) {
+      .privacy-card {
+        padding: 1.75rem;
+        margin: 1.25rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="privacy-card">
+    <div class="badge-section mb-3">Última atualização: 10 de novembro de 2025</div>
+    <h1 class="mb-2">Política de Privacidade</h1>
+    <p class="mb-4">
+      Esta Política descreve como o LembraPro coleta, utiliza e protege os dados pessoais de profissionais de nutrição e seus pacientes dentro da plataforma de pós-consulta.
+    </p>
+
+    <div class="toc border rounded-4 p-3 mb-4">
+      <strong class="text-uppercase text-muted small d-block mb-2">Conteúdo</strong>
+      <a href="#coleta"><i class="bi bi-circle"></i>Dados coletados</a>
+      <a href="#uso"><i class="bi bi-circle"></i>Como usamos seus dados</a>
+      <a href="#compartilhamento"><i class="bi bi-circle"></i>Compartilhamento e retenção</a>
+      <a href="#direitos"><i class="bi bi-circle"></i>Direitos de titulares</a>
+      <a href="#seguranca"><i class="bi bi-circle"></i>Segurança e armazenamento</a>
+      <a href="#contato"><i class="bi bi-circle"></i>Contatos e dúvidas</a>
+    </div>
+
+    <section id="coleta">
+      <h2>1. Dados coletados</h2>
+      <p>Coletamos apenas informações necessárias para operar o serviço:</p>
+      <ul>
+        <li><strong>Dados de acesso:</strong> nome, e-mail corporativo e credenciais utilizadas para autenticação.</li>
+        <li><strong>Informações de pacientes:</strong> dados cadastrais fornecidos pelo profissional, histórico de consultas e lembretes cadastrados na plataforma.</li>
+        <li><strong>Registros de uso:</strong> logs técnicos (endereço IP, navegador, data e hora de acesso) usados para auditoria, prevenção de abusos e melhoria contínua.</li>
+      </ul>
+    </section>
+
+    <section id="uso">
+      <h2>2. Como usamos seus dados</h2>
+      <p>Os dados são tratados com base no legítimo interesse do profissional de saúde para:</p>
+      <ul>
+        <li>Administrar contas, autenticar usuários e garantir a continuidade do serviço.</li>
+        <li>Gerar lembretes automatizados, agendas e registros de contato pós-consulta.</li>
+        <li>Customizar comunicações transacionais, como alertas de pacientes ou notificações operacionais.</li>
+        <li>Cumprir obrigações legais, como responder a solicitações de autoridades competentes.</li>
+      </ul>
+    </section>
+
+    <section id="compartilhamento">
+      <h2>3. Compartilhamento e retenção</h2>
+      <p>Não comercializamos dados com terceiros. Eventuais compartilhamentos ocorrem apenas quando:</p>
+      <ul>
+        <li>Há prestação de serviços essenciais (ex.: hospedagem, provedores de e-mail) sob contratos que exigem confidencialidade.</li>
+        <li>For necessário para cumprir determinações legais ou proteger direitos do LembraPro e de seus usuários.</li>
+      </ul>
+      <p>Os dados são mantidos pelo tempo em que o profissional possuir conta ativa. Após o encerramento, removemos ou anonimizamos as informações, exceto quando a lei exigir retenção por prazo superior.</p>
+    </section>
+
+    <section id="direitos">
+      <h2>4. Direitos de titulares</h2>
+      <p>Conforme a Lei Geral de Proteção de Dados (LGPD), você e seus pacientes podem:</p>
+      <ul>
+        <li>Solicitar confirmação e acesso às informações tratadas.</li>
+        <li>Corrigir dados incompletos, inexatos ou desatualizados.</li>
+        <li>Solicitar a anonimização, bloqueio ou eliminação de dados desnecessários.</li>
+        <li>Revogar consentimentos concedidos e solicitar portabilidade, quando aplicável.</li>
+      </ul>
+      <p>Pedidos podem ser feitos via e-mail indicado abaixo e serão atendidos dentro dos prazos legais.</p>
+    </section>
+
+    <section id="seguranca">
+      <h2>5. Segurança da informação</h2>
+      <p>Adotamos práticas alinhadas ao mercado para resguardar os dados armazenados, incluindo:</p>
+      <ul>
+        <li>Criptografia em repouso e em trânsito para registros sensíveis.</li>
+        <li>Autenticação com múltiplos fatores opcionais e controles de acesso baseados em perfil.</li>
+        <li>Backups redundantes e monitoramento pró-ativo para detecção de incidentes.</li>
+        <li>Políticas internas de confidencialidade e treinamento contínuo da equipe.</li>
+      </ul>
+    </section>
+
+    <section id="contato">
+      <h2>6. Fale com o encarregado</h2>
+      <p>Para dúvidas, solicitações ou exercícios de direitos, entre em contato:</p>
+      <ul class="list-unstyled">
+        <li><i class="bi bi-envelope text-primary me-2"></i>lembrapro@gmail.com</li>
+      </ul>
+      <p>Responderemos em até 10 dias úteis, conforme previsto pela LGPD.</p>
+    </section>
+
+    <footer class="mt-4 pt-3 border-top text-muted small">
+      © {% now "Y" %} LembraPro. Todos os direitos reservados.
+    </footer>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

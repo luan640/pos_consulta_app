@@ -93,7 +93,34 @@
       </div>
 
       <div class="login-footer">
-        <p>Não tem uma conta? <a href="#" class="text-primary">Solicite acesso</a></p>
+        <p>Não tem uma conta?
+          <button type="button" class="btn btn-link p-0 align-baseline text-primary" id="toggle-access-request">
+            Solicite acesso
+          </button>
+        </p>
+        <div id="access-request-card" class="card border border-primary-subtle shadow-sm mt-3 d-none">
+          <div class="card-body">
+            <h2 class="h6 mb-3 text-primary">Receba contato do nosso time</h2>
+            <form id="access-request-form">
+              <div class="mb-3">
+                <label for="access-name" class="form-label small text-muted">Nome completo</label>
+                <input type="text" class="form-control" id="access-name" placeholder="Seu nome" required>
+              </div>
+              <div class="mb-3">
+                <label for="access-email" class="form-label small text-muted">E-mail profissional</label>
+                <input type="email" class="form-control" id="access-email" placeholder="voce@gmail.com" required>
+              </div>
+              <div class="mb-3">
+                <label for="access-whatsapp" class="form-label small text-muted">WhatsApp com DDD</label>
+                <input type="tel" class="form-control" id="access-whatsapp" placeholder="11999999999" required>
+              </div>
+              <button type="submit" class="btn btn-outline-primary w-100" id="access-request-submit">
+                <i class="bi bi-send me-1"></i>Enviar pedido
+              </button>
+              <div class="form-text mt-2" id="access-request-feedback"></div>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -178,6 +205,70 @@
             }
           }, 500);
         }, 5000);
+      });
+
+      // Solicite acesso toggle + envio
+      const toggleAccessBtn = document.getElementById('toggle-access-request');
+      const accessCard = document.getElementById('access-request-card');
+      const accessForm = document.getElementById('access-request-form');
+      const feedbackEl = document.getElementById('access-request-feedback');
+      const accessSubmit = document.getElementById('access-request-submit');
+      const accessNameInput = document.getElementById('access-name');
+      const accessEmailInput = document.getElementById('access-email');
+      const accessWhatsappInput = document.getElementById('access-whatsapp');
+      const csrfTokenInput = document.querySelector('#login-form input[name="csrfmiddlewaretoken"]');
+      const csrfToken = csrfTokenInput ? csrfTokenInput.value : '';
+
+      toggleAccessBtn?.addEventListener('click', () => {
+        accessCard?.classList.toggle('d-none');
+        if (!accessCard?.classList.contains('d-none')) {
+          accessNameInput?.focus();
+        }
+      });
+
+      accessForm?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (!accessForm.checkValidity()) {
+          accessForm.reportValidity();
+          return;
+        }
+
+        feedbackEl.textContent = '';
+        feedbackEl.classList.remove('text-success', 'text-danger');
+        accessSubmit.disabled = true;
+        accessSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Enviando...';
+
+        const payload = {
+          nome: (accessNameInput?.value || '').trim(),
+          email: (accessEmailInput?.value || '').trim(),
+          whatsapp: (accessWhatsappInput?.value || '').trim(),
+        };
+
+        fetch('{% url "solicitar_acesso" %}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+          },
+          body: JSON.stringify(payload),
+        })
+          .then(async (response) => {
+            const data = await response.json();
+            if (!response.ok) {
+              throw new Error(data?.erro || 'Não foi possível enviar seu pedido agora.');
+            }
+            feedbackEl.classList.add('text-success');
+            feedbackEl.textContent = data.mensagem || 'Recebemos seus dados! Em breve falaremos com você.';
+            accessForm.reset();
+          })
+          .catch((error) => {
+            feedbackEl.classList.add('text-danger');
+            feedbackEl.textContent = error.message;
+          })
+          .finally(() => {
+            accessSubmit.disabled = false;
+            accessSubmit.innerHTML = '<i class="bi bi-send me-1"></i>Enviar pedido';
+          });
       });
     });
   </script>

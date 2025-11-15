@@ -24,6 +24,14 @@ def home(request):
     contatos = Paciente.objects.filter(dono=request.user)
     return render(request, 'home/home.html', {'contatos': contatos})
 
+
+def politica_privacidade(request):
+    """
+    Página institucional com as diretrizes de privacidade disponibilizada
+    publicamente para visitantes, independente de autenticação.
+    """
+    return render(request, 'home/politica_privacidade.html')
+
 @login_required
 def listar_pacientes_com_consultas(request):
     pacientes = (

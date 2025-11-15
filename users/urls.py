@@ -1,12 +1,17 @@
 from django.urls import path
-from .views import CustomLoginView
+from .views import CustomLoginView, solicitar_acesso
 from django.contrib.auth.views import LogoutView
 from django.contrib.auth import views as auth_views
 
 # login e logout
 urlpatterns = [
     path('login/', CustomLoginView.as_view(), name='login'),
-    path('logout/', LogoutView.as_view(), name='logout'),
+    path(
+        'logout/',
+        LogoutView.as_view(next_page='http://127.0.0.1:8000/login/'),
+        name='logout'
+    ),
+    path('solicitar-acesso/', solicitar_acesso, name='solicitar_acesso'),
 
 ]
 
@@ -17,4 +22,3 @@ urlpatterns += [
     path('senha/resetar/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='users/password_reset_confirm.html'), name='password_reset_confirm'),
     path('senha/resetar/completo/', auth_views.PasswordResetCompleteView.as_view(template_name='users/password_reset_complete.html'), name='password_reset_complete'),
 ]
-

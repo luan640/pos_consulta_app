@@ -30,3 +30,18 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+
+class AccessRequest(models.Model):
+    nome = models.CharField(max_length=255)
+    email = models.EmailField()
+    whatsapp = models.CharField(max_length=20)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-criado_em',)
+        verbose_name = 'Solicitação de acesso'
+        verbose_name_plural = 'Solicitações de acesso'
+
+    def __str__(self):
+        return f'{self.nome} ({self.email})'

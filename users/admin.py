@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser
+from .models import CustomUser, AccessRequest
 from django.forms import ModelForm
 
 class CustomUserAdmin(UserAdmin):
@@ -22,4 +22,11 @@ class CustomUserAdmin(UserAdmin):
         ),
     )
 
+class AccessRequestAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'email', 'whatsapp', 'criado_em')
+    search_fields = ('nome', 'email', 'whatsapp')
+    ordering = ('-criado_em',)
+
+
 admin.site.register(CustomUser, CustomUserAdmin)
+admin.site.register(AccessRequest, AccessRequestAdmin)
