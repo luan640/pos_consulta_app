@@ -32,6 +32,13 @@ def politica_privacidade(request):
     """
     return render(request, 'home/politica_privacidade.html')
 
+
+def termos_servico(request):
+    """
+    Termos de Serviço descrevendo regras de uso da plataforma para visitantes.
+    """
+    return render(request, 'home/termos_servico.html')
+
 @login_required
 def listar_pacientes_com_consultas(request):
     pacientes = (

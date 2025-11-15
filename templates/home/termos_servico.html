@@ -1,0 +1,240 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Termos de Serviço | LembraPro</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --lp-primary: #6c63ff;
+      --lp-dark: #101828;
+    }
+
+    body {
+      background: linear-gradient(135deg, #f5f7ff, #f0f4ff);
+      color: #1f2933;
+      min-height: 100vh;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .terms-card {
+      max-width: 960px;
+      margin: 2.5rem auto;
+      background: #fff;
+      border-radius: 1.5rem;
+      box-shadow: 0 30px 80px rgba(15, 23, 42, 0.12);
+      padding: 3.5rem;
+      border: 1px solid rgba(108, 99, 255, 0.2);
+    }
+
+    .terms-card h1 {
+      color: var(--lp-dark);
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .terms-card h2 {
+      font-size: 1.35rem;
+      font-weight: 600;
+      margin-top: 2rem;
+      margin-bottom: 0.75rem;
+      color: var(--lp-dark);
+    }
+
+    .terms-card p,
+    .terms-card li {
+      font-size: 1rem;
+      line-height: 1.7;
+      color: #475467;
+    }
+
+    .terms-card ul {
+      padding-left: 1.15rem;
+    }
+
+    .badge-section {
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--lp-primary);
+    }
+
+    .toc {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.5rem;
+    }
+
+    .toc a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0;
+      color: var(--lp-primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .toc a:hover {
+      color: #4d46c8;
+      text-decoration: underline;
+    }
+
+    .info-box {
+      border-left: 4px solid var(--lp-primary);
+      background: rgba(108, 99, 255, 0.08);
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0;
+    }
+
+    @media (max-width: 576px) {
+      .terms-card {
+        padding: 1.75rem;
+        margin: 1.25rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="terms-card">
+    <div class="badge-section mb-3">Última atualização: 15 de novembro de 2025</div>
+    <h1>Termos de Serviço LembraPro</h1>
+    <p class="mb-4">
+      Estes Termos estabelecem as condições de uso da plataforma LembraPro (“Serviço”) por profissionais e empresas de nutrição.
+      Ao criar uma conta ou utilizar qualquer funcionalidade, você concorda integralmente com este documento.
+    </p>
+
+    <div class="toc border rounded-4 p-3 mb-4">
+      <strong class="text-uppercase text-muted small d-block mb-2">Conteúdo</strong>
+      <a href="#aceite"><i class="bi bi-circle"></i>Aceite e elegibilidade</a>
+      <a href="#contas"><i class="bi bi-circle"></i>Contas e credenciais</a>
+      <a href="#uso"><i class="bi bi-circle"></i>Uso permitido</a>
+      <a href="#responsabilidades"><i class="bi bi-circle"></i>Responsabilidades do profissional</a>
+      <a href="#pagamentos"><i class="bi bi-circle"></i>Planos e pagamentos</a>
+      <a href="#dados"><i class="bi bi-circle"></i>Proteção de dados</a>
+      <a href="#restricoes"><i class="bi bi-circle"></i>Restrições e suspensões</a>
+      <a href="#rescisao"><i class="bi bi-circle"></i>Rescisão e exportação</a>
+      <a href="#suporte"><i class="bi bi-circle"></i>Suporte e contato</a>
+      <a href="#geral"><i class="bi bi-circle"></i>Disposições gerais</a>
+    </div>
+
+    <section id="aceite">
+      <h2>1. Aceite e elegibilidade</h2>
+      <p>
+        O Serviço é destinado a profissionais registrados em conselhos de nutrição ou pessoas jurídicas que prestam serviços nutricionais.
+        Ao aceitar estes Termos, você declara que:
+      </p>
+      <ul>
+        <li>Possui autorização para contratar o LembraPro em nome próprio ou da organização representada;</li>
+        <li>Fornecerá informações verdadeiras e manterá seus dados cadastrais atualizados;</li>
+        <li>Responderá pelo cumprimento da legislação aplicável, incluindo o Código de Ética profissional e a LGPD.</li>
+      </ul>
+    </section>
+
+    <section id="contas">
+      <h2>2. Contas e credenciais</h2>
+      <p>
+        Cada usuário recebe credenciais únicas e intransferíveis. É sua responsabilidade manter a confidencialidade dessas informações
+        e notificar o LembraPro caso identifique acessos não autorizados.
+      </p>
+      <div class="info-box">
+        <strong>Dica:</strong> utilize autenticação em dois fatores e políticas internas de senha para reduzir riscos.
+      </div>
+    </section>
+
+    <section id="uso">
+      <h2>3. Uso permitido da plataforma</h2>
+      <p>Você poderá utilizar o Serviço para:</p>
+      <ul>
+        <li>Gerenciar pacientes, protocolos, lembretes e materiais pós-consulta;</li>
+        <li>Registrar contatos, consultas e anotações clínicas ligadas ao acompanhamento nutricional;</li>
+        <li>Enviar comunicações transacionais alinhadas ao propósito do atendimento contratado.</li>
+      </ul>
+      <p>
+        É proibido usar o LembraPro para fins que violem as leis vigentes, infrações éticas ou envio de mensagens promocionais
+        em massa sem consentimento prévio.
+      </p>
+    </section>
+
+    <section id="responsabilidades">
+      <h2>4. Responsabilidades do profissional</h2>
+      <ul>
+        <li>Obter e registrar bases legais para tratar dados de pacientes na plataforma;</li>
+        <li>Garantir que os materiais enviados estejam de acordo com regulamentações sanitárias;</li>
+        <li>Responder por textos e mensagens configurados em automações, inclusive perante órgãos fiscalizadores;</li>
+        <li>Manter backups locais caso deseje arquivos adicionais ao fornecido pelo LembraPro na saída.</li>
+      </ul>
+    </section>
+
+    <section id="pagamentos">
+      <h2>5. Planos, cobranças e renovação</h2>
+      <p>
+        O acesso completo depende de assinatura paga. Os valores, periodicidade e limites de uso são descritos na proposta comercial.
+        A renovação é automática, salvo cancelamento solicitado com antecedência mínima de 10 dias do próximo ciclo.
+      </p>
+      <p>
+        Em caso de inadimplência, reservamo-nos o direito de suspender o acesso até a regularização, preservando os dados por até 90 dias.
+      </p>
+    </section>
+
+    <section id="dados">
+      <h2>6. Proteção e privacidade de dados</h2>
+      <p>
+        O tratamento das informações segue a nossa <a href="{% url 'politica_privacidade' %}" target="_blank">Política de Privacidade</a>.
+        O LembraPro atua como operador de dados pessoais, processando-os conforme instruções do controlador (profissional ou clínica).
+      </p>
+      <ul>
+        <li>Implementamos controles técnicos e organizacionais compatíveis com o porte do Serviço;</li>
+        <li>Não vendemos nem compartilhamos dados com terceiros sem respaldo legal;</li>
+        <li>Atendemos solicitações de titulares mediante comprovação e instruções do contratante.</li>
+      </ul>
+    </section>
+
+    <section id="restricoes">
+      <h2>7. Restrições, suspensão e auditoria</h2>
+      <p>
+        Podemos suspender ou limitar o uso caso sejam identificadas práticas que coloquem o sistema, outros clientes ou titulares em risco,
+        incluindo uso abusivo de APIs, tentativas de invasão e envio de comunicações ilícitas.
+      </p>
+    </section>
+
+    <section id="rescisao">
+      <h2>8. Rescisão e portabilidade</h2>
+      <p>
+        Você pode solicitar o cancelamento a qualquer momento pelos canais de suporte. Após a confirmação:
+      </p>
+      <ul>
+        <li>Disponibilizamos exportação em formato aberto dos dados cadastrados;</li>
+        <li>Removemos ou anonimizamos registros após o prazo contratual e legal aplicável;</li>
+        <li>Valores pagos não são reembolsáveis, exceto se previsto em contrato específico.</li>
+      </ul>
+    </section>
+
+    <section id="suporte">
+      <h2>9. Suporte e contato</h2>
+      <p>
+        Oferecemos suporte humano em horário comercial via e-mail e canais oficiais. Dúvidas sobre estes Termos
+        podem ser enviadas para <a href="mailto:lembrapro@gmail.com">lembrapro@gmail.com</a>.
+      </p>
+    </section>
+
+    <section id="geral">
+      <h2>10. Disposições gerais</h2>
+      <ul>
+        <li>Estes Termos podem ser atualizados para refletir evoluções do Serviço. Comunicaremos alterações relevantes.</li>
+        <li>A tolerância quanto a qualquer cláusula não implica renúncia ou novação.</li>
+        <li>O foro eleito é o da Comarca de São Paulo/SP, salvo previsão contratual diversa.</li>
+      </ul>
+    </section>
+
+    <footer class="mt-4 pt-3 border-top text-muted small">
+      © {% now "Y" %} LembraPro. Todos os direitos reservados.
+    </footer>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
