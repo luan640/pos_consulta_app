@@ -72,20 +72,6 @@ class Lembrete(models.Model):
     concluido = models.BooleanField(default=False)
     criado_em = models.DateTimeField(auto_now_add=True)
     contato_em = models.DateField(null=True, blank=True)
-    class WhatsappStatus(models.TextChoices):
-        PENDENTE = ("pendente", "Pendente")
-        ENVIADO = ("enviado", "Enviado")
-        ERRO = ("erro", "Erro")
-        SEM_TELEFONE = ("sem_telefone", "Sem telefone")
-
-    whatsapp_status = models.CharField(
-        max_length=20,
-        choices=WhatsappStatus,
-        default=WhatsappStatus.PENDENTE,
-    )
-    whatsapp_disparado_em = models.DateTimeField(null=True, blank=True)
-    whatsapp_tentativas = models.PositiveIntegerField(default=0)
-    whatsapp_ultimo_erro = models.TextField(blank=True)
 
     def __str__(self):
         return f"Lembrete para {self.paciente.nome} em {self.data_lembrete}"
