@@ -1047,7 +1047,7 @@ def verificar_e_disparar_mensagem(request):
     lembretes = Lembrete.objects.select_related('regra', 'paciente').prefetch_related('regra__materiais').filter(
         whatsapp_status__in=('pendente', 'erro', None), 
         data_lembrete=data_alvo
-    )    
+    ).order_by('data_lembrete')[:5]
     
     if lembretes.exists():
         for lembrete in lembretes:
