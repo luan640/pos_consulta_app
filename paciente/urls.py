@@ -1,10 +1,12 @@
 from django.urls import path
 from . import views
+from paciente.webhook_view import webhook
 
 urlpatterns = [
     path('home/', views.home, name='home'),
     path('politica-de-privacidade/', views.politica_privacidade, name='politica_privacidade'),
     path('termos-de-servico/', views.termos_servico, name='termos_servico'),
+    path('webhook/', webhook, name='webhook'),
 ]
 
 urlpatterns += [
@@ -38,5 +40,7 @@ urlpatterns += [
     path('api/editar-paciente/<int:pk>/', views.atualizar_paciente, name='atualizar_paciente'),
 
     path('api/verificar-cadastro/', views.verifica_se_tem_cadastrado, name='verifica_se_tem_cadastrado'),
+    
+    path('api/verificar-e-disparar-mensagem/', views.verificar_e_disparar_mensagem, name='verificar_e_disparar_mensagem'),
     
 ]

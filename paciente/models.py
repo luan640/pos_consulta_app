@@ -72,6 +72,7 @@ class Lembrete(models.Model):
     concluido = models.BooleanField(default=False)
     criado_em = models.DateTimeField(auto_now_add=True)
     contato_em = models.DateField(null=True, blank=True)
+
     class WhatsappStatus(models.TextChoices):
         PENDENTE = ("pendente", "Pendente")
         ENVIADO = ("enviado", "Enviado")
@@ -86,6 +87,37 @@ class Lembrete(models.Model):
     whatsapp_disparado_em = models.DateTimeField(null=True, blank=True)
     whatsapp_tentativas = models.PositiveIntegerField(default=0)
     whatsapp_ultimo_erro = models.TextField(blank=True)
+
+    # NOVOS CAMPOS RELACIONADOS AO WHATSAPP / WEBHOOK
+    # ID da mensagem no WhatsApp (wamid...)
+    whatsapp_message_id = models.CharField(
+        max_length=255,
+        blank=True,
+        db_index=True,
+        help_text="ID da mensagem retornado pela API do WhatsApp (messages[0].id).",
+    )
+
+    # Quando houve alguma resposta / interação relevante
+    whatsapp_respondido_em = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Data/hora em que o paciente respondeu ou interagiu pela primeira vez.",
+    )
+
+    # ID da resposta (por ex: ID do botão clicado)
+    whatsapp_resposta_id = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="ID da resposta/interação (ex: button_reply.id).",
+    )
+
+    # Texto da resposta (título do botão ou mensagem digitada)
+    whatsapp_resposta_texto = models.TextField(
+        blank=True,
+        help_text="Conteúdo da resposta (ex: título do botão ou mensagem de texto).",
+    )
+
+    tipo_mensagem = models.CharField(max_length=50, null=True, blank=True) # livre ou template (free ou paga)
 
     def __str__(self):
         return f"Lembrete para {self.paciente.nome} em {self.data_lembrete}"
@@ -116,3 +148,9 @@ class AnotacaoContato(models.Model):
 
     def __str__(self):
         return f"Anotação para {self.contato.paciente.nome} em {self.contato.data_contato}"
+
+class InteracaoWhatsapp(models.Model):
+    
+    criado_em = models.DateTimeField(auto_now_add=True)  # data/hora da interação
+    telefone = models.CharField(max_length=20)           # ex: 5585999012345
+    mensagem = models.TextField()                        # conteúdo da msg

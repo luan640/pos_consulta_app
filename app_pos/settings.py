@@ -198,18 +198,3 @@ LOGIN_URL = '/login/'
 #     },
 # }
 
-# Celery / Redis
-CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://default:YRxozo8dRIySt7t1PRUh60GsjzMbHiHC@redis-19871.crce216.sa-east-1-2.ec2.cloud.redislabs.com:19871")
-CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default=CELERY_BROKER_URL)
-CELERY_ACCEPT_CONTENT = ["json"]
-CELERY_TASK_SERIALIZER = "json"
-CELERY_RESULT_SERIALIZER = "json"
-CELERY_TIMEZONE = TIME_ZONE
-CELERY_ENABLE_UTC = False
-CELERY_BEAT_SCHEDULE = {
-    "disparar_whatsapp_programados": {
-        "task": "paciente.tasks.disparar_whatsapp_programados",
-        "schedule": 60,
-    },
-}
-
