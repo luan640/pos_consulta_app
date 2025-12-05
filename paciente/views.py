@@ -20,8 +20,9 @@ from paciente.services import _send_whatsapp_template, _send_whatsapp_message, v
 
 import json
 import logging
-from datetime import timedelta, datetime, date
+from datetime import timedelta, datetime, date, time
 import environ
+import random
 
 logger = logging.getLogger(__name__)
 env = environ.Env()
@@ -1085,6 +1086,9 @@ def verificar_e_disparar_mensagem(request):
                     materiais = materiais_list if len(materiais_list)>0 else ["Sem material programado"],
                     lembrete=lembrete,
                 )
+
+            time_sleep = random.uniform(3, 5)
+            time.sleep(time_sleep)
 
         return HttpResponse(resp)
     else:
