@@ -20,7 +20,8 @@ from paciente.services import _send_whatsapp_template, _send_whatsapp_message, v
 
 import json
 import logging
-from datetime import timedelta, datetime, date, time
+from datetime import timedelta, datetime, date
+import time
 import environ
 import random
 
