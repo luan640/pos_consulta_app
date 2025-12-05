@@ -295,7 +295,7 @@ def _send_whatsapp_message(
                     f"Olá, *{nome_nutri or 'Profissional'}*! 👋\n"
                     f"Passando aqui só para te lembrar de entrar em contato com o(a) paciente *{nome_paciente}*.\n\n"
                     f"📞 Telefone: *{tel_paciente}*\n\n"
-                    f"🩺 Ação necessária: realizar *{acao}*.\n\n"
+                    f"🩺 Ação necessária: *{acao}*.\n\n"
                     "📄 Materiais para enviar:\n\n"
                     f"{materiais_msg}\n\n"
                     "Se puder mandar mensagem para ele(a) ainda hoje, ótimo! "
