@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from datetime import date
-from django.http import JsonResponse, HttpResponseNotAllowed
+from django.http import JsonResponse, HttpResponseNotAllowed, HttpResponse
 from django.db.models import Max, Min, Prefetch, Q, F
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.dateparse import parse_date
@@ -9,15 +9,22 @@ from django.utils.timezone import now
 from django.views.decorators.http import require_http_methods, require_POST
 from django.shortcuts import get_object_or_404
 from django.db import transaction, IntegrityError
+from django.utils import timezone
 
 from .models import (
     Paciente, Lembrete, ContatoNutricionista,
     AnotacaoContato, Material, MaterialEnviado,
     RegraLembrete, Consulta, GrupoLembrete
 )
+from paciente.services import _send_whatsapp_template, _send_whatsapp_message, verifica_janela_24_hrs, registrar_contato_service
 
 import json
+import logging
 from datetime import timedelta, datetime, date
+import environ
+
+logger = logging.getLogger(__name__)
+env = environ.Env()
 
 @login_required
 def home(request):
@@ -258,87 +265,31 @@ def cadastrar_paciente(request):
 @csrf_exempt
 @login_required
 def registrar_contato(request):
-    if request.method != 'POST':
-        return JsonResponse({'erro': 'Método não permitido'}, status=405)
+
+    if request.method != "POST":
+        return JsonResponse({"erro": "Método não permitido"}, status=405)
 
     data = json.loads(request.body)
-    paciente_id = data.get('paciente_id')
-    tipo_contato = data.get('tipo', None)  # ex: "first" ou "followup"
-    anotacao_texto = data.get('anotacao', '')
-    materiais = data.get('materiais', [])  # lista de strings
+    paciente_id = data.get("paciente_id")
+    tipo = data.get("tipo")
+    anotacao = data.get("anotacao", "")
+    materiais = data.get("materiais", [])
 
     if not paciente_id:
-        return JsonResponse({'erro': 'Paciente é obrigatório'}, status=400)
-
-    # verificar se existe alguma regra de lembrete
-    if not RegraLembrete.objects.filter(nutricionista=request.user).exists():
-        return JsonResponse({'erro': 'Crie uma regra para registrar contato.'}, status=400)
+        return JsonResponse({"erro": "Paciente é obrigatório"}, status=400)
 
     try:
-        paciente = Paciente.objects.get(id=paciente_id, dono=request.user)
-    except Paciente.DoesNotExist:
-        return JsonResponse({'erro': 'Paciente não encontrado'}, status=404)
+        result = registrar_contato_service(
+            usuario=request.user,
+            paciente_id=paciente_id,
+            tipo_contato=tipo,
+            anotacao_texto=anotacao,
+            materiais=materiais,
+        )
+    except ValueError as e:
+        return JsonResponse({"erro": str(e)}, status=400)
 
-    # 1. Criar contato
-    contato = ContatoNutricionista.objects.create(
-        paciente=paciente,
-        data_contato=now().date(),
-        tipo=tipo_contato
-    )
-
-    # 2. Criar anotação
-    anotacao = AnotacaoContato.objects.create(
-        contato=contato,
-        texto=anotacao_texto
-    )
-
-    # 3. Associar materiais (criar se necessário)
-    for nome in materiais:
-        material_obj, _ = Material.objects.get_or_create(descricao=nome, dono=request.user)
-        anotacao.material_enviado.add(material_obj)
-
-    anotacao.save()
-
-    # 4. Marcar lembrete atual como concluído (se existir)
-    lembrete_atual = Lembrete.objects.filter(paciente=paciente, concluido=False).order_by('data_lembrete').first()
-    if lembrete_atual:
-        lembrete_atual.concluido = True
-        lembrete_atual.contato_em = now().date()
-        lembrete_atual.save()
-
-        # 5. Determinar próxima regra
-        regra_atual = lembrete_atual.regra
-        nova_regra = None
-
-        if regra_atual:
-            regras = list(RegraLembrete.objects.filter(nutricionista=request.user, grupo=paciente.grupo_lembrete).order_by('ordem'))
-            regras_ordenadas = {r.ordem: r for r in regras}
-            proxima_ordem = regra_atual.ordem + 1
-
-            if proxima_ordem in regras_ordenadas:
-                nova_regra = regras_ordenadas[proxima_ordem]
-            else:
-                nova_regra = regra_atual  # repete a última regra se não houver próxima
-
-        if nova_regra:
-            nova_data = now().date() + timedelta(days=nova_regra.dias_apos)
-            # Verifica se já existe
-            existe = Lembrete.objects.filter(paciente=paciente, data_lembrete=nova_data, concluido=False).exists()
-            if not existe:
-                Lembrete.objects.create(
-                    paciente=paciente,
-                    regra=nova_regra,
-                    data_lembrete=nova_data,
-                    texto=nova_regra.descricao,
-                    contato_em=None
-                )
-
-            return JsonResponse({
-                'mensagem': 'Contato registrado com sucesso',
-                'proximo_lembrete': nova_data.strftime('%d/%m/%Y')
-            })
-
-    return JsonResponse({'mensagem': 'Contato registrado com sucesso', 'proximo_lembrete': None})
+    return JsonResponse(result)
 
 @login_required
 def paciente_detalhe(request, pk):
@@ -1087,5 +1038,55 @@ def filtrar_home(request):
     nome = request.GET.get('nome_paciente')
     status_lembrete = request.GET.get('status_lembrete')
 
-
+@require_http_methods(['GET'])
+def verificar_e_disparar_mensagem(request):
     
+    hoje = timezone.now().date()
+    data_alvo = (hoje-timedelta(days=1)) + timedelta(days=1)
+    
+    print(data_alvo)
+
+    lembretes = Lembrete.objects.select_related('regra', 'paciente').prefetch_related('regra__materiais').filter(
+        whatsapp_status__in=('pendente', 'erro', None), 
+        data_lembrete=data_alvo
+    )    
+    
+    if lembretes.exists():
+        for lembrete in lembretes:
+            ja_passou_24h = verifica_janela_24_hrs(lembrete.paciente.dono_id, lembrete.paciente.dono.telefone)
+            materiais = lembrete.regra.materiais.all()
+            
+            materiais_list = []
+
+            if materiais.exists():
+                for material in materiais:
+                    print(material)
+                    materiais_list.append(material.descricao)
+            
+            if ja_passou_24h:
+
+                resp = _send_whatsapp_template(    
+                    tel_nutri = lembrete.paciente.dono.telefone,
+                    nome_nutri = lembrete.paciente.dono.nome,
+                    nome_paciente = lembrete.paciente.nome,
+                    tel_paciente = lembrete.paciente.telefone,
+                    acao = lembrete.texto,
+                    materiais = materiais_list if len(materiais_list)>0 else ["Sem material programado"],
+                    lembrete=lembrete,
+                )
+
+            else:
+
+                resp = _send_whatsapp_message(    
+                    tel_nutri = lembrete.paciente.dono.telefone,
+                    nome_nutri = lembrete.paciente.dono.nome,
+                    nome_paciente = lembrete.paciente.nome,
+                    tel_paciente = lembrete.paciente.telefone,
+                    acao = lembrete.texto,
+                    materiais = materiais_list if len(materiais_list)>0 else ["Sem material programado"],
+                    lembrete=lembrete,
+                )
+
+    return HttpResponse(resp)
+
+

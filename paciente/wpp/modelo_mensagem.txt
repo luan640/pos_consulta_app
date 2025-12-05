@@ -1,4 +1,26 @@
-Modelos de mensagem
+Olá, *{{1}}*! 👋
+Passando aqui só para te lembrar de entrar em contato com o(a) paciente *{{2}}*.
 
-1. Modelo para lembrar que tem um contato a fazer no dia posterior.
+📞 Telefone: *{{5}}*
 
+🩺 Ação necessária: realizar *{{3}}*.
+
+📄 Materiais para enviar: 
+
+{{4}}
+
+Se puder mandar mensagem para ele(a) ainda hoje, ótimo! Assim mantemos o acompanhamento bem alinhado e contínuo. 💚✨
+
+Olá, *Luan*! 👋
+Passando aqui só para te lembrar de entrar em contato com o(a) paciente *Rita*.
+
+📞 Telefone: *85999012483*
+
+🩺 Ação necessária: realizar *Enviar documentos*.
+
+📄 Materiais para enviar: 
+
+1. Enviar ebook
+2. Marcar retorno
+
+Se puder mandar mensagem para ele(a) ainda hoje, ótimo! Assim mantemos o acompanhamento bem alinhado e contínuo. 💚✨
