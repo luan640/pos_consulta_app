@@ -1041,11 +1041,9 @@ def filtrar_home(request):
 @require_http_methods(['GET'])
 def verificar_e_disparar_mensagem(request):
     
-    hoje = timezone.now().date()
-    data_alvo = (hoje-timedelta(days=1)) + timedelta(days=1)
+    hoje = (timezone.now() - timedelta(hours=3)).date()
+    data_alvo = hoje + timedelta(days=1)
     
-    print(data_alvo)
-
     lembretes = Lembrete.objects.select_related('regra', 'paciente').prefetch_related('regra__materiais').filter(
         whatsapp_status__in=('pendente', 'erro', None), 
         data_lembrete=data_alvo
@@ -1087,6 +1085,6 @@ def verificar_e_disparar_mensagem(request):
                     lembrete=lembrete,
                 )
 
-    return HttpResponse(resp)
-
-
+        return HttpResponse(resp)
+    else:
+        return HttpResponse("Sem lembretes")
