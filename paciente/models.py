@@ -81,7 +81,7 @@ class Lembrete(models.Model):
 
     whatsapp_status = models.CharField(
         max_length=20,
-        choices=WhatsappStatus,
+        choices=WhatsappStatus.choices,
         default=WhatsappStatus.PENDENTE,
     )
     whatsapp_disparado_em = models.DateTimeField(null=True, blank=True)
@@ -118,6 +118,8 @@ class Lembrete(models.Model):
     )
 
     tipo_mensagem = models.CharField(max_length=50, null=True, blank=True) # livre ou template (free ou paga)
+
+    enviado_para = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
         return f"Lembrete para {self.paciente.nome} em {self.data_lembrete}"

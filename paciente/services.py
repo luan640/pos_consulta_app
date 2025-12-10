@@ -136,8 +136,6 @@ def verifica_janela_24_hrs(id_nutri: int, tel_nutri: str) -> bool:
     
     agora = now()
 
-    print(tel_nutri)
-
     ultima_resposta_nutri = (InteracaoWhatsapp.objects
                             .filter(telefone__endswith=tel_nutri[-8:])
                             .order_by("-criado_em").first()
@@ -158,6 +156,7 @@ def _send_whatsapp_template(
     acao: Optional[str],
     materiais: Optional[list] = None,
     lembrete=None,
+    enviado_para= Optional[str]
 ) -> dict[str, Any]:
     """
     Envia um template do WhatsApp para o profissional (nutri).
@@ -203,7 +202,7 @@ def _send_whatsapp_template(
 
     payload = {
         "messaging_product": "whatsapp",
-        "to": "5585999012483",
+        "to": tel_nutri,
         "type": "template",
         "template": {
             "name": "confirmar_contato_com_paciente",
@@ -239,6 +238,7 @@ def _send_whatsapp_template(
         if lembrete is not None:
             lembrete.whatsapp_tentativas += 1
             lembrete.tipo_mensagem = 'paga'
+            lembrete.enviado_para = enviado_para
 
             if message_id:
                 lembrete.whatsapp_message_id = message_id
@@ -258,6 +258,8 @@ def _send_whatsapp_template(
             lembrete.whatsapp_tentativas += 1
             lembrete.whatsapp_status = Lembrete.WhatsappStatus.ERRO
             lembrete.whatsapp_ultimo_erro = str(e)
+            lembrete.enviado_para = enviado_para
+
             lembrete.save()
 
         raise
@@ -269,6 +271,7 @@ def _send_whatsapp_message(
     tel_paciente: Optional[str],
     acao: Optional[str],
     materiais: Optional[list],
+    enviado_para: Optional[str],
     lembrete: Optional[Lembrete] = None,
 ) -> dict[str, Any]:
     url = f"https://graph.facebook.com/{env('WHATSAPP_VERSION_API')}/{env('WHATSAPP_PHONE_NUMBER_ID')}/messages"
@@ -332,6 +335,7 @@ def _send_whatsapp_message(
         if lembrete is not None:
             lembrete.whatsapp_tentativas += 1
             lembrete.tipo_mensagem = 'gratis'
+            lembrete.enviado_para = enviado_para
 
             if message_id:
                 lembrete.whatsapp_message_id = message_id

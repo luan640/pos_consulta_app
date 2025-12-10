@@ -1054,6 +1054,7 @@ def verificar_e_disparar_mensagem(request):
     
     if lembretes.exists():
         for lembrete in lembretes:
+            
             ja_passou_24h = verifica_janela_24_hrs(lembrete.paciente.dono_id, lembrete.paciente.dono.telefone)
             materiais = lembrete.regra.materiais.all()
             
@@ -1091,6 +1092,6 @@ def verificar_e_disparar_mensagem(request):
             time_sleep = random.uniform(3, 5)
             time.sleep(time_sleep)
 
-        return HttpResponse(resp)
+        return HttpResponse('teste')
     else:
         return HttpResponse("Sem lembretes")
