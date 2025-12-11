@@ -155,8 +155,8 @@ def _send_whatsapp_template(
     tel_paciente: Optional[str],
     acao: Optional[str],
     materiais: Optional[list] = None,
+    enviado_para= Optional[str],
     lembrete=None,
-    enviado_para= Optional[str]
 ) -> dict[str, Any]:
     """
     Envia um template do WhatsApp para o profissional (nutri).

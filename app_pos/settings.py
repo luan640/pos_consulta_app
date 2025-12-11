@@ -98,7 +98,7 @@ WSGI_APPLICATION = 'app_pos.wsgi.application'
 #     }
 # }
 
-schema = env('DB_SCHEMA', default='lembra_pro')
+schema = env('DB_SCHEMA', default='lembra_pro_dev')
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',

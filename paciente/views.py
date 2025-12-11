@@ -1075,6 +1075,7 @@ def verificar_e_disparar_mensagem(request):
                     acao = lembrete.texto,
                     materiais = materiais_list if len(materiais_list)>0 else ["Sem material programado"],
                     lembrete=lembrete,
+                    enviado_para=lembrete.paciente.dono.telefone
                 )
 
             else:
@@ -1087,11 +1088,12 @@ def verificar_e_disparar_mensagem(request):
                     acao = lembrete.texto,
                     materiais = materiais_list if len(materiais_list)>0 else ["Sem material programado"],
                     lembrete=lembrete,
+                    enviado_para=lembrete.paciente.dono.telefone
                 )
 
             time_sleep = random.uniform(3, 5)
             time.sleep(time_sleep)
 
-        return HttpResponse('teste')
+        return HttpResponse(resp)
     else:
         return HttpResponse("Sem lembretes")

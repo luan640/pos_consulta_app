@@ -123,6 +123,44 @@ def webhook(request):
                 mensagem=botao_texto
             )
 
+        elif msg.get("type") == "button":
+            button = msg["button"]
+            botao_id = button.get("payload")
+            botao_texto = button.get("text", "")
+            context = msg.get("context", {})
+
+            message_id_origem = context.get("id")
+
+            lembrete = Lembrete.objects.filter(whatsapp_message_id=message_id_origem).first()
+
+            if lembrete:
+                lembrete.whatsapp_resposta_id = botao_id
+                lembrete.whatsapp_resposta_texto = botao_texto
+                lembrete.whatsapp_respondido_em = timezone.now()
+                lembrete.save()
+            
+                usuario = lembrete.regra.nutricionista
+
+                if lembrete.regra:
+                    materiais = list(
+                        lembrete.regra.materiais.values_list("descricao", flat=True)
+                    )
+                else:
+                    materiais = []
+
+                registrar_contato_service(
+                    usuario=usuario,
+                    paciente_id=lembrete.paciente_id,
+                    tipo_contato="whatsapp_button",
+                    anotacao_texto = f"Resposta via WhatsApp: {lembrete.whatsapp_resposta_texto}",
+                    materiais=materiais
+                )
+
+            InteracaoWhatsapp.objects.create(
+                telefone=value["messages"][0]["from"],
+                mensagem=botao_texto
+            )
+
         elif msg.get("type") == 'text':
 
             InteracaoWhatsapp.objects.create(
