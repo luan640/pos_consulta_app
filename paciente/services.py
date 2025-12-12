@@ -2,6 +2,7 @@
 
 from django.utils.timezone import now
 from django.utils import timezone
+from django.db import transaction
 
 from paciente.models import (
     Paciente,
@@ -34,100 +35,101 @@ def registrar_contato_service(
 
     materiais = materiais or []
 
-    # 1. Validar paciente
-    try:
-        paciente = Paciente.objects.get(id=paciente_id, dono=usuario)
-    except Paciente.DoesNotExist:
-        raise ValueError("Paciente não encontrado")
+    with transaction.atomic():
+        # 1. Validar paciente
+        try:
+            paciente = Paciente.objects.get(id=paciente_id, dono=usuario)
+        except Paciente.DoesNotExist:
+            raise ValueError("Paciente não encontrado")
 
-    # 2. Verifica se existe alguma regra
-    if not RegraLembrete.objects.filter(nutricionista=usuario).exists():
-        raise ValueError("Crie uma regra para registrar contato.")
+        # 2. Verifica se existe alguma regra
+        if not RegraLembrete.objects.filter(nutricionista=usuario).exists():
+            raise ValueError("Crie uma regra para registrar contato.")
 
-    # 3. Criar contato
-    contato = ContatoNutricionista.objects.create(
-        paciente=paciente,
-        data_contato=now().date(),
-        tipo=tipo_contato,
-    )
-
-    # 4. Criar anotação
-    anotacao = AnotacaoContato.objects.create(
-        contato=contato,
-        texto=anotacao_texto,
-    )
-
-    # 5. Associar materiais
-    for nome in materiais:
-        material_obj, _ = Material.objects.get_or_create(
-            descricao=nome,
-            dono=usuario,
+        # 3. Criar contato
+        contato = ContatoNutricionista.objects.create(
+            paciente=paciente,
+            data_contato=now().date(),
+            tipo=tipo_contato,
         )
-        anotacao.material_enviado.add(material_obj)
 
-    anotacao.save()
+        # 4. Criar anotação
+        anotacao = AnotacaoContato.objects.create(
+            contato=contato,
+            texto=anotacao_texto,
+        )
 
-    # 6. Marcar lembrete atual como concluído
-    lembrete_atual = (
-        Lembrete.objects.filter(paciente=paciente, concluido=False)
-        .order_by("data_lembrete")
-        .first()
-    )
-
-    proximo_lembrete_data = None
-
-    if lembrete_atual:
-        lembrete_atual.concluido = True
-        lembrete_atual.contato_em = now().date()
-        lembrete_atual.save()
-
-        # 7. Achar próxima regra
-        regra_atual = lembrete_atual.regra
-        nova_regra = None
-
-        if regra_atual:
-            regras = list(
-                RegraLembrete.objects.filter(
-                    nutricionista=usuario,
-                    grupo=paciente.grupo_lembrete,
-                ).order_by("ordem")
+        # 5. Associar materiais
+        for nome in materiais:
+            material_obj, _ = Material.objects.get_or_create(
+                descricao=nome,
+                dono=usuario,
             )
+            anotacao.material_enviado.add(material_obj)
 
-            regras_por_ordem = {r.ordem: r for r in regras}
-            proxima_ordem = regra_atual.ordem + 1
+        anotacao.save()
 
-            nova_regra = (
-                regras_por_ordem.get(proxima_ordem, regra_atual)
-            )  # se não houver próxima, repete a última
+        # 6. Marcar lembrete atual como concluído
+        lembrete_atual = (
+            Lembrete.objects.filter(paciente=paciente, concluido=False)
+            .order_by("data_lembrete")
+            .first()
+        )
 
-        # 8. Criar novo lembrete
-        if nova_regra:
-            nova_data = now().date() + timedelta(days=nova_regra.dias_apos)
+        proximo_lembrete_data = None
 
-            if not Lembrete.objects.filter(
-                paciente=paciente,
-                data_lembrete=nova_data,
-                concluido=False,
-            ).exists():
+        if lembrete_atual:
+            lembrete_atual.concluido = True
+            lembrete_atual.contato_em = now().date()
+            lembrete_atual.save()
 
-                Lembrete.objects.create(
-                    paciente=paciente,
-                    regra=nova_regra,
-                    data_lembrete=nova_data,
-                    texto=nova_regra.descricao,
-                    contato_em=None,
+            # 7. Achar próxima regra
+            regra_atual = lembrete_atual.regra
+            nova_regra = None
+
+            if regra_atual:
+                regras = list(
+                    RegraLembrete.objects.filter(
+                        nutricionista=usuario,
+                        grupo=paciente.grupo_lembrete,
+                    ).order_by("ordem")
                 )
 
-            proximo_lembrete_data = nova_data
+                regras_por_ordem = {r.ordem: r for r in regras}
+                proxima_ordem = regra_atual.ordem + 1
 
-    return {
-        "mensagem": "Contato registrado com sucesso",
-        "proximo_lembrete": (
-            proximo_lembrete_data.strftime("%d/%m/%Y")
-            if proximo_lembrete_data
-            else None
-        ),
-    }
+                nova_regra = (
+                    regras_por_ordem.get(proxima_ordem, regra_atual)
+                )  # se não houver próxima, repete a última
+
+            # 8. Criar novo lembrete
+            if nova_regra:
+                nova_data = now().date() + timedelta(days=nova_regra.dias_apos)
+
+                if not Lembrete.objects.filter(
+                    paciente=paciente,
+                    data_lembrete=nova_data,
+                    concluido=False,
+                ).exists():
+
+                    Lembrete.objects.create(
+                        paciente=paciente,
+                        regra=nova_regra,
+                        data_lembrete=nova_data,
+                        texto=nova_regra.descricao,
+                        contato_em=None,
+                    )
+
+                proximo_lembrete_data = nova_data
+
+        return {
+            "mensagem": "Contato registrado com sucesso",
+            "proximo_lembrete": (
+                proximo_lembrete_data.strftime("%d/%m/%Y")
+                if proximo_lembrete_data
+                else None
+            ),
+        }
 
 def verifica_janela_24_hrs(id_nutri: int, tel_nutri: str) -> bool:
 

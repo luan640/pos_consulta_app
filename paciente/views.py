@@ -281,13 +281,14 @@ def registrar_contato(request):
         return JsonResponse({"erro": "Paciente é obrigatório"}, status=400)
 
     try:
-        result = registrar_contato_service(
-            usuario=request.user,
-            paciente_id=paciente_id,
-            tipo_contato=tipo,
-            anotacao_texto=anotacao,
-            materiais=materiais,
-        )
+        with transaction.atomic():
+            result = registrar_contato_service(
+                usuario=request.user,
+                paciente_id=paciente_id,
+                tipo_contato=tipo,
+                anotacao_texto=anotacao,
+                materiais=materiais,
+            )
     except ValueError as e:
         return JsonResponse({"erro": str(e)}, status=400)
 
