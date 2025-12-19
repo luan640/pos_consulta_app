@@ -33,6 +33,10 @@ def home(request):
     contatos = Paciente.objects.filter(dono=request.user)
     return render(request, 'home/home.html', {'contatos': contatos})
 
+@login_required
+def regras(request):
+    return render(request, 'regras.html')
+
 
 def politica_privacidade(request):
     """

@@ -4,6 +4,7 @@ from paciente.webhook_view import webhook
 
 urlpatterns = [
     path('home/', views.home, name='home'),
+    path('regras/', views.regras, name='regras'),
     path('politica-de-privacidade/', views.politica_privacidade, name='politica_privacidade'),
     path('termos-de-servico/', views.termos_servico, name='termos_servico'),
     path('webhook/', webhook, name='webhook'),

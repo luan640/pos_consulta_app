@@ -460,6 +460,12 @@ body {
 }
 
 /* Responsividade */
+.patients-container {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
 @media (max-width: 768px) {
   .container {
       padding: 20px 15px;
@@ -478,6 +484,10 @@ body {
   .section-title {
       font-size: 1.5rem;
   }
+
+  .patients-container {
+      grid-template-columns: 1fr;
+  }
 }
 
 
@@ -495,5 +505,135 @@ body {
 .badge-waiting {
     background-color: #0d6efd;
     color: #fff;
+}
+
+/* Fluxo de regras */
+.regra-page .regra-card {
+    border-radius: 16px;
+    border: 1px solid rgba(52, 152, 219, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+}
+
+.regra-grupos-list .list-group-item {
+    border: 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 0.9rem 1rem;
+}
+
+.regra-grupos-list .list-group-item.active {
+    background: #e8f1ff;
+    color: #1e3a5f;
+}
+
+.regra-empty {
+    padding: 1.5rem;
+    text-align: center;
+    color: #6c757d;
+    font-size: 0.95rem;
+}
+
+.regra-flow-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+.regra-flow-item {
+    background: #fff;
+    border: 1px solid rgba(52, 152, 219, 0.15);
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+    box-shadow: 0 6px 18px rgba(52, 152, 219, 0.08);
+}
+
+.regra-flow-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.regra-flow-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #1e3a5f;
+    margin: 0;
+}
+
+.regra-flow-meta {
+    font-size: 0.85rem;
+    color: #5a6c7d;
+}
+
+.regra-flow-description {
+    color: #2c3e50;
+    font-size: 0.95rem;
+}
+
+.regra-flow-actions {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.regra-flow-arrow {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: #5a6c7d;
+    font-size: 0.85rem;
+    margin: 0.1rem 0 0.4rem;
+    padding-left: 0.5rem;
+}
+
+.regra-flow-arrow-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #f0f4f8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.regra-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #5a6c7d;
+    justify-content: center;
+    padding: 1.5rem 0;
+}
+
+.regra-flow-list--loading {
+    opacity: 0.6;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.regra-flow-materiais {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.regra-materiais-list {
+    min-height: 44px;
+}
+
+.regras-material-chip {
+    border-radius: 16px;
+}
+
+@media (max-width: 992px) {
+    .regra-flow-header {
+        flex-direction: column;
+    }
+
+    .regra-flow-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
 }
 
