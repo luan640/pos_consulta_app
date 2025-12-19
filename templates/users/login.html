@@ -1,277 +1,66 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- <title>Login</title> -->
-  <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Bootstrap Icons -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrar | LEMBRAPRO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
-  <div class="login-container">
-    <div class="login-card">
-      <div class="login-header">
-        <div class="logo-container">
-          <div class="logo-icon">
-            <i class="bi bi-heart-pulse"></i>
-          </div>
-        </div>
-        <!-- <h1>Pós-Atendimento Nutricional</h1>
-        <p>Acesse sua conta para gerenciar seus pacientes</p> -->
-      </div>
-
-      <div class="login-body">
-        <!-- Exibir erros não relacionados a campos específicos -->
-        {% if form.non_field_errors %}
-          <div class="non-field-errors">
-            {{ form.non_field_errors }}
-          </div>
-        {% endif %}
-
-        <!-- Mensagens do Django (se houver) -->
-        {% if messages %}
-          {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}" role="alert">
-              <i class="bi bi-{% if message.tags == 'error' %}exclamation-triangle-fill{% elif message.tags == 'success' %}check-circle-fill{% else %}info-circle-fill{% endif %} me-2"></i>
-              {{ message }}
+    <div class="login-wrapper">
+        <div class="container">
+            <div class="row align-items-center min-vh-100">
+                <div class="col-lg-5 col-md-6 mx-auto">
+                    <div class="login-card">
+                        <div class="mb-4">
+                            <h1 class="logo-text">LEMBRAPRO</h1>
+                            <p class="text-muted mt-2">Faça login para seguir acompanhando seus pacientes.</p>
+                        </div>
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} mb-3" role="alert">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger mb-3" role="alert">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+                        <form method="post" class="mt-4" novalidate>
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="{{ form.username.id_for_label }}" class="form-label">E-mail</label>
+                                {{ form.username.as_widget(attrs={'class': 'form-control', 'placeholder': 'email@exemplo.com'}) }}
+                                {% if form.username.errors %}
+                                    <div class="text-danger small mt-1">{{ form.username.errors|striptags }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="mb-4">
+                                <label for="{{ form.password.id_for_label }}" class="form-label">Senha</label>
+                                {{ form.password.as_widget(attrs={'class': 'form-control', 'placeholder': '••••••••'}) }}
+                                {% if form.password.errors %}
+                                    <div class="text-danger small mt-1">{{ form.password.errors|striptags }}</div>
+                                {% endif %}
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 mb-3">Entrar</button>
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'password_reset' %}" class="text-muted small">Esqueceu sua senha?</a>
+                                <a href="{% url 'landing' %}" class="text-muted small">Voltar</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-lg-6 d-none d-lg-block ms-auto">
+                    <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80" alt="Profissional de saúde" class="login-image">
+                </div>
             </div>
-          {% endfor %}
-        {% endif %}
-
-        <!-- Formulário de login -->
-        <form method="post" id="login-form">
-          {% csrf_token %}
-          
-          <div class="django-form-field {% if form.username.errors %}has-error{% endif %}">
-            {{ form.username }}
-            <label for="{{ form.username.id_for_label }}">Usuário (E-mail)</label>
-            {% if form.username.errors %}
-              <div class="text-danger">
-                {% for error in form.username.errors %}
-                  <div>{{ error }}</div>
-                {% endfor %}
-              </div>
-            {% endif %}
-          </div>
-          
-          <div class="django-form-field password-container {% if form.password.errors %}has-error{% endif %}">
-            {{ form.password }}
-            <label for="{{ form.password.id_for_label }}">Senha</label>
-            <button type="button" class="btn-toggle-password" id="toggle-password">
-              <i class="bi bi-eye"></i>
-            </button>
-            {% if form.password.errors %}
-              <div class="text-danger">
-                {% for error in form.password.errors %}
-                  <div>{{ error }}</div>
-                {% endfor %}
-              </div>
-            {% endif %}
-          </div>
-          
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" id="remember-me">
-              <label class="form-check-label" for="remember-me">
-                Lembrar-me
-              </label>
-            </div>
-            <a href="{% url 'password_reset' %}" class="forgot-password">Esqueci minha senha</a>
-          </div>
-          
-          <button type="submit" class="btn btn-primary w-100 btn-lg">
-            <i class="bi bi-box-arrow-in-right me-2"></i>
-            Entrar
-          </button>
-        </form>
-      </div>
-
-      <div class="login-footer">
-        <p>Não tem uma conta?
-          <button type="button" class="btn btn-link p-0 align-baseline text-primary" id="toggle-access-request">
-            Solicite acesso
-          </button>
-        </p>
-        <div id="access-request-card" class="card border border-primary-subtle shadow-sm mt-3 d-none">
-          <div class="card-body">
-            <h2 class="h6 mb-3 text-primary">Receba contato do nosso time</h2>
-            <form id="access-request-form">
-              <div class="mb-3">
-                <label for="access-name" class="form-label small text-muted">Nome completo</label>
-                <input type="text" class="form-control" id="access-name" placeholder="Seu nome" required>
-              </div>
-              <div class="mb-3">
-                <label for="access-email" class="form-label small text-muted">E-mail profissional</label>
-                <input type="email" class="form-control" id="access-email" placeholder="voce@gmail.com" required>
-              </div>
-              <div class="mb-3">
-                <label for="access-whatsapp" class="form-label small text-muted">WhatsApp com DDD</label>
-                <input type="tel" class="form-control" id="access-whatsapp" placeholder="11999999999" required>
-              </div>
-              <button type="submit" class="btn btn-outline-primary w-100" id="access-request-submit">
-                <i class="bi bi-send me-1"></i>Enviar pedido
-              </button>
-              <div class="form-text mt-2" id="access-request-feedback"></div>
-            </form>
-          </div>
         </div>
-      </div>
     </div>
-
-    <div class="login-decoration">
-      <div class="decoration-circle circle-1"></div>
-      <div class="decoration-circle circle-2"></div>
-      <div class="decoration-circle circle-3"></div>
-    </div>
-  </div>
-
-  <!-- Bootstrap JS Bundle with Popper -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Toggle password visibility
-      const togglePassword = document.getElementById('toggle-password');
-      const passwordInput = document.querySelector('input[type="password"]');
-      
-      if (togglePassword && passwordInput) {
-        togglePassword.addEventListener('click', function() {
-          const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-          passwordInput.setAttribute('type', type);
-          
-          // Toggle icon
-          const icon = this.querySelector('i');
-          if (type === 'password') {
-            icon.classList.remove('bi-eye-slash');
-            icon.classList.add('bi-eye');
-          } else {
-            icon.classList.remove('bi-eye');
-            icon.classList.add('bi-eye-slash');
-          }
-        });
-      }
-      
-      // Form submission handling with animation
-      const loginForm = document.getElementById('login-form');
-      loginForm.addEventListener('submit', function(e) {
-        const submitBtn = this.querySelector('button[type="submit"]');
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Entrando...';
-        submitBtn.disabled = true;
-      });
-      
-      // Handle floating labels for Django form fields
-      const formFields = document.querySelectorAll('.django-form-field');
-      formFields.forEach(field => {
-        const input = field.querySelector('input');
-        const label = field.querySelector('label');
-        
-        if (input && label) {
-          // Check if field has value on page load
-          function checkValue() {
-            if (input.value.trim() !== '') {
-              field.classList.add('has-value');
-            } else {
-              field.classList.remove('has-value');
-            }
-          }
-          
-          // Initial check
-          checkValue();
-          
-          // Add event listeners
-          input.addEventListener('input', checkValue);
-          input.addEventListener('focus', () => field.classList.add('focused'));
-          input.addEventListener('blur', () => {
-            field.classList.remove('focused');
-            checkValue();
-          });
-        }
-      });
-      
-      // Auto-hide messages after 5 seconds
-      const alerts = document.querySelectorAll('.alert:not(.non-field-errors)');
-      alerts.forEach(alert => {
-        setTimeout(() => {
-          alert.style.transition = 'opacity 0.5s ease';
-          alert.style.opacity = '0';
-          setTimeout(() => {
-            if (alert.parentNode) {
-              alert.parentNode.removeChild(alert);
-            }
-          }, 500);
-        }, 5000);
-      });
-
-      // Solicite acesso toggle + envio
-      const toggleAccessBtn = document.getElementById('toggle-access-request');
-      const accessCard = document.getElementById('access-request-card');
-      const accessForm = document.getElementById('access-request-form');
-      const feedbackEl = document.getElementById('access-request-feedback');
-      const accessSubmit = document.getElementById('access-request-submit');
-      const accessNameInput = document.getElementById('access-name');
-      const accessEmailInput = document.getElementById('access-email');
-      const accessWhatsappInput = document.getElementById('access-whatsapp');
-      const csrfTokenInput = document.querySelector('#login-form input[name="csrfmiddlewaretoken"]');
-      const csrfToken = csrfTokenInput ? csrfTokenInput.value : '';
-
-      toggleAccessBtn?.addEventListener('click', () => {
-        accessCard?.classList.toggle('d-none');
-        if (!accessCard?.classList.contains('d-none')) {
-          accessNameInput?.focus();
-        }
-      });
-
-      accessForm?.addEventListener('submit', (event) => {
-        event.preventDefault();
-        if (!accessForm.checkValidity()) {
-          accessForm.reportValidity();
-          return;
-        }
-
-        feedbackEl.textContent = '';
-        feedbackEl.classList.remove('text-success', 'text-danger');
-        accessSubmit.disabled = true;
-        accessSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Enviando...';
-
-        const payload = {
-          nome: (accessNameInput?.value || '').trim(),
-          email: (accessEmailInput?.value || '').trim(),
-          whatsapp: (accessWhatsappInput?.value || '').trim(),
-        };
-
-        fetch('{% url "solicitar_acesso" %}', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken,
-          },
-          body: JSON.stringify(payload),
-        })
-          .then(async (response) => {
-            const data = await response.json();
-            if (!response.ok) {
-              throw new Error(data?.erro || 'Não foi possível enviar seu pedido agora.');
-            }
-            feedbackEl.classList.add('text-success');
-            feedbackEl.textContent = data.mensagem || 'Recebemos seus dados! Em breve falaremos com você.';
-            accessForm.reset();
-          })
-          .catch((error) => {
-            feedbackEl.classList.add('text-danger');
-            feedbackEl.textContent = error.message;
-          })
-          .finally(() => {
-            accessSubmit.disabled = false;
-            accessSubmit.innerHTML = '<i class="bi bi-send me-1"></i>Enviar pedido';
-          });
-      });
-    });
-  </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-

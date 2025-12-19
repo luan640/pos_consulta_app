@@ -4,426 +4,333 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LembraPro | Pós-atendimento que encanta pacientes</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+    <title>LEMBRAPRO - Sistema de Acompanhamento</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
-    <div class="landing-wrapper">
-        <header class="hero" id="top">
-            <nav class="navbar">
-                <div class="brand">
-                    <img src="{% static 'img/logo.png' %}" alt="LembraPro logo">
-                    <div>
-                        <strong>LembraPro</strong>
-                        <span>Pós-consulta inteligente</span>
+    <div id="login-screen" class="login-wrapper">
+        <div class="container">
+            <div class="row align-items-center min-vh-100">
+                <div class="col-lg-5 col-md-6 mx-auto">
+                    <div class="login-card">
+                        <div class="mb-4">
+                            <h1 class="logo-text">LEMBRAPRO</h1>
+                            <p class="text-muted mt-2">Nunca mais perca o momento certo de entrar em contato com seus pacientes.</p>
+                        </div>
+                        <form id="login-form" class="mt-4">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">E-mail</label>
+                                <input type="email" class="form-control" id="email" value="usuario@exemplo.com">
+                            </div>
+                            <div class="mb-4">
+                                <label for="password" class="form-label">Senha</label>
+                                <input type="password" class="form-control" id="password" value="senha123">
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 mb-3">Entrar</button>
+                            <a href="#" class="text-muted small">Esqueceu sua senha?</a>
+                        </form>
                     </div>
                 </div>
-                <div class="nav-links">
-                    <a href="#features">Funcionalidades</a>
-                    <a href="#como-funciona">Como funciona</a>
-                    <a href="#resultados">Resultados</a>
-                    <a href="#contato" class="btn btn-ghost">Quero conhecer</a>
-                    <a href="{% url 'login' %}" class="btn btn-primary">Entrar</a>
+                <div class="col-lg-6 d-none d-lg-block ms-auto">
+                    <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80" alt="Profissional de saúde" class="login-image">
                 </div>
-            </nav>
+            </div>
+        </div>
+    </div>
 
-            <div class="hero-content container">
-                <div class="hero-text fade-up">
-                    <p class="badge">Controle pós-consulta para nutricionistas</p>
-                    <h1>Transforme cada acompanhamento em uma experiência memorável.</h1>
-                    <p class="subtitle">
-                        Automatize lembretes e mantenha pacientes engajados entre consultas.
-                        Mostre profissionalismo e aumente a recompra com um fluxo inteligente.
-                    </p>
-                    <div class="hero-ctas">
-                        <a href="#contato" class="btn btn-primary btn-lg">
-                            <i class="bi bi-stars me-2"></i>Quero uma demonstração
-                        </a>
-                        <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg">
-                            <i class="bi bi-play-circle me-2"></i>Ver ambiente de testes
-                        </a>
-                    </div>
-                    <!-- <div class="hero-highlights">
-                        <div>
-                            <strong>+42%</strong>
-                            <span>pacientes ativos após 3 meses</span>
-                        </div>
-                        <div>
-                            <strong>8h/sem</strong>
-                            <span>economia média com automações</span>
-                        </div>
-                        <div>
-                            <strong>100%</strong>
-                            <span>histórico centralizado</span>
-                        </div>
-                    </div> -->
+    <div id="app" class="d-none">
+        <nav class="navbar navbar-light bg-white border-bottom fixed-top">
+            <div class="container-fluid px-4">
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-link text-dark me-3" id="toggle-sidebar">
+                        <i class="bi bi-list fs-4"></i>
+                    </button>
+                    <span class="navbar-brand mb-0 fw-semibold">LEMBRAPRO</span>
                 </div>
-                <div class="hero-card fade-up delay-1">
-                    <div class="hero-card-header">
-                        <span class="status-pill">Painel ao vivo</span>
-                        <span class="text-muted">Atualizado agora</span>
-                    </div>
-                    <div class="mini-board">
-                        <div>
-                            <p class="label">Total de pacientes cadastrados</p>
-                            <h3>18</h3>
-                            <!-- <small class="text-success"><i class="bi bi-arrow-up"></i> +5 vs. semana passada</small> -->
-                        </div>
-                        <div>
-                            <p class="label">Lembretes em atraso</p>
-                            <h3>4</h3>
-                            <!-- <small class="text-muted">+ 12 pacientes celebrando metas</small> -->
-                        </div>
-                    </div>
-                    <div class="timeline-preview">
-                        <div class="step">
-                            <span class="dot"></span>
-                            <div>
-                                <strong>Enviar plano alimentar</strong>
-                                <!-- <p>Notificação WhatsApp</p> -->
-                            </div>
-                        </div>
-                        <div class="step">
-                            <span class="dot"></span>
-                            <div>
-                                <strong>Checagem de progresso e disponibilidade para daptação</strong>
-                                <!-- <p>Agendado para 22/08</p> -->
-                            </div>
-                        </div>
-                        <div class="step">
-                            <span class="dot"></span>
-                            <div>
-                                <strong>Lembrar de retorno</strong>
-                                <!-- <p></p> -->
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <span>Quer um painel assim?</span>
-                        <a href="#contato">Vamos conversar <i class="bi bi-arrow-right-short"></i></a>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-link text-dark position-relative">
+                        <i class="bi bi-bell fs-5"></i>
+                        <span class="notification-badge">3</span>
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-link text-dark dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle fs-5"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" data-page="settings">Configurações</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="logout-btn">Sair</a></li>
+                        </ul>
                     </div>
                 </div>
             </div>
-        </header>
+        </nav>
 
-        <main>
-            <section id="features" class="section container">
-                <div class="section-heading">
-                    <p class="badge">Funcionalidades-chave</p>
-                    <h2>O LembraPro trabalha enquanto você cuida dos seus pacientes.</h2>
-                    <p>Automatizamos o que é repetitivo, mantendo espaço para o cuidado humano.</p>
-                </div>
-                <div class="feature-grid">
-                    <article class="feature-card fade-up">
-                        <div class="icon-circle">
-                            <i class="bi bi-calendar-check"></i>
-                        </div>
-                        <h3>Jornadas inteligentes</h3>
-                        <p>Crie fluxos com lembretes, materiais e follow-ups que se adaptam ao perfil de cada paciente.</p>
-                        <ul>
-                            <li>Lembretes por whatsapp</li>
-                            <li>Segmentação por objetivos</li>
-                            <li>Monitoramento em tempo real</li>
-                        </ul>
-                    </article>
-                    <article class="feature-card fade-up delay-1">
-                        <div class="icon-circle">
-                            <i class="bi bi-chat-heart"></i>
-                        </div>
-                        <h3>Lembretes WhatsApp</h3>
-                        <p>Você receberá no seu whatsapp um lembrete para entrar em contato com aquele paciente.</p>
-                        <ul>
-                            <li>Templates aprovados</li>
-                            <li>Alertas inteligentes</li>
-                        </ul>
-                    </article>
-                    <article class="feature-card fade-up delay-2">
-                        <div class="icon-circle">
-                            <i class="bi bi-graph-up-arrow"></i>
-                        </div>
-                        <h3>Configurações flexíveis</h3>
-                        <p>Ative e desative alertas para pacientes específicos.</p>
-                        <ul>
-                            <li>Controle de alertas</li>
-                            <li>Saiba quem precisa ser contatado</li>
-                        </ul>
-                    </article>
-                </div>
-            </section>
+        <div class="sidebar" id="sidebar">
+            <nav class="nav flex-column p-3">
+                <a class="nav-link active" href="#" data-page="dashboard">
+                    <i class="bi bi-house-door me-2"></i> Início
+                </a>
+                <a class="nav-link" href="#" data-page="calendar">
+                    <i class="bi bi-calendar3 me-2"></i> Calendário
+                </a>
+                <a class="nav-link" href="#" data-page="patients">
+                    <i class="bi bi-people me-2"></i> Pacientes
+                </a>
+                <a class="nav-link" href="#" data-page="rules">
+                    <i class="bi bi-diagram-3 me-2"></i> Regras e Fluxos
+                </a>
+                <a class="nav-link" href="#" data-page="materials">
+                    <i class="bi bi-file-earmark-text me-2"></i> Materiais
+                </a>
+            </nav>
+        </div>
 
-            <section id="como-funciona" class="section workflow">
-                <div class="container">
-                    <div class="section-heading">
-                        <p class="badge">Como funciona</p>
-                        <h2>Em três passos você tem um pós-consulta de qualidade.</h2>
-                    </div>
-                    <div class="workflow-steps">
-                        <div class="step-card fade-up">
-                            <span class="step-number">1</span>
-                            <h3>Personalize sua jornada</h3>
-                            <p>Importe seus pacientes, defina grupos de lembretes e envie materiais com poucos cliques.</p>
-                        </div>
-                        <div class="step-card fade-up delay-1">
-                            <span class="step-number">2</span>
-                            <h3>Automatize contatos</h3>
-                            <p>O LembraPro dispara WhatsApp para lembrar que existe um contato a fazer.</p>
-                        </div>
-                        <div class="step-card fade-up delay-2">
-                            <span class="step-number">3</span>
-                            <h3>Acompanhe</h3>
-                            <p>Nunca mais esqueça de entrar em contato com aquele paciente.</p>
-                        </div>
-                    </div>
+        <div class="main-content" id="main-content">
+            <div id="page-dashboard" class="page-content active">
+                <div class="content-header mb-4">
+                    <h2 class="mb-1">Lembretes</h2>
+                    <p class="text-muted small">Acompanhe seus contatos agendados</p>
                 </div>
-            </section>
-
-            <section class="section highlight container">
-                <div class="highlight-card fade-up">
-                    <div>
-                        <p class="badge">Recursos exclusivos</p>
-                        <h2>Organização clínica e comercial no mesmo lugar.</h2>
-                        <p>Dos lembretes pós-consulta ao agendamento do retorno, tudo fica documentado e mensurado.</p>
-                        <ul>
-                            <li><i class="bi bi-check-circle-fill"></i> Biblioteca de materiais</li>
-                            <li><i class="bi bi-check-circle-fill"></i> Alertas de pacientes que precisam ter contato</li>
-                            <li><i class="bi bi-check-circle-fill"></i> Dashboards com indicadores (Em andamento)</li>
-                        </ul>
-                    </div>
-                    <!-- <div class="highlight-kpis">
-                        <div>
-                            <strong>3x</strong>
-                            <span>mais reconsultas agendadas</span>
+                <div class="filter-bar mb-4">
+                    <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="filter" id="filter-today" checked>
+                            <label class="btn btn-outline-secondary" for="filter-today">Hoje</label>
+                            <input type="radio" class="btn-check" name="filter" id="filter-overdue">
+                            <label class="btn btn-outline-secondary" for="filter-overdue">Atrasados</label>
+                            <input type="radio" class="btn-check" name="filter" id="filter-upcoming">
+                            <label class="btn btn-outline-secondary" for="filter-upcoming">Próximos dias</label>
+                            <input type="radio" class="btn-check" name="filter" id="filter-all">
+                            <label class="btn btn-outline-secondary" for="filter-all">Todos</label>
                         </div>
-                        <div>
-                            <strong>92%</strong>
-                            <span>abertura média dos lembretes</span>
-                        </div>
-                        <div>
-                            <strong>5 min</strong>
-                            <span>para montar um fluxo completo</span>
-                        </div>
-                    </div> -->
-                </div>
-            </section>
-
-            <section class="section container">
-                <div class="section-heading">
-                    <p class="badge">Template aprovado</p>
-                    <h2>Veja o lembrete que voce recebe no WhatsApp.</h2>
-                    <p>Mensagem interativa com botao de confirmacao para agilizar seu fluxo.</p>
-                </div>
-                <div class="card shadow-sm fade-up">
-                    <div class="card-body">
-                        <div class="d-flex align-items-start gap-3">
-                            <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
-                                <i class="bi bi-whatsapp"></i>
+                        <div class="d-flex gap-2 align-items-center">
+                            <input type="text" class="form-control form-control-sm" id="search-reminders" placeholder="Buscar paciente..." style="width: 200px;">
+                            <div class="btn-group" role="group">
+                                <input type="radio" class="btn-check" name="view" id="view-list" checked>
+                                <label class="btn btn-outline-secondary btn-sm" for="view-list">
+                                    <i class="bi bi-list-ul"></i>
+                                </label>
+                                <input type="radio" class="btn-check" name="view" id="view-calendar">
+                                <label class="btn btn-outline-secondary btn-sm" for="view-calendar">
+                                    <i class="bi bi-calendar-week"></i>
+                                </label>
                             </div>
-                            <div class="flex-grow-1">
-                                <p class="text-muted mb-1 small">Corpo do template interativo</p>
-                                <div class="bg-light p-3 rounded border">
-                                    <p class="mb-2">
-                                        Ola, <strong>Dr. Ana Silva</strong>! &#x1F44B;<br>
-                                        Passando aqui so para te lembrar de entrar em contato com o(a) paciente <strong>Joao Santos</strong>.
-                                    </p>
-                                    <p class="mb-2">
-                                        &#x1F4DE; Telefone: <strong>11 99999-9999</strong><br>
-                                        &#x1F489; Acao necessaria: <strong>Enviar ajuste do plano alimentar</strong>
-                                    </p>
-                                    <p class="mb-2">
-                                        &#x1F4C4; Materiais para enviar:<br>
-                                        <em>- PDF do novo plano<br>- Guia de compras da semana</em>
-                                    </p>
-                                    <p class="mb-3">
-                                        Se puder mandar mensagem para ele(a) ainda hoje, otimo! Assim mantemos o acompanhamento bem alinhado e continuo. &#x1F49A;&#x2728;
-                                    </p>
-                                    <div class="d-grid">
-                                        <button class="btn btn-success">
-                                            Ok, vou enviar <span class="text-white-50 small ms-2">(id: BTN_CONFIRMA_ENVIO)</span>
-                                        </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="reminders-list" class="reminders-container"></div>
+                <div id="calendar-view" class="d-none"></div>
+            </div>
+
+            <div id="page-calendar" class="page-content">
+                <div class="content-header mb-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1">Calendário</h2>
+                        <p class="text-muted small">Visualize seus lembretes ao longo do mês</p>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <button class="btn btn-outline-secondary btn-sm" id="prev-month">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <span id="current-month-year" class="fw-semibold"></span>
+                        <button class="btn btn-outline-secondary btn-sm" id="next-month">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" id="today-btn">Hoje</button>
+                    </div>
+                </div>
+                <div id="calendar-grid" class="calendar-grid"></div>
+                <div id="day-details" class="mt-4"></div>
+            </div>
+
+            <div id="page-patients" class="page-content">
+                <div class="content-header mb-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1">Pacientes</h2>
+                        <p class="text-muted small">Gerencie sua base de pacientes</p>
+                    </div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newPatientModal">
+                        <i class="bi bi-plus-lg me-1"></i> Novo Paciente
+                    </button>
+                </div>
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="search-patients" placeholder="Buscar por nome, telefone ou e-mail...">
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover" id="patients-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Telefone</th>
+                                <th>E-mail</th>
+                                <th>Última consulta</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patients-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="page-rules" class="page-content">
+                <div class="content-header mb-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1">Regras e Fluxos</h2>
+                        <p class="text-muted small">Configure lembretes automáticos baseados em consultas</p>
+                    </div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newRuleGroupModal">
+                        <i class="bi bi-plus-lg me-1"></i> Novo Grupo
+                    </button>
+                </div>
+                <div id="rule-groups-container"></div>
+                <div class="alert alert-info mt-4 d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="bi bi-info-circle me-2"></i>
+                        <span>Teste como as regras geram lembretes automaticamente</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary" id="simulate-rules">Simular geração</button>
+                </div>
+            </div>
+
+            <div id="page-materials" class="page-content">
+                <div class="content-header mb-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1">Materiais</h2>
+                        <p class="text-muted small">Biblioteca de conteúdos para envio</p>
+                    </div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newMaterialModal">
+                        <i class="bi bi-plus-lg me-1"></i> Novo Material
+                    </button>
+                </div>
+                <div class="row g-3" id="materials-grid"></div>
+            </div>
+
+            <div id="page-settings" class="page-content">
+                <div class="content-header mb-4">
+                    <h2 class="mb-1">Configurações</h2>
+                    <p class="text-muted small">Gerencie suas preferências</p>
+                </div>
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">Dados pessoais</h5>
+                                <form id="settings-form">
+                                    <div class="mb-3">
+                                        <label class="form-label">Nome completo</label>
+                                        <input type="text" class="form-control" value="Dra. Ana Carolina Silva">
                                     </div>
-                                    <p class="small text-muted mt-2 mb-0">
-                                        Tipo: interactive/button &middot; Acao: reply &middot; Botao responde ao lembrete automaticamente.
-                                    </p>
+                                    <div class="mb-3">
+                                        <label class="form-label">Telefone</label>
+                                        <input type="text" class="form-control" value="(11) 98765-4321">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">E-mail</label>
+                                        <input type="email" class="form-control" value="ana.silva@exemplo.com">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">Notificações</h5>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="notif-email" checked>
+                                    <label class="form-check-label" for="notif-email">Receber lembretes por e-mail</label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="notif-whatsapp" checked>
+                                    <label class="form-check-label" for="notif-whatsapp">Receber lembretes via WhatsApp</label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="notif-browser">
+                                    <label class="form-check-label" for="notif-browser">Notificações no navegador</label>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </section>
-            <!-- <section id="resultados" class="section results">
-                <div class="container">
-                    <div class="section-heading text-center">
-                        <p class="badge">Resultados</p>
-                        <h2>Nutricionistas que já vendem mais acompanhamentos.</h2>
-                    </div>
-                    <div class="results-grid">
-                        <article class="result-card fade-up">
-                            <h3>Atendimento boutique</h3>
-                            <p>“Os lembretes automáticos fazem o paciente sentir que estou sempre presente.”</p>
-                            <div class="author">
-                                <strong>Camila Borges</strong>
-                                <span>Nutricionista clínica · SP</span>
-                            </div>
-                        </article>
-                        <article class="result-card fade-up delay-1">
-                            <h3>Gestão em escala</h3>
-                            <p>“Passei de 40 para 120 pacientes com a mesma equipe e sem perder qualidade.”</p>
-                            <div class="author">
-                                <strong>Equipe Vitta Care</strong>
-                                <span>Clínica especializada</span>
-                            </div>
-                        </article>
-                        <article class="result-card fade-up delay-2">
-                            <h3>Foco na ciência</h3>
-                            <p>“O sistema cuida do operacional e eu fico livre para o planejamento nutricional.”</p>
-                            <div class="author">
-                                <strong>Lucas Andrade</strong>
-                                <span>Nutricionista esportivo</span>
-                            </div>
-                        </article>
-                    </div>
-                </div>
-            </section> -->
-
-            <section id="contato" class="section contact container">
-                <div class="contact-card fade-up">
-                    <div>
-                        <p class="badge">Vamos conversar</p>
-                        <h2>Receba uma apresentação guiada.</h2>
-                        <p>Preencha seus dados e nosso time entra em contato com uma proposta sob medida.</p>
-                        <div class="contact-info">
-                            <div>
-                                <i class="bi bi-patch-check"></i>
-                                Implementação assistida em 7 dias
-                            </div>
-                            <div>
-                                <i class="bi bi-shield-lock"></i>
-                                LGPD & backups automáticos
-                            </div>
-                            <div>
-                                <i class="bi bi-headset"></i>
-                                Suporte humano em horário comercial
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <form id="lead-form" class="lead-form">
-                            {% csrf_token %}
-                            <div class="form-floating">
-                                <input type="text" class="form-control" id="lead-name" placeholder="Nome completo" required>
-                                <label for="lead-name">Nome completo</label>
-                            </div>
-                            <div class="form-floating">
-                                <input type="email" class="form-control" id="lead-email" placeholder="email@empresa.com" required>
-                                <label for="lead-email">E-mail profissional</label>
-                            </div>
-                            <div class="form-floating">
-                                <input type="tel" class="form-control" id="lead-whatsapp" placeholder="11999999999" required>
-                                <label for="lead-whatsapp">WhatsApp com DDD</label>
-                            </div>
-                            <button type="submit" id="lead-submit" class="btn btn-primary w-100">
-                                <i class="bi bi-rocket-takeoff me-2"></i>Quero ser cliente
-                            </button>
-                            <p class="small text-muted mt-2">
-                                Enviamos apenas comunicações relevantes. Nada de spam.
-                            </p>
-                            <div id="lead-feedback" class="mt-2 small"></div>
-                        </form>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <footer class="footer">
-            <div class="container">
-                <p>© {% now 'Y' %} LembraPro. Pós-atendimento inteligente para nutricionistas.</p>
-                <div>
-                    <a href="#top">Voltar ao topo</a>
-                    <span>&middot;</span>
-                    <a href="{% url 'politica_privacidade' %}" target="_blank">Política de privacidade</a>
-                    <span>&middot;</span>
-                    <a href="{% url 'termos_servico' %}" target="_blank">Termos de Serviço</a>
-                </div>
             </div>
-        </footer>
+        </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const observer = new IntersectionObserver(
-                (entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            entry.target.classList.add('is-visible');
-                            observer.unobserve(entry.target);
-                        }
-                    });
-                },
-                { threshold: 0.15 }
-            );
+    <div class="modal fade" id="newPatientModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Novo Paciente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="new-patient-form">
+                        <div class="mb-3">
+                            <label class="form-label">Nome completo *</label>
+                            <input type="text" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Telefone *</label>
+                            <input type="text" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">E-mail</label>
+                            <input type="email" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Observações</label>
+                            <textarea class="form-control" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+    <div class="modal fade" id="patientDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="patient-detail-name"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs mb-3" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-history">Timeline</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-returns">Retornos</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-materials-sent">Materiais enviados</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="tab-history">
+                            <div id="patient-timeline"></div>
+                        </div>
+                        <div class="tab-pane fade" id="tab-returns">
+                            <div id="patient-returns"></div>
+                        </div>
+                        <div class="tab-pane fade" id="tab-materials-sent">
+                            <div id="patient-materials"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            const form = document.getElementById('lead-form');
-            const feedback = document.getElementById('lead-feedback');
-            const submitBtn = document.getElementById('lead-submit');
-            const csrfInput = form?.querySelector('input[name="csrfmiddlewaretoken"]');
+    <div class="toast-container position-fixed top-0 end-0 p-3" id="toast-container"></div>
 
-            form?.addEventListener('submit', (event) => {
-                event.preventDefault();
-                if (!csrfInput) {
-                    return;
-                }
-
-                if (!form.checkValidity()) {
-                    form.reportValidity();
-                    return;
-                }
-
-                feedback.textContent = '';
-                feedback.classList.remove('text-success', 'text-danger');
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Enviando...';
-
-                const payload = {
-                    nome: document.getElementById('lead-name').value.trim(),
-                    email: document.getElementById('lead-email').value.trim(),
-                    whatsapp: document.getElementById('lead-whatsapp').value.trim(),
-                };
-
-                fetch('{% url "solicitar_acesso" %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfInput.value,
-                    },
-                    body: JSON.stringify(payload),
-                })
-                    .then(async (response) => {
-                        const data = await response.json();
-                        if (!response.ok) {
-                            throw new Error(data?.erro || 'Não foi possível enviar agora.');
-                        }
-                        feedback.classList.add('text-success');
-                        feedback.textContent = data?.mensagem || 'Recebemos seus dados! Em breve retornamos.';
-                        form.reset();
-                    })
-                    .catch((error) => {
-                        feedback.classList.add('text-danger');
-                        feedback.textContent = error.message;
-                    })
-                    .finally(() => {
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = '<i class="bi bi-rocket-takeoff me-2"></i>Quero ser cliente';
-                    });
-            });
-        });
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/scripts.js' %}"></script>
 </body>
 </html>

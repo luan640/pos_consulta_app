@@ -1,925 +1,349 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- <title>Pós-Atendimento Nutricional</title> -->
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{% static 'css/home.css' %}">
-    <link rel="stylesheet" href="{% static 'css/input_material.css' %}">
-    <link rel="stylesheet" href="{% static 'css/toast-styles.css' %}">
-    <link rel="stylesheet" href="{% static 'css/contact-modal.css' %}">
-    <link rel="stylesheet" href="{% static 'css/card-pacientes.css' %}">
-    <link rel="stylesheet" href="{% static 'css/modal-historico-consulta.css' %}">
-    <link rel="stylesheet" href="{% static 'css/calendar.css' %}">
+    <title>LEMBRAPRO - Sistema de Acompanhamento</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
-<body class="bg-light">
-
-    <div class="container py-4">
-
-        <input type="hidden" id="regra-grupo-id">
-        <input type="hidden" id="nome-grupo">
-        <input type="hidden" id="descricao-grupo">
-        <input type="hidden" id="paciente-id">
-    
-        <!-- Header -->
-        <div class="mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-            <div class="d-flex align-items-center">
-            <!-- Substitui o <p> pela logo -->
-            <img
-                src="{% static 'img/logo.png' %}"
-                alt="LembraPro — pós-atendimento nutricional"
-                style="height: 100px; width: auto;"
-                class="me-2"
-            />
-            <!-- Opcional: um texto auxiliar pequeno ao lado -->
-            <!-- <span class="text-secondary small">Gerencie o acompanhamento dos seus pacientes</span> -->
-            </div>
-            <div class="d-flex gap-2 flex-wrap justify-content-end">
-            <button id="btnModalNovoPaciente" class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newPatientModal">
-                <i class="bi bi-plus"></i>
-                Novo Paciente
-            </button>
-            <button id="btnModalRegra" class="btn btn-info mx-auto" data-bs-toggle="modal" data-bs-target="#regraModal">
-                <i class="bi bi-gear"></i>
-                Regras
-            </button>
-            <button id="btnModalMaterial" class="btn btn-info mx-auto" data-bs-toggle="modal" data-bs-target="#gerenciarMateriaisModal">
-                <i class="bi bi-gear"></i>
-                Materiais
-            </button>
-            <form method="post" action="{% url 'logout' %}" class="d-inline-flex">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-secondary d-flex align-items-center gap-2">
-                    <i class="bi bi-box-arrow-right"></i>
-                    Sair
-                </button>
-            </form>
-            </div>
-        </div>
-
-        <!-- Stats Cards -->
-        <section class="section">
-            <!-- <h2 class="section-title">📊 Indicadores de Saúde</h2> -->
-            <div class="medical-stats">
-                <div class="stat-card patients">
-                    <div class="stat-icon patients">👥</div>
-                    <div class="stat-number" id="total-patients">-</div>
-                    <div class="stat-label">Total de Pacientes</div>
-                </div>
-
-                <div class="stat-card treatments">
-                    <div class="stat-icon treatments">📅</div>
-                    <div class="stat-number" id="lembrete-atrasado">-</div>
-                    <div class="stat-label">Lembretes em atraso</div>
-                </div>
-
-                <div class="stat-card emergencies">
-                    <div class="stat-icon emergencies">🚨</div>
-                    <div class="stat-number" id="active-alerts">-</div>
-                    <div class="stat-label">Alertas ativos</div>
-                    <!-- <div class="stat-trend trend-down">↘️ -2 desde ontem</div> -->
-                </div>
-            </div>
-        </section>
-
-        <!-- Filter Panel -->
-        <div class="mb-4">
-            <div class="card card-body filter-panel shadow-sm border-light-subtle">
-                
-                <!-- Form completo: filtros + botões -->
-                <form id="filtros-form">
-                    <div class="row gy-2 gx-3">
-                        <!-- Filtros -->
-                        <div class="col-md-3">
-                            <label for="filter-name" class="form-label small text-muted">
-                                <i class="bi bi-search me-1"></i> Buscar por Nome
-                            </label>
-                            <div class="input-group input-group-sm">
-                                <input type="text" class="form-control" id="filter-name" placeholder="Digite o nome...">
-                            </div>
+<body data-authenticated="true">
+    <div id="login-screen" class="login-wrapper d-none">
+        <div class="container">
+            <div class="row align-items-center min-vh-100">
+                <div class="col-lg-5 col-md-6 mx-auto">
+                    <div class="login-card">
+                        <div class="mb-4">
+                            <h1 class="logo-text">LEMBRAPRO</h1>
+                            <p class="text-muted mt-2">Nunca mais perca o momento certo de entrar em contato com seus pacientes.</p>
                         </div>
-
-                        <div class="col-md-3">
-                            <label for="filter-reminder" class="form-label small text-muted">
-                                <i class="bi bi-bell me-1"></i> Status do Lembrete
-                            </label>
-                            <select class="form-select form-select-sm" id="filter-reminder">
-                                <option value="">Todos</option>
-                                <option value="True">Ativo</option>
-                                <option value="False">Inativo</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-3">
-                            <label for="filter-sort" class="form-label small text-muted">
-                                <i class="bi bi-sort-down me-1"></i> Ordenar Por
-                            </label>
-                            <select class="form-select form-select-sm" id="filter-sort">
-                                <option value="">Todos</option>
-                                <option value="name-asc">Nome (A-Z)</option>
-                                <option value="name-desc">Nome (Z-A)</option>
-                                <option value="contact-nearest">Contato Mais Próximo</option>
-                                <option value="contact-farthest">Contato Mais Distante</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Botões alinhados à direita -->
-                    <div class="mt-3 d-flex justify-content-end gap-2">
-                        <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2" id="reset-filters" title="Limpar Filtros" style="font-size: 0.75rem;">
-                            <i class="bi bi-arrow-clockwise me-1" style="font-size: 0.9rem;"></i> Limpar
-                        </button>
-                        <button type="submit" class="btn btn-primary btn-sm py-1 px-2" id="apply-filters" title="Aplicar Filtros" style="font-size: 0.75rem;">
-                            <i class="bi bi-check2 me-1" style="font-size: 0.9rem;"></i> Aplicar
-                        </button>
-                    </div>
-                </form>
-
-            </div>
-        </div>
-
-        <!-- Patients List -->
-        <div class="mb-4">
-            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2" id="patients-view-switcher">
-                <h2 class="fs-5 mb-0 text-secondary">Visão de Pacientes</h2>
-                <div class="btn-group btn-group-sm" role="group" aria-label="Alternar visualização de pacientes">
-                    <button type="button" class="btn btn-outline-primary active" id="view-toggle-list" disabled aria-disabled="true">
-                        <i class="bi bi-card-list me-1"></i>
-                        Lista
-                    </button>
-                    <button type="button" class="btn btn-outline-primary" id="view-toggle-calendar" disabled aria-disabled="true">
-                        <i class="bi bi-calendar3 me-1"></i>
-                        Calendário
-                    </button>
-                </div>
-            </div>
-
-            <div id="empty-state" class="card text-center p-5">
-                <i class="bi bi-calendar3 fs-1 text-secondary mx-auto mb-3"></i>
-                <h3 class="fs-5 fw-medium mb-2">Nenhum paciente encontrado</h3>
-                <p class="text-secondary mb-4">Comece cadastrando seu primeiro paciente ou limpe os filtros.</p>
-                <!-- <button class="btn btn-primary mx-auto" data-bs-toggle="modal" data-bs-target="#newPatientModal">
-                <i class="bi bi-plus me-2"></i>
-                Cadastrar Primeiro Paciente
-                </button> -->
-            </div>
-
-            <div id="calendar-view" class="d-none">
-                <div class="card card-body shadow-sm border-light-subtle mb-3">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-2" id="calendar-prev" type="button">
-                            <i class="bi bi-chevron-left"></i>
-                            Mês anterior
-                        </button>
-                        <h3 class="fs-5 mb-0" id="calendar-month-label">&nbsp;</h3>
-                        <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-2" id="calendar-next" type="button">
-                            Próximo mês
-                            <i class="bi bi-chevron-right"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div id="calendar-empty-state" class="card text-center p-5 d-none">
-                    <i class="bi bi-calendar-x fs-1 text-secondary mx-auto mb-3"></i>
-                    <h3 class="fs-5 fw-medium mb-2">Nenhum lembrete encontrado para este mês</h3>
-                    <p class="text-secondary mb-0">Altere o mês ou ajuste os filtros para visualizar outros pacientes.</p>
-                </div>
-
-                <div class="calendar-grid-wrapper">
-                    <div id="calendar-grid"></div>
-                </div>
-            </div>
-
-            <div id="patients-list" class="d-none">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-
-                </div>
-                <div id="patients-container" class="patients-container">
-                <!-- Patient cards will be inseridos via JavaScript -->
-                </div>
-                <div id="load-more-wrapper" class="text-center mt-3 d-none">
-                    <button id="load-more-patients" class="btn btn-outline-primary">
-                        Ver mais
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- New Patient Modal -->
-        <div class="modal fade" id="newPatientModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Cadastrar Novo Paciente</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="patient-form">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="name" placeholder="Nome completo" required>
-                                <label for="name" for="name" class="form-label">Nome do Paciente *</label>
+                        <form id="login-form" class="mt-4">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">E-mail</label>
+                                <input type="email" class="form-control" id="email" value="usuario@exemplo.com">
                             </div>
-                            <div class="form-floating mb-3">
-                                <input type="tel" class="form-control" id="phone" placeholder="(11) 99999-9999">
-                                <label for="phone" for="phone" class="form-label">Telefone</label>
-                            </div>
-                            <div class="form-floating mb-3">
-                                <input type="date" class="form-control" id="lastConsultation" required>
-                                <label for="lastConsultation" for="lastConsultation" class="form-label">Data da Última Consulta *</label>
-                            </div>
-                            <div class="form-floating mb-3">
-                                <select class="form-select" id="tipoConsulta" required>
-                                    <option value="" disabled selected>Selecione</option>
-                                    <option value="consulta">Consulta</option>
-                                    <option value="retorno">Retorno</option>
-                                </select>
-                                <label for="tipoConsulta">Tipo de Consulta *</label>
-                            </div>
-                            <div class="d-flex justify-content-end">
-                                <button type="submit" class="btn btn-success" id="submit-contact-btn">Salvar</button>
-                            </div>       
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Contact Modal -->
-        <div class="modal fade" id="contactModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title">
-                        <i class="bi bi-chat-dots-fill me-2"></i>
-                        Registrar Contato - <span id="contact-patient-name" class="fw-bold"></span>
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <form id="contact-form">
-                            <input type="hidden" id="contact-patient-id">
-                            <input type="hidden" id="contact-type">
-
-                            <!-- Contact Notes Section -->
                             <div class="mb-4">
-                                <label for="contact-notes" class="form-label fw-bold">
-                                <i class="bi bi-journal-text me-2"></i>Anotações do Contato
-                                </label>
-                                <textarea 
-                                class="form-control border border-2" 
-                                id="contact-notes" 
-                                rows="5" 
-                                placeholder="Descreva como foi o contato, feedback do paciente, orientações dadas..."
-                                ></textarea>
+                                <label for="password" class="form-label">Senha</label>
+                                <input type="password" class="form-control" id="password" value="senha123">
                             </div>
-
-                            <!-- Materials Section -->
-                            <div class="mb-4 p-3 bg-light rounded">
-                                <label class="form-label fw-bold">
-                                <i class="bi bi-file-earmark-text me-2"></i>Materiais a entregar
-                                </label>
-                                
-                                <!-- Selected Materials -->
-                                <div id="selected-materials" class="d-flex flex-wrap gap-2 mb-3 p-2 border rounded bg-white min-height-50"></div>
-                                
-                                <!-- Material Suggestions -->
-                                <div>
-                                <p class="text-muted small mb-2">Materiais disponíveis:</p>
-                                <div id="material-suggestions" class="d-flex flex-wrap gap-2"></div>
-                                </div>
-                            </div>
-
-                            <!-- Action Buttons -->
-                            <div class="d-flex justify-content-end">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="submit" class="btn btn-success" id="btn-registrar-contato">Salvar</button>
-                            </div>
+                            <button type="submit" class="btn btn-primary w-100 mb-3">Entrar</button>
+                            <a href="#" class="text-muted small">Esqueceu sua senha?</a>
                         </form>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Delete Confirmation Modal -->
-        <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Excluir Paciente</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Tem certeza que deseja excluir <span id="delete-patient-name"></span>? Esta ação não pode ser desfeita.</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-danger" id="confirm-delete">Excluir</button>
-                    </div>
+                <div class="col-lg-6 d-none d-lg-block ms-auto">
+                    <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80" alt="Profissional de saúde" class="login-image">
                 </div>
             </div>
         </div>
-
-        <!-- Modal: Grupos de Regras -->
-        <div class="modal fade" id="regraModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-xl">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Fluxo de regras</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-
-                    <div class="modal-body p-0">
-                        <div class="row g-0">
-                            <!-- Painel Lateral - Grupos -->
-                            <div class="col-md-3 border-end">
-                                <div class="p-3 d-flex justify-content-between align-items-center border-bottom">
-                                    <button class="btn btn-primary d-flex align-items-center gap-2" id="novoGrupoBtn">Add grupo de regra
-                                        <i class="bi bi-plus-circle"></i>
-                                    </button>
-                                </div>
-                                <div class="list-group list-group-flush" id="grupos-lista">
-                                </div>
-                            </div>
-
-                            <!-- Conteúdo Principal - Regras do Grupo -->
-                            <div class="col-md-9">
-                                <div class="p-3">
-                                    <!-- Cabeçalho do Grupo -->
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <h6 class="fw-bold" id="grupo-selecionado-titulo">Primeiro Contato</h6>
-                                        <div>
-                                            <button class="btn btn-outline-secondary btn-sm me-2" id="modalEditarGrupoBtn">
-                                                <i class="bi bi-pencil me-1"></i> Editar Grupo
-                                            </button>
-                                            <button class="btn btn-primary btn-sm" id="btnNovaRegra">
-                                                <i class="bi bi-plus-circle me-1"></i> Nova Regra
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Descrição do Grupo -->
-                                    <div class="alert alert-light mb-3" id="grupo-descricao">
-                                        Escolha ou crie um grupo de regras.
-                                    </div>
-
-                                    <!-- Tabela de Regras do Grupo -->
-                                    <div class="table-responsive">
-                                        <table class="table table-bordered table-sm">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th>Nome</th>
-                                                    <th>Dias Após</th>
-                                                    <th>Descrição</th>
-                                                    <th>Materiais</th>
-                                                    <th>Ações</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="regras-tbody">
-
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    <!-- Mensagem quando não há regras -->
-                                    <div id="sem-regras" class="text-center p-4 d-none">
-                                        <i class="bi bi-exclamation-circle text-secondary fs-3"></i>
-                                        <p class="mt-2 text-secondary">Nenhuma regra cadastrada neste grupo.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Novo Grupo -->
-        <div class="modal fade" id="novoGrupoModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="grupoModalLabel">Novo Grupo de Regras</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="grupoForm">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="grupoNome" placeholder="Nome do Grupo" required>
-                                <label for="grupoNome" class="form-label">Nome do Grupo</label>
-                            </div>
-                            <div class="form-floating mb-3">
-                                <textarea class="form-control" name="grupoDescricao" id="grupoDescricao" placeholder="Descrição" style="height: 100px"></textarea>
-                                <label for="grupoDescricao">Descrição</label>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary btn-cancelar-grupo" data-bs-dismiss="modal">Voltar</button>
-                                <button type="submit" class="btn btn-success" id="salvarGrupoBtn">Salvar</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Editar Grupo -->
-        <div class="modal fade" id="editarGrupo" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                <h5 class="modal-title" id="grupoModalLabel">Editar Grupo de Regras</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                </div>
-                <div class="modal-body">
-                <form id="editarGrupoForm">
-                    <div class="form-floating mb-3">
-                    <input type="text" class="form-control" id="editarGrupoNome" placeholder="Nome do Grupo" required>
-                    <label for="editarGrupoNome" class="form-label">Nome do Grupo</label>
-                    </div>
-                    <div class="form-floating mb-3">
-                    <textarea class="form-control" id="editarGrupoDescricao" placeholder="Descrição" style="height: 100px"></textarea>
-                    <label for="editarGrupoDescricao">Descrição</label>
-                    </div>
-                    
-                    <div class="modal-footer d-flex justify-content-between">
-                    <button type="button" class="btn btn-danger" id="excluirGrupoBtn">Excluir</button>
-                    <div>
-                        <button type="button" class="btn btn-secondary btn-cancelar-grupo" data-bs-dismiss="modal">Voltar</button>
-                        <button type="submit" class="btn btn-success" id="editarGrupoBtn">Salvar</button>
-                    </div>
-                    </div>
-                </form>
-                </div>
-            </div>
-            </div>
-        </div>
-
-        <!-- Modal: confirmar exclusão grupo de regra -->
-        <div class="modal fade" id="confirmarExclusaoGrupoModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-md">
-                <div class="modal-content fade-in">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="bi bi-exclamation-triangle-fill"></i>
-                            Excluir Grupo de Regras
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    
-                    <div class="modal-body text-center">
-                        <div class="alert alert-danger d-flex align-items-start" role="alert">
-                            <i class="bi bi-exclamation-circle-fill text-danger me-2 mt-1"></i>
-                            <div class="text-start">
-                                <strong>Atenção:</strong> Esta ação não pode ser desfeita e todas as regras deste grupo serão removidas permanentemente.
-                            </div>
-                        </div>
-                        
-                        <div class="alert alert-warning d-flex align-items-start" role="alert">
-                            <i class="bi bi-info-circle-fill text-warning me-2 mt-1"></i>
-                            <div class="text-start">
-                                <strong>Importante:</strong> Caso algum paciente esteja cadastrado a este grupo de regras, ele ficará sem grupo de regras atribuído.
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" id="voltar-editar-grupo-btn">Voltar</button>
-                        <button type="button" class="btn btn-danger" id="confirmar-exclusao-grupo-btn">Excluir</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Nova Regra -->
-        <div class="modal fade" id="novaRegraModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Nova Regra</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="nova-regra-form">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="nova-regra-nome" placeholder="Nome da Regra" required>
-                                <label for="nova-regra-nome">Nome da Regra</label>
-                            </div>
-                            <div class="form-floating mb-3">
-                                <input type="number" class="form-control" id="nova-regra-dias" placeholder="Dias Após" min="1" required>
-                                <label for="nova-regra-dias">Dias Após</label>
-                            </div>
-                            <div class="form-floating mb-3">
-                                <textarea class="form-control" id="nova-regra-descricao" placeholder="Descrição" style="height: 100px"></textarea>
-                                <label for="nova-regra-descricao">Descrição</label>
-                            </div>
-                            <div class="mb-3">
-                                <label for="nova-regra-materiais" class="form-label">Materiais (opcional)</label>
-                                <div id="nova-regra-materiais" class="materiais-multiselect border rounded p-2 small text-muted" style="max-height: 220px; overflow-y: auto;" aria-describedby="nova-regra-materiais-help" role="group">
-                                    Carregando materiais...
-                                </div>
-                                <div id="nova-regra-materiais-help" class="form-text">Clique nos botões para selecionar os materiais que acompanham esta regra (pode escolher mais de um).</div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Voltar</button>
-                                <button type="submit" class="btn btn-success" id="salvarRegraBtn">Salvar</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Desabilitar Lembrete -->
-        <div class="modal fade" id="desabilitarLembrete" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-large">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Desabilitar lembrete</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-
-                    <div class="modal-body text-center py-5">
-                        <input type="hidden" id="disable-patient-id">
-
-                        <i class="bi bi-bell-slash-fill text-warning fs-1 mb-3"></i>
-                        <h4 class="fw-bold mb-3">Desabilitar Lembrete</h4>
-                        <p class="mb-2">
-                            Deseja <span class="text-danger fw-semibold">desabilitar o lembrete</span> para o paciente 
-                            <span id="patient-name-disable" class="fw-bold text-primary"></span>?
-                        </p>
-                        <p class="text-secondary mb-3">
-                            Você não receberá mais lembretes para este paciente.<br>
-                            Caso queira, será possível reabilitar o lembrete futuramente.
-                        </p>
-                    </div>
-                    <div class="modal-footer justify-content-center">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-success" id="confirm-disable-reminder">Salvar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Habilitar Lembrete -->
-        <div class="modal fade" id="habilitarLembrete" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-md">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Habilitar lembrete</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-
-                    <div class="modal-body text-center py-5">
-                        <input type="hidden" id="enable-patient-id">
-
-                        <i class="bi bi-bell-fill text-success fs-1 mb-3"></i>
-                        <h4 class="fw-bold mb-3">Habilitar Lembrete</h4>
-                        <p class="mb-2">
-                            Deseja <span class="text-success fw-semibold">habilitar o lembrete</span> para o paciente 
-                            <span id="patient-name-enable" class="fw-bold text-primary"></span>?
-                        </p>
-                        <p class="text-secondary mb-3">
-                            Você voltará a receber lembretes para este paciente.<br>
-                            Caso queira, será possível desabilitar o lembrete futuramente.
-                        </p>
-                    </div>
-                    <div class="modal-footer justify-content-center">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-success" id="confirm-enable-reminder">Habilitar Lembrete</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Desativar Paciente Temporariamente -->
-        <div class="modal fade" id="desativarPacienteModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-md">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Desativar Paciente Temporariamente</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-                    <div class="modal-body text-center py-5">
-                        <input type="hidden" id="deactivate-patient-id">
-                        <i class="bi bi-pause-circle-fill text-warning fs-1 mb-3"></i>
-                        <h4 class="fw-bold mb-3">Desativar Paciente</h4>
-                        <p class="mb-2">
-                            Deseja <span class="text-warning fw-semibold">desativar temporariamente</span> o paciente 
-                            <span id="patient-name-deactivate" class="fw-bold text-primary"></span>?
-                        </p>
-                        <p class="text-secondary mb-3">
-                            O paciente será removido da lista de acompanhamento, mas seus dados serão mantidos.<br>
-                            Você poderá reativá-lo a qualquer momento.
-                        </p>
-                    </div>
-                    <div class="modal-footer justify-content-center">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-success" id="confirm-deactivate-patient">Salvar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Excluir Paciente Permantente -->
-        <div class="modal fade" id="excluirPacienteModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-md">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Excluir paciente permanentemente</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-                    <div class="modal-body text-center py-5">
-                        <input type="hidden" id="excluir-patient-id">
-                        <i class="bi bi-pause-circle-fill text-danger fs-1 mb-3"></i>
-                        <h4 class="fw-bold mb-3">Excluir paciente</h4>
-                        <p class="mb-2">
-                            Deseja <span class="text-danger fw-semibold">excluir permanentemente</span> o paciente 
-                            <span id="patient-name-excluir" class="fw-bold text-primary"></span>?
-                        </p>
-                        <p class="text-secondary mb-3">
-                            O paciente será removido da lista de acompanhamento, e todos seus dados serão perdidos.<br>
-                            Você não poderá resgatá-lo.
-                        </p>
-                    </div>
-                    <div class="modal-footer justify-content-center">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-success" id="confirm-excluir-patient">Salvar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Reativar Paciente -->
-        <div class="modal fade" id="reativarPacienteModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-md">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Reativar Paciente</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-                    <div class="modal-body text-center py-5">
-                        <input type="hidden" id="reactivate-patient-id">
-                        <i class="bi bi-play-circle-fill text-success fs-1 mb-3"></i>
-                        <h4 class="fw-bold mb-3">Reativar Paciente</h4>
-                        <p class="mb-2">
-                            Deseja <span class="text-success fw-semibold">reativar</span> o paciente 
-                            <span id="patient-name-reactivate" class="fw-bold text-primary"></span>?
-                        </p>
-                        <p class="text-secondary mb-3">
-                            O paciente voltará para a lista de acompanhamento.<br>
-                            Você poderá desativá-lo novamente a qualquer momento.
-                        </p>
-                    </div>
-                    <div class="modal-footer justify-content-center">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-success" id="confirm-reactivate-patient">Salvar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Registrar consulta de paciente, pode ser uma consulta ou retorno -->
-        <div class="modal fade" id="registrarConsultaModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <form id="registrar-consulta-form">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Registrar Consulta para <span id="consulta-patient-name" class="fw-bold text-primary"></span></h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                        </div>
-                        <div class="modal-body">
-                            <input type="hidden" id="consulta-patient-id">
-                            <div class="mb-3">
-                                <label for="consulta-tipo" class="form-label">Tipo de Consulta</label>
-                                <select class="form-select" id="consulta-tipo" required>
-                                    <option value="" disabled selected>Selecione</option>
-                                    <option value="consulta">Consulta</option>
-                                    <option value="retorno">Retorno</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label for="consulta-data" class="form-label">Data</label>
-                                <input type="date" class="form-control" id="consulta-data" required>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-success" id="btn-registrar-consulta">Salvar</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Atribuir Grupo de Regras ao Paciente -->
-        <div class="modal fade" id="atribuirGrupoModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <form id="atribuir-grupo-form">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Atribuir Grupo de Regras</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                        </div>
-                        <div class="modal-body">
-                            <input type="hidden" id="atribuir-patient-id">
-                            <div class="mb-3">
-                                <label for="grupo-select" class="form-label">Selecione o Grupo de Regras</label>
-                                <select class="form-select" id="grupo-select" required>
-                                    <option value="" disabled selected>Escolha um grupo</option>
-                                    <!-- Opções de grupos serão inseridas via JavaScript -->
-                                </select>
-                            </div>
-                            <div id="grupo-descricao-preview" class="alert alert-light d-none"></div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-success">Salvar</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Gerenciar Materiais -->
-        <div class="modal fade" id="gerenciarMateriaisModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Gerenciar Materiais</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-                    <div class="modal-body">
-                        <!-- Lista de Materiais -->
-                        <div class="d-flex justify-content-end align-items-center mb-3">
-                            <button class="btn btn-primary btn-sm mb-3" id="btnNovoMaterial" data-bs-toggle="modal" data-bs-target="#novoMaterialModal">
-                                <i class="bi bi-plus-circle me-1"></i> Novo Material
-                            </button>
-                        </div>
-                        <div class="table-responsive">
-                        <table class="table table-bordered table-sm align-middle">
-                            <thead class="table-light">
-                            <tr>
-                                <th>Nome</th>
-                                <th class="text-center" style="width: 120px;">Ações</th>
-                            </tr>
-                            </thead>
-                            <tbody id="materiais-tbody">
-                            <!-- Linhas de materiais via JS -->
-                            </tbody>
-                        </table>
-                        <div id="sem-materiais" class="text-center text-secondary py-4 d-none">
-                            <i class="bi bi-file-earmark-text fs-3"></i>
-                            <p class="mt-2 mb-0">Nenhum material cadastrado.</p>
-                        </div>
-                        </div>
-                        <!-- Formulário de Novo/Editar Material (exibido via JS) -->
-                        <div id="material-form-wrapper" class="d-none">
-                            <form id="material-form">
-                            <input type="hidden" id="material-id">
-                            <div class="mb-3">
-                                <label for="material-nome" class="form-label">Nome do Material</label>
-                                <input type="text" class="form-control" id="material-nome" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="material-descricao" class="form-label">Descrição</label>
-                                <textarea class="form-control" id="material-descricao" rows="2"></textarea>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-success" id="salvar-material-btn">Salvar</button>
-                                <button type="button" class="btn btn-secondary" id="cancelar-material-btn">Cancelar</button>
-                            </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Novo material -->
-        <div class="modal fade" id="novoMaterialModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <form id="novo-material-form">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Novo Material</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="form-floating mb-3">
-                            <input type="text" class="form-control" id="novo-material-nome" name="novo-material-nome" placeholder="Nome do Material" required>
-                            <label for="novo-material-nome">Nome do Material</label>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success">Salvar</button>
-                    </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Histórico de Consultas -->
-        <div class="modal fade" id="consultasModal" tabindex="-1" aria-labelledby="consultasModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-sm">
-                <div class="modal-content">
-                    <div class="modal-header">
-                    <h5 class="modal-title" id="consultasModalLabel">
-                        <i class="bi bi-journal-medical me-2"></i>
-                        Histórico de consultas
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body" id="consultas-historico-body">
-                    <!-- Consultas serão inseridas via JS -->
-                    </div>
-                    <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Histórico de Contatos -->
-        <div class="modal fade" id="contatosModal" tabindex="-1" aria-labelledby="contatosModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                <h5 class="modal-title" id="contatosModalLabel">
-                    <i class="bi bi-chat-dots me-2"></i>
-                    Histórico de Contatos<span id="contatosModalPatientName"></span>
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="contatosModalBody">
-                <!-- Histórico de contatos será inserido via JS -->
-                </div>
-                <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                </div>
-            </div>
-            </div>
-        </div>
-
-        <!-- Modal: Editar Paciente -->
-        <div class="modal fade" id="editarPacienteModal" tabindex="-1" aria-labelledby="editarPacienteModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                    <h5 class="modal-title" id="editarPacienteModalLabel">
-                        <i class="bi bi-pencil me-2"></i>
-                        Editar Informações do Paciente
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                    <form id="editarPacienteForm">
-                        <input type="hidden" id="editarPacienteId">
-                        <div class="form-floating mb-3">
-                        <input type="text" class="form-control" id="nomeInput" placeholder="Nome completo" required>
-                        <label for="nomeInput">Nome completo</label>
-                        </div>
-                        <div class="form-floating mb-3">
-                        <input type="tel" class="form-control" id="telefoneInput" placeholder="Telefone" required>
-                        <label for="telefoneInput">Telefone</label>
-                        <div class="form-text">Digite apenas números (DDD + número)</div>
-                        <!-- </div>
-                        <div class="form-floating mb-3">
-                        <input type="email" class="form-control" id="emailInput" placeholder="E-mail (opcional)">
-                        <label for="emailInput">E-mail (opcional)</label>
-                        </div>
-                        <div class="form-floating mb-3">
-                        <textarea class="form-control" id="observacoesInput" placeholder="Observações" style="height: 100px"></textarea>
-                        <label for="observacoesInput">Observações gerais</label>
-                        </div> -->
-                    </form>
-                    </div>
-                    <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-success" id="salvarEdicaoPacienteBtn">Salvar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     </div>
 
-    <!-- Bootstrap JS Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Custom JS -->
-    <script type="module" src="{% static 'js/home.js' %}"></script>
-    <script type="module" src="{% static 'js/registrar-contato.js' %}"></script>
-    <script type="module" src="{% static 'js/message.js' %}"></script>
-    <script type="module" src="{% static 'js/cadastrar-regra.js' %}"></script>
-    <script type="module" src="{% static 'js/materiais.js' %}"></script>
-    <script type="module" src="{% static 'js/verifica-cadastro.js' %}"></script>
-    <script type="module" src="{% static 'js/filtro.js' %}"></script>
+    <div id="app">
+        <nav class="navbar navbar-light bg-white border-bottom fixed-top">
+            <div class="container-fluid px-4">
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-link text-dark me-3" id="toggle-sidebar">
+                        <i class="bi bi-list fs-4"></i>
+                    </button>
+                    <span class="navbar-brand mb-0 fw-semibold">LEMBRAPRO</span>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-link text-dark position-relative">
+                        <i class="bi bi-bell fs-5"></i>
+                        <span class="notification-badge">3</span>
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-link text-dark dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle fs-5"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" data-page="settings">Configurações</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}">Sair</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="sidebar" id="sidebar">
+            <nav class="nav flex-column p-3">
+                <a class="nav-link active" href="#" data-page="dashboard">
+                    <i class="bi bi-house-door me-2"></i> Início
+                </a>
+                <a class="nav-link" href="#" data-page="calendar">
+                    <i class="bi bi-calendar3 me-2"></i> Calendário
+                </a>
+                <a class="nav-link" href="#" data-page="patients">
+                    <i class="bi bi-people me-2"></i> Pacientes
+                </a>
+                <a class="nav-link" href="#" data-page="rules">
+                    <i class="bi bi-diagram-3 me-2"></i> Regras e Fluxos
+                </a>
+                <a class="nav-link" href="#" data-page="materials">
+                    <i class="bi bi-file-earmark-text me-2"></i> Materiais
+                </a>
+            </nav>
+        </div>
+
+        <div class="main-content" id="main-content">
+            <div id="page-dashboard" class="page-content active">
+                <div class="content-header mb-4">
+                    <h2 class="mb-1">Lembretes</h2>
+                    <p class="text-muted small">Acompanhe seus contatos agendados</p>
+                </div>
+                <div class="filter-bar mb-4">
+                    <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="filter" id="filter-today" checked>
+                            <label class="btn btn-outline-secondary" for="filter-today">Hoje</label>
+                            <input type="radio" class="btn-check" name="filter" id="filter-overdue">
+                            <label class="btn btn-outline-secondary" for="filter-overdue">Atrasados</label>
+                            <input type="radio" class="btn-check" name="filter" id="filter-upcoming">
+                            <label class="btn btn-outline-secondary" for="filter-upcoming">Próximos dias</label>
+                            <input type="radio" class="btn-check" name="filter" id="filter-all">
+                            <label class="btn btn-outline-secondary" for="filter-all">Todos</label>
+                        </div>
+                        <div class="d-flex gap-2 align-items-center">
+                            <input type="text" class="form-control form-control-sm" id="search-reminders" placeholder="Buscar paciente..." style="width: 200px;">
+                            <div class="btn-group" role="group">
+                                <input type="radio" class="btn-check" name="view" id="view-list" checked>
+                                <label class="btn btn-outline-secondary btn-sm" for="view-list">
+                                    <i class="bi bi-list-ul"></i>
+                                </label>
+                                <input type="radio" class="btn-check" name="view" id="view-calendar">
+                                <label class="btn btn-outline-secondary btn-sm" for="view-calendar">
+                                    <i class="bi bi-calendar-week"></i>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="reminders-list" class="reminders-container"></div>
+                <div id="calendar-view" class="d-none"></div>
+            </div>
+
+            <div id="page-calendar" class="page-content">
+                <div class="content-header mb-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1">Calendário</h2>
+                        <p class="text-muted small">Visualize seus lembretes ao longo do mês</p>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <button class="btn btn-outline-secondary btn-sm" id="prev-month">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <span id="current-month-year" class="fw-semibold"></span>
+                        <button class="btn btn-outline-secondary btn-sm" id="next-month">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" id="today-btn">Hoje</button>
+                    </div>
+                </div>
+                <div id="calendar-grid" class="calendar-grid"></div>
+                <div id="day-details" class="mt-4"></div>
+            </div>
+
+            <div id="page-patients" class="page-content">
+                <div class="content-header mb-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1">Pacientes</h2>
+                        <p class="text-muted small">Gerencie sua base de pacientes</p>
+                    </div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newPatientModal">
+                        <i class="bi bi-plus-lg me-1"></i> Novo Paciente
+                    </button>
+                </div>
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="search-patients" placeholder="Buscar por nome, telefone ou e-mail...">
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover" id="patients-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Telefone</th>
+                                <th>E-mail</th>
+                                <th>Última consulta</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patients-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="page-rules" class="page-content">
+                <div class="content-header mb-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1">Regras e Fluxos</h2>
+                        <p class="text-muted small">Configure lembretes automáticos baseados em consultas</p>
+                    </div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newRuleGroupModal">
+                        <i class="bi bi-plus-lg me-1"></i> Novo Grupo
+                    </button>
+                </div>
+                <div id="rule-groups-container"></div>
+                <div class="alert alert-info mt-4 d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="bi bi-info-circle me-2"></i>
+                        <span>Teste como as regras geram lembretes automaticamente</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary" id="simulate-rules">Simular geração</button>
+                </div>
+            </div>
+
+            <div id="page-materials" class="page-content">
+                <div class="content-header mb-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1">Materiais</h2>
+                        <p class="text-muted small">Biblioteca de conteúdos para envio</p>
+                    </div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newMaterialModal">
+                        <i class="bi bi-plus-lg me-1"></i> Novo Material
+                    </button>
+                </div>
+                <div class="row g-3" id="materials-grid"></div>
+            </div>
+
+            <div id="page-settings" class="page-content">
+                <div class="content-header mb-4">
+                    <h2 class="mb-1">Configurações</h2>
+                    <p class="text-muted small">Gerencie suas preferências</p>
+                </div>
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">Dados pessoais</h5>
+                                <form id="settings-form">
+                                    <div class="mb-3">
+                                        <label class="form-label">Nome completo</label>
+                                        <input type="text" class="form-control" value="Dra. Ana Carolina Silva">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Telefone</label>
+                                        <input type="text" class="form-control" value="(11) 98765-4321">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">E-mail</label>
+                                        <input type="email" class="form-control" value="ana.silva@exemplo.com">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">Notificações</h5>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="notif-email" checked>
+                                    <label class="form-check-label" for="notif-email">Receber lembretes por e-mail</label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="notif-whatsapp" checked>
+                                    <label class="form-check-label" for="notif-whatsapp">Receber lembretes via WhatsApp</label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="notif-browser">
+                                    <label class="form-check-label" for="notif-browser">Notificações no navegador</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="newPatientModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Novo Paciente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="new-patient-form">
+                        <div class="mb-3">
+                            <label class="form-label">Nome completo *</label>
+                            <input type="text" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Telefone *</label>
+                            <input type="text" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">E-mail</label>
+                            <input type="email" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Observações</label>
+                            <textarea class="form-control" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="patientDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="patient-detail-name"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs mb-3" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-history">Timeline</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-returns">Retornos</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-materials-sent">Materiais enviados</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="tab-history">
+                            <div id="patient-timeline"></div>
+                        </div>
+                        <div class="tab-pane fade" id="tab-returns">
+                            <div id="patient-returns"></div>
+                        </div>
+                        <div class="tab-pane fade" id="tab-materials-sent">
+                            <div id="patient-materials"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed top-0 end-0 p-3" id="toast-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/scripts.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('login-screen')?.classList.add('d-none');
+            document.getElementById('app')?.classList.remove('d-none');
+            if (typeof renderReminders === 'function') {
+                renderReminders();
+                renderPatients();
+                renderRuleGroups();
+                renderMaterials();
+                renderCalendar();
+            }
+        });
+    </script>
 </body>
 </html>
