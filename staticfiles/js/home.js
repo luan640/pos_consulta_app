@@ -845,7 +845,7 @@ function criarEventoCalendario(paciente) {
   } = dados;
 
   const elemento = document.createElement('div');
-  elemento.className = `calendar-event calendar-event-${status}`;
+  elemento.className = `calendar-event calendar-event-${status} calendar-event--compact`;
   elemento.dataset.pacienteId = paciente.id;
 
   const cabecalho = document.createElement('div');
@@ -928,6 +928,14 @@ function criarEventoCalendario(paciente) {
   elemento.appendChild(cabecalho);
   elemento.appendChild(informacoes);
   elemento.appendChild(rodape);
+
+  cabecalho.addEventListener('click', (event) => {
+    if (event.target.closest('button, a')) {
+      return;
+    }
+    const expandido = elemento.classList.toggle('calendar-event--expanded');
+    elemento.classList.toggle('calendar-event--compact', !expandido);
+  });
 
   return elemento;
 }

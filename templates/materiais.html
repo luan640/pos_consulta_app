@@ -1,0 +1,183 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <!-- Bootstrap Icons -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="{% static 'css/home.css' %}">
+        <link rel="stylesheet" href="{% static 'css/toast-styles.css' %}">
+    </head>
+
+    <body class="bg-light">
+        <div class="container py-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <div>
+                    <a class="btn btn-secondary btn-sm d-inline-flex align-items-center gap-2 mb-2" href="{% url 'home' %}">
+                        <i class="bi bi-arrow-left"></i>
+                        Voltar
+                    </a>
+                    <h1 class="h3 mb-1">Materiais</h1>
+                    <p class="text-muted mb-0">Gerencie os materiais cadastrados.</p>
+                </div>
+                <button class="btn btn-primary d-flex align-items-center gap-2" id="btnNovoMaterial" data-bs-toggle="modal" data-bs-target="#novoMaterialModal">
+                    <i class="bi bi-plus-circle"></i>
+                    Novo material
+                </button>
+            </div>
+
+            <div class="card shadow-sm border-light-subtle">
+                <div class="card-body">
+                    <div id="materiais-cards" class="row g-3"></div>
+                    <div id="sem-materiais" class="text-center text-secondary py-4 d-none">
+                        <i class="bi bi-file-earmark-text fs-3"></i>
+                        <p class="mt-2 mb-0">Nenhum material cadastrado.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal: Novo material -->
+            <div class="modal fade" id="novoMaterialModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered material-modal">
+                    <div class="modal-content">
+                        <form id="novo-material-form" enctype="multipart/form-data">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Novo Material</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="text-muted small mb-3">Escolha um tipo de arquivo e envie apenas um.</p>
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="novo-material-nome" name="descricao" placeholder="Nome do Material" required>
+                                    <label for="novo-material-nome">Nome do Material</label>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="novo-material-tipo">Tipo de arquivo</label>
+                                    <select class="form-select" id="novo-material-tipo" name="tipo_arquivo">
+                                        <option value="pdf" selected>PDF</option>
+                                        <option value="imagem">Imagem</option>
+                                        <option value="foto">Foto</option>
+                                        <option value="video">Video</option>
+                                        <option value="">Sem arquivo</option>
+                                    </select>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6 material-arquivo-wrapper">
+                                        <label for="novo-material-pdf" class="form-label">Anexar PDF</label>
+                                        <input type="file" class="form-control material-arquivo-input" id="novo-material-pdf" name="arquivo_pdf" accept="application/pdf" data-tipo="pdf">
+                                    </div>
+                                    <div class="col-md-6 material-arquivo-wrapper">
+                                        <label for="novo-material-video" class="form-label">Anexar video</label>
+                                        <input type="file" class="form-control material-arquivo-input" id="novo-material-video" name="arquivo_video" accept="video/*" data-tipo="video">
+                                    </div>
+                                    <div class="col-md-6 material-arquivo-wrapper">
+                                        <label for="novo-material-imagem" class="form-label">Anexar imagem</label>
+                                        <input type="file" class="form-control material-arquivo-input" id="novo-material-imagem" name="arquivo_imagem" accept="image/*" data-tipo="imagem">
+                                    </div>
+                                    <div class="col-md-6 material-arquivo-wrapper">
+                                        <label for="novo-material-foto" class="form-label">Anexar foto</label>
+                                        <input type="file" class="form-control material-arquivo-input" id="novo-material-foto" name="arquivo_foto" accept="image/*" data-tipo="foto">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-success">Salvar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal: Editar material -->
+            <div class="modal fade" id="editarMaterialModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form id="material-editar-form" enctype="multipart/form-data">
+                            <input type="hidden" id="material-editar-id" name="material-id">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Editar material</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="material-editar-descricao" name="descricao" placeholder="Nome do Material" required>
+                                    <label for="material-editar-descricao">Nome do Material</label>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="material-editar-tipo">Tipo de arquivo</label>
+                                    <select class="form-select" id="material-editar-tipo" name="tipo_arquivo">
+                                        <option value="pdf">PDF</option>
+                                        <option value="imagem">Imagem</option>
+                                        <option value="foto">Foto</option>
+                                        <option value="video">Video</option>
+                                        <option value="">Sem arquivo</option>
+                                    </select>
+                                </div>
+                                <div id="material-editar-arquivos" class="text-muted small mb-3"></div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="material-editar-remover" name="remover_arquivo" value="1">
+                                    <label class="form-check-label" for="material-editar-remover">Remover arquivo atual</label>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="material-editar-pdf" class="form-label">Substituir PDF</label>
+                                    <input type="file" class="form-control material-arquivo-input" id="material-editar-pdf" name="arquivo_pdf" accept="application/pdf" data-tipo="pdf">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="material-editar-foto" class="form-label">Substituir foto</label>
+                                    <input type="file" class="form-control material-arquivo-input" id="material-editar-foto" name="arquivo_foto" accept="image/*" data-tipo="foto">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="material-editar-imagem" class="form-label">Substituir imagem</label>
+                                    <input type="file" class="form-control material-arquivo-input" id="material-editar-imagem" name="arquivo_imagem" accept="image/*" data-tipo="imagem">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="material-editar-video" class="form-label">Substituir video</label>
+                                    <input type="file" class="form-control material-arquivo-input" id="material-editar-video" name="arquivo_video" accept="video/*" data-tipo="video">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-success">Salvar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal: Confirmar exclusao -->
+            <div class="modal fade" id="excluirMaterialModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-sm">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Excluir material</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-0">
+                                Deseja excluir o material
+                                <strong id="excluir-material-nome">selecionado</strong>?
+                            </p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-danger" id="confirmar-excluir-material">Excluir</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bootstrap JS Bundle with Popper -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+        <!-- Custom JS -->
+        <script type="module" src="{% static 'js/message.js' %}"></script>
+        <script type="module" src="{% static 'js/materiais.js' %}"></script>
+    </body>
+</html>

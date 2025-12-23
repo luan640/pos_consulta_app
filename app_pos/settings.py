@@ -152,6 +152,17 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [ os.path.join(BASE_DIR, 'static') ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+# Media (local)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# S3
+USE_S3 = env.bool('USE_S3')
+AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME')
+
 # E adicione esta configuração moderna:
 STORAGES = {
     "default": {
@@ -166,6 +177,12 @@ STORAGES = {
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_AUTOREFRESH = True  # Apenas para desenvolvimento
 WHITENOISE_MANIFEST_STRICT = False
+
+if USE_S3:
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+    }
+    MEDIA_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

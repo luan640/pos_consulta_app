@@ -1,0 +1,278 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <!-- Bootstrap Icons -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="{% static 'css/home.css' %}">
+        <link rel="stylesheet" href="{% static 'css/toast-styles.css' %}">
+    </head>
+
+    <body class="bg-light">
+        <div class="container py-4">
+            <div class="regra-page py-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                    <div>
+                        <a class="btn btn-secondary btn-sm d-inline-flex align-items-center gap-2 mb-2" href="{% url 'home' %}">
+                            <i class="bi bi-arrow-left"></i>
+                            Voltar
+                        </a>
+                        <h1 class="h3 mb-1">Fluxo de regras</h1>
+                        <p class="text-muted mb-0">
+                            Crie grupos de regras e organize o fluxo de contatos dos pacientes.
+                        </p>
+                    </div>
+                    <button class="btn btn-primary d-flex align-items-center gap-2" id="btn-novo-grupo">
+                        <i class="bi bi-plus-circle"></i>
+                        Novo grupo
+                    </button>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-lg-4">
+                        <div class="card regra-card h-100">
+                            <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+                                <span class="fw-semibold text-secondary">Grupos de regras</span>
+                                <button class="btn btn-sm btn-primary" id="btn-novo-grupo-lateral">
+                                    <i class="bi bi-plus"></i>
+                                    Criar
+                                </button>
+                            </div>
+                            <div id="regra-grupos-list" class="list-group list-group-flush regra-grupos-list"></div>
+                            <div id="regra-grupos-empty" class="regra-empty d-none">
+                                Nenhum grupo cadastrado ainda.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-8">
+                        <div class="card regra-card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+                                    <div>
+                                        <h2 class="h5 mb-1" id="regra-grupo-nome">Selecione um grupo</h2>
+                                        <p class="text-muted mb-0" id="regra-grupo-descricao">
+                                            Escolha um grupo para visualizar e editar as regras.
+                                        </p>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-secondary" id="btn-editar-grupo" disabled>
+                                            <i class="bi bi-pencil"></i>
+                                            Editar
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" id="btn-excluir-grupo" disabled>
+                                            <i class="bi bi-trash"></i>
+                                            Excluir
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                                    <span class="text-muted small" id="regra-contador">0 regras</span>
+                                    <button class="btn btn-sm btn-success" id="btn-nova-regra" disabled>
+                                        <i class="bi bi-plus-circle"></i>
+                                        Adicionar regra
+                                    </button>
+                                </div>
+
+                                <div id="regra-flow-empty" class="regra-empty">
+                                    Selecione um grupo para visualizar o fluxo de regras.
+                                </div>
+
+                                <div id="regra-flow-list" class="regra-flow-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="modalGrupoNovo" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form id="form-grupo-novo">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Novo grupo de regras</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label" for="grupo-nome">Nome do grupo</label>
+                                    <input type="text" class="form-control" id="grupo-nome" required>
+                                </div>
+                                <div>
+                                    <label class="form-label" for="grupo-descricao">Descricao</label>
+                                    <textarea class="form-control" id="grupo-descricao" rows="3"></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Salvar grupo</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="modalGrupoEditar" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form id="form-grupo-editar">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Editar grupo</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label" for="grupo-editar-nome">Nome do grupo</label>
+                                    <input type="text" class="form-control" id="grupo-editar-nome" required>
+                                </div>
+                                <div>
+                                    <label class="form-label" for="grupo-editar-descricao">Descricao</label>
+                                    <textarea class="form-control" id="grupo-editar-descricao" rows="3"></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-success">Salvar alteracoes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="modalGrupoExcluir" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-sm">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Excluir grupo</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-0">Deseja realmente excluir este grupo de regras?</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-danger" id="btn-confirmar-exclusao-grupo">Excluir</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="modalRegraNova" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form id="form-regra-nova">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Nova regra</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label" for="regra-nome">Titulo da regra</label>
+                                    <input type="text" class="form-control" id="regra-nome" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="regra-dias">Dias apos o ultimo contato</label>
+                                    <input type="number" class="form-control" id="regra-dias" min="0" required>
+                                </div>
+                                <div>
+                                    <label class="form-label" for="regra-descricao">Descricao</label>
+                                    <textarea class="form-control" id="regra-descricao" rows="3" required></textarea>
+                                </div>
+                                <div class="mt-3">
+                                    <label class="form-label">Materiais a enviar</label>
+                                    <div class="regra-materiais-section">
+                                        <div class="regra-materiais-title">Materiais disponiveis</div>
+                                        <div id="regra-materiais-disponiveis" class="regra-materiais-list text-muted small">
+                                            Carregando materiais...
+                                        </div>
+                                        <div class="regra-materiais-title mt-2">Selecionados</div>
+                                        <div id="regra-materiais-selecionados" class="regra-materiais-list regra-materiais-selected"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-success">Salvar regra</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="modalRegraEditar" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form id="form-regra-editar">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Editar regra</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label" for="regra-editar-nome">Titulo da regra</label>
+                                    <input type="text" class="form-control" id="regra-editar-nome" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="regra-editar-dias">Dias apos o ultimo contato</label>
+                                    <input type="number" class="form-control" id="regra-editar-dias" min="0" required>
+                                </div>
+                                <div>
+                                    <label class="form-label" for="regra-editar-descricao">Descricao</label>
+                                    <textarea class="form-control" id="regra-editar-descricao" rows="3" required></textarea>
+                                </div>
+                                <div class="mt-3">
+                                    <label class="form-label">Materiais a enviar</label>
+                                    <div class="regra-materiais-section">
+                                        <div class="regra-materiais-title">Materiais disponiveis</div>
+                                        <div id="regra-editar-materiais-disponiveis" class="regra-materiais-list text-muted small">
+                                            Carregando materiais...
+                                        </div>
+                                        <div class="regra-materiais-title mt-2">Selecionados</div>
+                                        <div id="regra-editar-materiais-selecionados" class="regra-materiais-list regra-materiais-selected"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-success">Salvar alteracoes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="modalRegraExcluir" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-sm">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Excluir regra</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-0">Deseja realmente excluir esta regra?</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-danger" id="btn-confirmar-exclusao-regra">Excluir</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        <!-- Bootstrap JS Bundle with Popper -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+        <!-- Custom JS -->
+        <script type="module" src="{% static 'js/fluxo-regras.js' %}"></script>
+
+    </body>
+
+</html>

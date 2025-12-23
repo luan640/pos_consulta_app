@@ -1,5 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
 from datetime import date
 from django.http import JsonResponse, HttpResponseNotAllowed, HttpResponse
 from django.db.models import Max, Min, Prefetch, Q, F
@@ -14,8 +16,9 @@ from django.utils import timezone
 from .models import (
     Paciente, Lembrete, ContatoNutricionista,
     AnotacaoContato, Material, MaterialEnviado,
-    RegraLembrete, Consulta, GrupoLembrete
+    RegraLembrete, Consulta, GrupoLembrete,
 )
+from users.models import PerfilUsuario
 from paciente.services import _send_whatsapp_template, _send_whatsapp_message, verifica_janela_24_hrs, registrar_contato_service
 
 import json
@@ -36,6 +39,65 @@ def home(request):
 @login_required
 def regras(request):
     return render(request, 'regras.html')
+
+@login_required
+def materiais_page(request):
+    return render(request, 'materiais.html')
+
+@login_required
+def perfil(request):
+    def obter_nome_usuario(usuario):
+        nome = ''
+        if hasattr(usuario, 'nome'):
+            nome = getattr(usuario, 'nome', '') or ''
+        if hasattr(usuario, 'get_full_name'):
+            nome = usuario.get_full_name()
+        return nome or getattr(usuario, 'username', '') or usuario.get_username()
+
+    perfil_usuario, _ = PerfilUsuario.objects.get_or_create(
+        usuario=request.user,
+        defaults={'nome': obter_nome_usuario(request.user)}
+    )
+
+    senha_form = PasswordChangeForm(user=request.user)
+    for field in senha_form.fields.values():
+        field.widget.attrs.update({'class': 'form-control'})
+
+    if request.method == 'POST':
+        form_tipo = request.POST.get('form_type')
+
+        if form_tipo == 'perfil':
+            nome = request.POST.get('nome', '').strip()
+            telefone = request.POST.get('telefone', '').strip()
+            whatsapp_notificacoes = request.POST.get('whatsapp_notificacoes') == 'on'
+            foto = request.FILES.get('foto')
+
+            if nome:
+                perfil_usuario.nome = nome
+            if hasattr(request.user, 'nome') and nome:
+                request.user.nome = nome
+            perfil_usuario.whatsapp_notificacoes = whatsapp_notificacoes
+            if foto:
+                perfil_usuario.foto = foto
+            perfil_usuario.save()
+            if hasattr(request.user, 'telefone'):
+                request.user.telefone = telefone
+                request.user.save(update_fields=['nome', 'telefone'] if hasattr(request.user, 'nome') else ['telefone'])
+            return redirect('perfil')
+
+        if form_tipo == 'senha':
+            senha_form = PasswordChangeForm(user=request.user, data=request.POST)
+            for field in senha_form.fields.values():
+                field.widget.attrs.update({'class': 'form-control'})
+            if senha_form.is_valid():
+                user = senha_form.save()
+                update_session_auth_hash(request, user)
+                return redirect('perfil')
+
+    return render(request, 'perfil.html', {
+        'perfil': perfil_usuario,
+        'senha_form': senha_form,
+    })
 
 
 def politica_privacidade(request):
@@ -885,21 +947,74 @@ def atribuir_grupo(request, pk_grupo, pk_paciente):
     return JsonResponse({'mensagem': 'Grupo de regras atribuído com sucesso.'})
     
 @login_required
-@require_http_methods(["PUT", "DELETE"])
+@require_http_methods(["PUT", "POST", "DELETE"])
 @csrf_exempt
 def materiais(request, pk):
     try:
         material = Material.objects.get(dono=request.user, pk=pk)
     except Material.DoesNotExist:
-        return JsonResponse({'erro': 'Material não encontrado'}, status=404)
+        return JsonResponse({'erro': 'Material n??o encontrado'}, status=404)
 
-    if request.method == 'PUT':
-        data = json.loads(request.body)
-        descricao = data.get('descricao')
+    if request.method in ['PUT', 'POST']:
+        if request.content_type and request.content_type.startswith('multipart/form-data'):
+            descricao = request.POST.get('descricao', material.descricao)
+            tipo_arquivo = request.POST.get('tipo_arquivo') or material.tipo_arquivo
+            remover_arquivo = request.POST.get('remover_arquivo') == '1'
+            arquivo_pdf = request.FILES.get('arquivo_pdf')
+            arquivo_video = request.FILES.get('arquivo_video')
+            arquivo_imagem = request.FILES.get('arquivo_imagem')
+            arquivo_foto = request.FILES.get('arquivo_foto')
+        else:
+            data = json.loads(request.body)
+            descricao = data.get('descricao', material.descricao)
+            tipo_arquivo = data.get('tipo_arquivo', material.tipo_arquivo)
+            remover_arquivo = data.get('remover_arquivo', False)
+            arquivo_pdf = None
+            arquivo_video = None
+            arquivo_imagem = None
+            arquivo_foto = None
 
-        # Verifica se já existe outro material com a mesma descrição para o usuário
+        # Verifica se j?? existe outro material com a mesma descri????o para o usu??rio
         if Material.objects.filter(dono=request.user, descricao=descricao).exclude(pk=pk).exists():
-            return JsonResponse({'erro': 'Já existe um material com essa descrição.'}, status=400)
+            return JsonResponse({'erro': 'J?? existe um material com essa descri????o.'}, status=400)
+
+        arquivos = [
+            ('pdf', arquivo_pdf),
+            ('video', arquivo_video),
+            ('imagem', arquivo_imagem),
+            ('foto', arquivo_foto),
+        ]
+        arquivos_enviados = [(tipo, arquivo) for tipo, arquivo in arquivos if arquivo]
+        if len(arquivos_enviados) > 1:
+            return JsonResponse({'erro': 'Envie apenas um tipo de arquivo por material.'}, status=400)
+
+        if remover_arquivo:
+            material.arquivo_pdf = None
+            material.arquivo_video = None
+            material.arquivo_imagem = None
+            material.arquivo_foto = None
+            material.tipo_arquivo = None
+
+        if arquivos_enviados:
+            tipo_detectado = arquivos_enviados[0][0]
+            if tipo_arquivo and tipo_arquivo != tipo_detectado:
+                return JsonResponse({'erro': 'O tipo escolhido nao corresponde ao arquivo enviado.'}, status=400)
+
+            tipo_atual = material.tipo_arquivo or (
+                'pdf' if material.arquivo_pdf else
+                'video' if material.arquivo_video else
+                'imagem' if material.arquivo_imagem else
+                'foto' if material.arquivo_foto else
+                None
+            )
+            if tipo_atual and tipo_atual != tipo_detectado and not remover_arquivo:
+                return JsonResponse({'erro': 'Para trocar o tipo do arquivo, remova o arquivo atual primeiro.'}, status=400)
+
+            material.tipo_arquivo = tipo_detectado
+            material.arquivo_pdf = arquivo_pdf if tipo_detectado == 'pdf' else None
+            material.arquivo_video = arquivo_video if tipo_detectado == 'video' else None
+            material.arquivo_imagem = arquivo_imagem if tipo_detectado == 'imagem' else None
+            material.arquivo_foto = arquivo_foto if tipo_detectado == 'foto' else None
 
         material.descricao = descricao
         material.save()
@@ -907,9 +1022,9 @@ def materiais(request, pk):
 
     elif request.method == 'DELETE':
         material.delete()
-        return JsonResponse({'mensagem': 'Material excluído com sucesso'})
+        return JsonResponse({'mensagem': 'Material exclu??do com sucesso'})
 
-    return HttpResponseNotAllowed(['PUT', 'DELETE'])
+    return HttpResponseNotAllowed(['PUT', 'POST', 'DELETE'])
 
 @login_required
 @require_http_methods(["GET", "POST"])
@@ -921,12 +1036,59 @@ def buscar_materiais(request):
         return JsonResponse({'erro': 'Material não encontrado'}, status=404)
 
     if request.method == 'GET':
-        data = [{'id': m.id, 'descricao': m.descricao} for m in material]
+        data = [
+            {
+                'id': m.id,
+                'descricao': m.descricao,
+                'tipo_arquivo': m.tipo_arquivo or (
+                    'pdf' if m.arquivo_pdf else
+                    'video' if m.arquivo_video else
+                    'imagem' if m.arquivo_imagem else
+                    'foto' if m.arquivo_foto else
+                    None
+                ),
+                'pdf_url': m.arquivo_pdf.url if m.arquivo_pdf else None,
+                'video_url': m.arquivo_video.url if m.arquivo_video else None,
+                'imagem_url': m.arquivo_imagem.url if m.arquivo_imagem else None,
+                'foto_url': m.arquivo_foto.url if m.arquivo_foto else None,
+            }
+            for m in material
+        ]
         return JsonResponse({'materiais': data})
 
     if request.method == 'POST':
-        data = json.loads(request.body)
-        descricao = data.get('descricao')
+        if request.content_type and request.content_type.startswith('multipart/form-data'):
+            descricao = request.POST.get('descricao')
+            tipo_arquivo = request.POST.get('tipo_arquivo') or None
+            arquivo_pdf = request.FILES.get('arquivo_pdf')
+            arquivo_video = request.FILES.get('arquivo_video')
+            arquivo_imagem = request.FILES.get('arquivo_imagem')
+            arquivo_foto = request.FILES.get('arquivo_foto')
+        else:
+            data = json.loads(request.body)
+            descricao = data.get('descricao')
+            tipo_arquivo = data.get('tipo_arquivo') or None
+            arquivo_pdf = None
+            arquivo_video = None
+            arquivo_imagem = None
+            arquivo_foto = None
+
+        arquivos = [
+            ('pdf', arquivo_pdf),
+            ('video', arquivo_video),
+            ('imagem', arquivo_imagem),
+            ('foto', arquivo_foto),
+        ]
+        arquivos_enviados = [(tipo, arquivo) for tipo, arquivo in arquivos if arquivo]
+        if len(arquivos_enviados) > 1:
+            return JsonResponse({'erro': 'Envie apenas um tipo de arquivo por material.'}, status=400)
+        if tipo_arquivo and not arquivos_enviados:
+            return JsonResponse({'erro': 'Selecione o arquivo correspondente ao tipo escolhido.'}, status=400)
+        if arquivos_enviados:
+            tipo_detectado = arquivos_enviados[0][0]
+            if tipo_arquivo and tipo_arquivo != tipo_detectado:
+                return JsonResponse({'erro': 'O tipo escolhido nao corresponde ao arquivo enviado.'}, status=400)
+            tipo_arquivo = tipo_detectado
         
         # Verifica se já existe outro material com a mesma descrição para o usuário
         if Material.objects.filter(dono=request.user, descricao=descricao).exists():
@@ -934,7 +1096,12 @@ def buscar_materiais(request):
         else:
             Material.objects.create(
                 dono=request.user,
-                descricao=descricao
+                descricao=descricao,
+                tipo_arquivo=tipo_arquivo,
+                arquivo_pdf=arquivo_pdf,
+                arquivo_video=arquivo_video,
+                arquivo_imagem=arquivo_imagem,
+                arquivo_foto=arquivo_foto,
             )
 
         return JsonResponse({'mensagem': 'Novo material adicionado com sucesso'})

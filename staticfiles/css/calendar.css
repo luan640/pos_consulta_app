@@ -181,6 +181,23 @@
   gap: 0.5rem;
 }
 
+.calendar-event--compact .calendar-event-header {
+  cursor: pointer;
+}
+
+.calendar-event--compact .calendar-event-info-list,
+.calendar-event--compact .calendar-event-footer {
+  display: none;
+}
+
+.calendar-event--expanded .calendar-event-info-list {
+  display: flex;
+}
+
+.calendar-event--expanded .calendar-event-footer {
+  display: flex;
+}
+
 .calendar-event-title {
   flex: 1 1 auto;
   font-size: 1rem;

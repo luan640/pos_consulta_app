@@ -460,6 +460,12 @@ body {
 }
 
 /* Responsividade */
+.patients-container {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
 @media (max-width: 768px) {
   .container {
       padding: 20px 15px;
@@ -478,6 +484,10 @@ body {
   .section-title {
       font-size: 1.5rem;
   }
+
+  .patients-container {
+      grid-template-columns: 1fr;
+  }
 }
 
 
@@ -495,5 +505,314 @@ body {
 .badge-waiting {
     background-color: #0d6efd;
     color: #fff;
+}
+
+/* Fluxo de regras */
+.regra-page .regra-card {
+    border-radius: 16px;
+    border: 1px solid rgba(52, 152, 219, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+}
+
+.regra-grupos-list .list-group-item {
+    border: 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 0.9rem 1rem;
+}
+
+.regra-grupos-list .list-group-item.active {
+    background: #e8f1ff;
+    color: #1e3a5f;
+}
+
+.regra-empty {
+    padding: 1.5rem;
+    text-align: center;
+    color: #6c757d;
+    font-size: 0.95rem;
+}
+
+.regra-flow-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+.regra-flow-item {
+    background: #fff;
+    border: 1px solid rgba(52, 152, 219, 0.15);
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+    box-shadow: 0 6px 18px rgba(52, 152, 219, 0.08);
+}
+
+.regra-flow-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.regra-flow-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #1e3a5f;
+    margin: 0;
+}
+
+.regra-flow-meta {
+    font-size: 0.85rem;
+    color: #5a6c7d;
+}
+
+.regra-flow-description {
+    color: #2c3e50;
+    font-size: 0.95rem;
+}
+
+.regra-flow-actions {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.regra-flow-arrow {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: #5a6c7d;
+    font-size: 0.85rem;
+    margin: 0.1rem 0 0.4rem;
+    padding-left: 0.5rem;
+}
+
+.regra-flow-arrow-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #f0f4f8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.regra-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #5a6c7d;
+    justify-content: center;
+    padding: 1.5rem 0;
+}
+
+.regra-flow-list--loading {
+    opacity: 0.6;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.regra-flow-materiais {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.regra-materiais-list {
+    min-height: 44px;
+}
+
+.regras-material-chip {
+    border-radius: 16px;
+}
+
+.regra-materiais-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.regra-materiais-title {
+    font-size: 0.85rem;
+    color: #5a6c7d;
+    font-weight: 600;
+}
+
+.regra-materiais-selected {
+    min-height: 44px;
+    padding: 0.4rem;
+    border: 1px dashed rgba(13, 110, 253, 0.35);
+    border-radius: 12px;
+    background: #f8fbff;
+}
+
+.regras-material-chip--selected {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: #fff;
+}
+
+.regras-material-chip--move {
+    animation: regra-chip-pop 0.18s ease-out;
+}
+
+/* Materiais cards */
+.material-card {
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    position: relative;
+}
+
+.material-card-cover {
+    height: 140px;
+    background: linear-gradient(135deg, #e9f2ff 0%, #f8fbff 100%);
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 12px 14px;
+    gap: 6px;
+}
+
+.material-card-cover--editing {
+    background: linear-gradient(135deg, #eef2f7 0%, #f8fafc 100%);
+}
+
+.material-card-cover--pdf {
+    background: linear-gradient(135deg, #ffe9ec 0%, #fff7f8 100%);
+}
+
+.material-card-cover--video {
+    background: linear-gradient(135deg, #e8f3ff 0%, #f5faff 100%);
+}
+
+.material-card-cover--imagem {
+    background: linear-gradient(135deg, #e9fff5 0%, #f6fffb 100%);
+}
+
+.material-card-cover--foto {
+    background: linear-gradient(135deg, #fff6e5 0%, #fffaf0 100%);
+}
+
+.material-card-cover--none {
+    background: linear-gradient(135deg, #f0f4f8 0%, #f8fafc 100%);
+}
+
+.material-card-cover-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.08);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: #1e3a5f;
+}
+
+.material-card-cover-label {
+    background: rgba(15, 23, 42, 0.72);
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+}
+
+.material-card-body {
+    padding: 16px 16px 6px;
+}
+
+.material-card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e3a5f;
+}
+
+.material-card-footer {
+    display: flex;
+    gap: 0.5rem;
+    padding: 12px 16px 16px;
+}
+
+.material-card--loading {
+    pointer-events: none;
+    opacity: 0.75;
+}
+
+.material-card-loading {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.72);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    color: #1e3a5f;
+    backdrop-filter: blur(2px);
+}
+
+.material-modal .modal-content {
+    border-radius: 18px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+}
+
+.material-modal .modal-header {
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.material-modal .modal-footer {
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.material-modal .form-check-input {
+    cursor: pointer;
+}
+
+.perfil-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 16px;
+    background: #f0f4f8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    color: #5a6c7d;
+    font-size: 1.8rem;
+}
+
+.perfil-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+@keyframes regra-chip-pop {
+    0% {
+        transform: scale(0.96);
+    }
+    60% {
+        transform: scale(1.06);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@media (max-width: 992px) {
+    .regra-flow-header {
+        flex-direction: column;
+    }
+
+    .regra-flow-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
 }
 

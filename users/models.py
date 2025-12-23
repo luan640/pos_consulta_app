@@ -1,5 +1,16 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+import uuid
+import os
+
+def gerar_nome_arquivo(prefixo, filename):
+    _, ext = os.path.splitext(filename)
+    return f"{prefixo}/{uuid.uuid4().hex}{ext}"
+
+
+def gerar_nome_arquivo_perfil(instance, filename):
+    return gerar_nome_arquivo('perfil', filename)
+
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -30,6 +41,17 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+
+class PerfilUsuario(models.Model):
+    usuario = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='perfil')
+    nome = models.CharField(max_length=150, blank=True)
+    foto = models.ImageField(upload_to=gerar_nome_arquivo_perfil, null=True, blank=True)
+    whatsapp_notificacoes = models.BooleanField(default=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.nome or self.usuario.email
 
 
 class AccessRequest(models.Model):

@@ -1,17 +1,246 @@
 import { showToast } from './message.js';
-import { inicializarSelecaoMateriais } from './home.js';
 
 document.addEventListener('DOMContentLoaded', function () {
   carregarMateriais();
-
 });
+
+async function tentarAtualizarSelecaoMateriais(preSelecionados = []) {
+  try {
+    const modulo = await import('./home.js');
+    if (typeof modulo?.inicializarSelecaoMateriais === 'function') {
+      modulo.inicializarSelecaoMateriais(preSelecionados);
+    }
+  } catch (error) {
+    // Ignora em telas onde o modulo nao se aplica.
+  }
+}
+
+const editarMaterialModalEl = document.getElementById('editarMaterialModal');
+const editarMaterialModal = editarMaterialModalEl
+    ? new bootstrap.Modal(editarMaterialModalEl)
+    : null;
+const materialEditarForm = document.getElementById('material-editar-form');
+const materialEditarId = document.getElementById('material-editar-id');
+const materialEditarDescricao = document.getElementById('material-editar-descricao');
+const materialEditarArquivos = document.getElementById('material-editar-arquivos');
+const materialEditarTipoSelect = materialEditarForm
+    ? materialEditarForm.querySelector('select[name="tipo_arquivo"]')
+    : null;
+const materialEditarRemover = document.getElementById('material-editar-remover');
+const excluirMaterialModalEl = document.getElementById('excluirMaterialModal');
+const excluirMaterialModal = excluirMaterialModalEl
+    ? new bootstrap.Modal(excluirMaterialModalEl)
+    : null;
+const excluirMaterialNome = document.getElementById('excluir-material-nome');
+const excluirMaterialConfirmar = document.getElementById('confirmar-excluir-material');
+let materialExclusaoAtual = null;
+
+function abrirModalExcluirMaterial(item) {
+    if (!excluirMaterialModal || !excluirMaterialConfirmar) {
+        return false;
+    }
+    materialExclusaoAtual = item;
+    const nome = item.querySelector('.descricao')?.textContent || 'selecionado';
+    if (excluirMaterialNome) {
+        excluirMaterialNome.textContent = nome;
+    }
+    excluirMaterialModal.show();
+    return true;
+}
+
+function executarExclusaoMaterial(item) {
+    if (!item) return;
+    const id = item.dataset.materialId;
+    definirLoadingExclusao(item, true);
+    fetch(`/api/materiais/${id}/`, {
+        method: 'DELETE'
+    })
+    .then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            showToast(data.erro || 'Erro ao deletar material', 'error');
+            definirLoadingExclusao(item, false);
+            carregarMateriais();
+            return;
+        }
+        showToast(data.mensagem || 'Material deletado com sucesso!', 'success');
+        carregarMateriais();
+        tentarAtualizarSelecaoMateriais();
+    })
+    .catch(err => {
+        console.error(err);
+        showToast('Erro inesperado ao tentar deletar.', 'error');
+        definirLoadingExclusao(item, false);
+    });
+}
+
+if (excluirMaterialConfirmar) {
+    excluirMaterialConfirmar.addEventListener('click', () => {
+        if (materialExclusaoAtual) {
+            executarExclusaoMaterial(materialExclusaoAtual);
+        }
+        excluirMaterialModal?.hide();
+        materialExclusaoAtual = null;
+    });
+}
+
+function atualizarVisibilidadeArquivos(form) {
+    if (!form) return;
+    const tipoSelecionado = form.querySelector('[name="tipo_arquivo"]')?.value || '';
+    form.querySelectorAll('.material-arquivo-input').forEach((input) => {
+        const tipo = input.dataset.tipo;
+        const wrapper = input.closest('.material-arquivo-wrapper') || input.closest('.mb-3') || input;
+        const ativo = tipoSelecionado && tipoSelecionado === tipo;
+        if (!ativo) {
+            input.value = '';
+        }
+        wrapper.classList.toggle('d-none', !ativo);
+    });
+}
+
+function bindTipoArquivo(form) {
+    if (!form) return;
+    const select = form.querySelector('select[name="tipo_arquivo"]');
+    if (select) {
+        select.addEventListener('change', () => {
+            atualizarVisibilidadeArquivos(form);
+        });
+    }
+    atualizarVisibilidadeArquivos(form);
+}
+
+function obterTipoSelecionado(form) {
+    return form.querySelector('[name="tipo_arquivo"]')?.value || '';
+}
+
+function validarArquivoPorTipo(form, tipoSelecionado, permitirExistente = false) {
+    if (!tipoSelecionado) {
+        return true;
+    }
+    const input = form.querySelector(`.material-arquivo-input[data-tipo="${tipoSelecionado}"]`);
+    if (!input || !input.files || input.files.length === 0) {
+        if (permitirExistente) {
+            const remover = form.querySelector('input[name="remover_arquivo"]');
+            const possuiAtual = form.dataset.temArquivo === '1';
+            const tipoAtual = form.dataset.tipoAtual || '';
+            if (possuiAtual && tipoAtual === tipoSelecionado && !remover?.checked) {
+                return true;
+            }
+        }
+        showToast('Selecione o arquivo correspondente ao tipo escolhido.', 'error');
+        return false;
+    }
+    return true;
+}
+
+function definirLoadingExclusao(item, ativo) {
+    if (!item) return;
+    const card = item.querySelector('.material-card');
+    if (card) {
+        card.classList.toggle('material-card--loading', ativo);
+        let overlay = card.querySelector('.material-card-loading');
+        if (ativo && !overlay) {
+            overlay = document.createElement('div');
+            overlay.className = 'material-card-loading';
+            overlay.innerHTML = `
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Excluindo...
+            `;
+            card.appendChild(overlay);
+        }
+        if (!ativo && overlay) {
+            overlay.remove();
+        }
+    } else {
+        const botoes = item.querySelectorAll('button');
+        botoes.forEach((btn) => {
+            btn.disabled = ativo;
+        });
+        if (ativo) {
+            item.dataset.loading = '1';
+        } else {
+            delete item.dataset.loading;
+        }
+    }
+}
+
+function preencherArquivosAtuais(item) {
+    if (!materialEditarArquivos) return;
+    materialEditarArquivos.innerHTML = '';
+    const links = [];
+    const pdfUrl = item.dataset.pdfUrl || '';
+    const videoUrl = item.dataset.videoUrl || '';
+    const imagemUrl = item.dataset.imagemUrl || '';
+    const fotoUrl = item.dataset.fotoUrl || '';
+
+    if (pdfUrl) {
+        links.push({ label: 'PDF atual', url: pdfUrl });
+    }
+    if (videoUrl) {
+        links.push({ label: 'Video atual', url: videoUrl });
+    }
+    if (imagemUrl) {
+        links.push({ label: 'Imagem atual', url: imagemUrl });
+    }
+    if (fotoUrl) {
+        links.push({ label: 'Foto atual', url: fotoUrl });
+    }
+
+    if (!links.length) {
+        materialEditarArquivos.textContent = 'Nenhum arquivo anexado.';
+        return;
+    }
+
+    const lista = document.createElement('ul');
+    lista.className = 'mb-0 ps-3';
+    links.forEach((itemLink) => {
+        const li = document.createElement('li');
+        const link = document.createElement('a');
+        link.href = itemLink.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = itemLink.label;
+        li.appendChild(link);
+        lista.appendChild(li);
+    });
+    materialEditarArquivos.appendChild(lista);
+}
+
+function abrirModalEditarMaterial(item) {
+    if (!editarMaterialModal || !materialEditarForm || !materialEditarId || !materialEditarDescricao) {
+        return;
+    }
+
+    materialEditarForm.reset();
+    materialEditarId.value = item.dataset.materialId || '';
+    materialEditarDescricao.value = item.querySelector('.descricao')?.textContent || '';
+    const tipoAtual = item.dataset.tipoArquivo || '';
+    const temArquivo = Boolean(item.dataset.pdfUrl || item.dataset.videoUrl || item.dataset.imagemUrl || item.dataset.fotoUrl);
+    materialEditarForm.dataset.tipoAtual = tipoAtual;
+    materialEditarForm.dataset.temArquivo = temArquivo ? '1' : '0';
+    if (materialEditarTipoSelect) {
+        materialEditarTipoSelect.value = tipoAtual || '';
+    }
+    if (materialEditarRemover) {
+        materialEditarRemover.checked = false;
+    }
+    atualizarVisibilidadeArquivos(materialEditarForm);
+    preencherArquivosAtuais(item);
+    editarMaterialModal.show();
+}
 
 function carregarMateriais() {
     fetch('/api/materiais/')
         .then(res => res.json())
         .then(data => {
         const tbody = document.getElementById('materiais-tbody');
-        tbody.innerHTML = '';
+        const cardsContainer = document.getElementById('materiais-cards');
+        if (tbody) {
+            tbody.innerHTML = '';
+        }
+        if (cardsContainer) {
+            cardsContainer.innerHTML = '';
+        }
         
         const semMaterial = document.getElementById('sem-materiais');
         if (data.materiais.length === 0) {
@@ -20,47 +249,146 @@ function carregarMateriais() {
             semMaterial.classList.add('d-none');
         }
 
-        data.materiais.forEach(material => {
-            const tr = document.createElement('tr');
-            tr.dataset.materialId = material.id;
-            tr.innerHTML = `
-            <td class="descricao">${material.descricao}</td>
-            <td class="acoes d-flex gap-2">
-                <button class="btn btn-sm btn-info btn-editar" title="Editar">
-                <i class="bi bi-pencil"></i>
-                </button>
-                <button class="btn btn-sm btn-danger btn-excluir" title="Excluir">
-                <i class="bi bi-trash"></i>
-                </button>
-            </td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-        // Edição inline
-        tbody.querySelectorAll('.btn-editar').forEach(btn => {
-            btn.addEventListener('click', function () {
-            const row = btn.closest('tr');
-            const id = row.dataset.materialId;
-            const descricao = row.querySelector('.descricao').textContent;
-
-            row.innerHTML = `
-                <td><input type="text" class="form-control form-control-sm descricao-input" value="${descricao}"></td>
-                <td class="d-flex gap-2">
-                <button class="btn btn-sm btn-success btn-salvar" title="Salvar">
-                    <span class="btn-salvar-content"><i class="bi bi-check"></i></span>
-                </button>
-                <button class="btn btn-sm btn-danger btn-cancelar" title="Cancelar">
-                    <i class="bi bi-x"></i>
-                </button>
+        const renderTabela = () => {
+            if (!tbody) return;
+            data.materiais.forEach(material => {
+                const tr = document.createElement('tr');
+                tr.dataset.materialId = material.id;
+                tr.innerHTML = `
+                <td class="descricao">${material.descricao}</td>
+                <td class="acoes d-flex gap-2">
+                    <button class="btn btn-sm btn-info btn-editar" title="Editar">
+                    <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger btn-excluir" title="Excluir">
+                    <i class="bi bi-trash"></i>
+                    </button>
                 </td>
-            `;
+                `;
+                tbody.appendChild(tr);
+            });
+        };
 
-            const btnSalvar = row.querySelector('.btn-salvar');
+        const renderCards = () => {
+            if (!cardsContainer) return;
+            data.materiais.forEach(material => {
+                const tipoArquivo = material.tipo_arquivo || (
+                    material.pdf_url ? 'pdf' :
+                    material.video_url ? 'video' :
+                    material.imagem_url ? 'imagem' :
+                    material.foto_url ? 'foto' :
+                    ''
+                );
+                const coverLabelMap = {
+                    pdf: 'PDF',
+                    video: 'Video',
+                    imagem: 'Imagem',
+                    foto: 'Foto',
+                };
+                const coverIconMap = {
+                    pdf: 'bi-file-earmark-pdf',
+                    video: 'bi-camera-video',
+                    imagem: 'bi-image',
+                    foto: 'bi-camera',
+                };
+                const coverLabel = coverLabelMap[tipoArquivo] || 'Sem arquivo';
+                const coverIcon = coverIconMap[tipoArquivo] || 'bi-file-earmark';
+                const col = document.createElement('div');
+                col.className = 'col-12 col-md-6 col-xl-4';
+                col.dataset.materialId = material.id;
+                col.dataset.tipoArquivo = tipoArquivo || '';
+                col.dataset.pdfUrl = material.pdf_url || '';
+                col.dataset.videoUrl = material.video_url || '';
+                col.dataset.imagemUrl = material.imagem_url || '';
+                col.dataset.fotoUrl = material.foto_url || '';
+                col.innerHTML = `
+                    <div class="card material-card h-100 shadow-sm border-light-subtle">
+                        <div class="material-card-cover material-card-cover--${tipoArquivo || 'none'}">
+                            <div class="material-card-cover-icon">
+                                <i class="bi ${coverIcon}"></i>
+                            </div>
+                            <span class="material-card-cover-label">${coverLabel}</span>
+                        </div>
+                        <div class="card-body material-card-body">
+                            <div class="descricao material-card-title">${material.descricao}</div>
+                        </div>
+                        <div class="card-footer material-card-footer bg-white border-0">
+                            <button class="btn btn-sm btn-primary btn-editar" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                                Editar
+                            </button>
+                            <button class="btn btn-sm btn-danger btn-excluir" title="Excluir">
+                                <i class="bi bi-trash"></i>
+                                Excluir
+                            </button>
+                        </div>
+                    </div>
+                `;
+                cardsContainer.appendChild(col);
+            });
+        };
+
+        if (cardsContainer) {
+            renderCards();
+        } else {
+            renderTabela();
+        }
+
+        const scope = cardsContainer || tbody;
+        if (!scope) return;
+
+        // Edicao inline
+        scope.querySelectorAll('.btn-editar').forEach(btn => {
+            btn.addEventListener('click', function () {
+            const item = btn.closest('[data-material-id]');
+            const id = item.dataset.materialId;
+            const descricao = item.querySelector('.descricao').textContent;
+
+            if (cardsContainer && editarMaterialModalEl) {
+                abrirModalEditarMaterial(item);
+                return;
+            }
+
+            if (cardsContainer) {
+                item.innerHTML = `
+                    <div class="card material-card h-100 shadow-sm border-light-subtle">
+                        <div class="material-card-cover material-card-cover--editing">
+                            <span class="material-card-cover-label">Editando</span>
+                        </div>
+                        <div class="card-body material-card-body">
+                            <input type="text" class="form-control form-control-sm descricao-input" value="${descricao}">
+                        </div>
+                        <div class="card-footer material-card-footer bg-white border-0">
+                            <button class="btn btn-sm btn-success btn-salvar" title="Salvar">
+                                <span class="btn-salvar-content"><i class="bi bi-check"></i></span>
+                                Salvar
+                            </button>
+                            <button class="btn btn-sm btn-secondary btn-cancelar" title="Cancelar">
+                                <i class="bi bi-x"></i>
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                item.innerHTML = `
+                    <td><input type="text" class="form-control form-control-sm descricao-input" value="${descricao}"></td>
+                    <td class="d-flex gap-2">
+                        <button class="btn btn-sm btn-success btn-salvar" title="Salvar">
+                            <span class="btn-salvar-content"><i class="bi bi-check"></i></span>
+                        </button>
+                        <button class="btn btn-sm btn-danger btn-cancelar" title="Cancelar">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </td>
+                `;
+            }
+
+            const btnSalvar = item.querySelector('.btn-salvar');
             btnSalvar.addEventListener('click', () => {
-                const novaDescricao = row.querySelector('.descricao-input').value.trim();
+                const novaDescricao = item.querySelector('.descricao-input').value.trim();
                 if (!novaDescricao) {
-                    alert('Descrição não pode ser vazia.');
+                    alert('Descricao nao pode ser vazia.');
                     return;
                 }
 
@@ -86,7 +414,7 @@ function carregarMateriais() {
                     }
                     showToast(data.mensagem || 'Material atualizado com sucesso!', 'success');
                     carregarMateriais();
-                    inicializarSelecaoMateriais();
+                    tentarAtualizarSelecaoMateriais();
                 })
                 .catch(err => {
                     console.error(err);
@@ -94,35 +422,19 @@ function carregarMateriais() {
                 });
             });
 
-            row.querySelector('.btn-cancelar').addEventListener('click', carregarMateriais);
+            item.querySelector('.btn-cancelar').addEventListener('click', carregarMateriais);
             });
         });
 
-        // Exclusão
-        tbody.querySelectorAll('.btn-excluir').forEach(btn => {
+        // Exclusao
+        scope.querySelectorAll('.btn-excluir').forEach(btn => {
             btn.addEventListener('click', function () {
-            const row = btn.closest('tr');
-            const id = row.dataset.materialId;
+            const item = btn.closest('[data-material-id]');
+            if (abrirModalExcluirMaterial(item)) {
+                return;
+            }
             if (confirm('Deseja excluir este material?')) {
-                fetch(`/api/materiais/${id}/`, {
-                method: 'DELETE'
-                })
-                .then(async res => {
-                const data = await res.json();
-                if (!res.ok) {
-                    showToast(data.erro || 'Erro ao deletar material', 'error');
-                    carregarMateriais();
-                    return;
-                }
-                    showToast(data.mensagem || 'Material deletado com sucesso!', 'success');
-                    carregarMateriais();
-                    inicializarSelecaoMateriais();
-
-                })
-                .catch(err => {
-                    console.error(err);
-                    showToast('Erro inesperado ao tentar deletar.', 'error');
-                });
+                executarExclusaoMaterial(item);
             }
             });
         });
@@ -130,73 +442,145 @@ function carregarMateriais() {
         });
 }
 
-// submissão do formulario novo-material-form
+// submiss??o do formulario novo-material-form
 const novoMaterialForm = document.getElementById('novo-material-form');
-const btnSalvarNovoMaterial = novoMaterialForm.querySelector('button[type="submit"]');
+const btnSalvarNovoMaterial = novoMaterialForm
+    ? novoMaterialForm.querySelector('button[type="submit"]')
+    : null;
 
-novoMaterialForm.addEventListener('submit', function (e) {
-    e.preventDefault();
+if (novoMaterialForm) {
+    bindTipoArquivo(novoMaterialForm);
+    novoMaterialForm.addEventListener('submit', function (e) {
+        e.preventDefault();
 
-    const descricaoInput = novoMaterialForm.querySelector('[name="novo-material-nome"]');
-    const descricao = descricaoInput.value.trim();
+        const descricaoInput = novoMaterialForm.querySelector('[name="descricao"]');
+        const descricao = descricaoInput.value.trim();
+        const tipoSelecionado = obterTipoSelecionado(novoMaterialForm);
 
-    if (!descricao) {
-        showToast('Descrição não pode ser vazia.', 'error');
-        return;
-    }
-
-    // Mostra loading no botão
-    const originalBtnContent = btnSalvarNovoMaterial.innerHTML;
-    btnSalvarNovoMaterial.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...`;
-    btnSalvarNovoMaterial.disabled = true;
-
-    fetch('/api/materiais/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({ descricao })
-    })
-    .then(async res => {
-        const data = await res.json();
-        if (!res.ok) {
-            showToast(data.erro || 'Erro ao adicionar material', 'error');
+        if (!descricao) {
+            showToast('Descri????o n??o pode ser vazia.', 'error');
             return;
         }
-        showToast(data.mensagem || 'Material adicionado com sucesso!', 'success');
-        descricaoInput.value = '';
-        inicializarSelecaoMateriais();
-        carregarMateriais();
+        if (!validarArquivoPorTipo(novoMaterialForm, tipoSelecionado)) {
+            return;
+        }
 
-        const modalGerenciarMaterialEl = document.getElementById('gerenciarMateriaisModal');
-        const modalGerenciarMaterial = bootstrap.Modal.getInstance(modalGerenciarMaterialEl) || new bootstrap.Modal(modalGerenciarMaterialEl);
+        // Mostra loading no bot??o
+        const originalBtnContent = btnSalvarNovoMaterial.innerHTML;
+        btnSalvarNovoMaterial.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...`;
+        btnSalvarNovoMaterial.disabled = true;
 
-        const modalNovoMaterialEl = document.getElementById('novoMaterialModal');
-        const modalNovoMaterial = bootstrap.Modal.getInstance(modalNovoMaterialEl) || new bootstrap.Modal(modalNovoMaterialEl);
+        const formData = new FormData(novoMaterialForm);
+        formData.set('descricao', descricao);
 
-        modalNovoMaterial.hide();
-        modalGerenciarMaterial.show();
+        fetch('/api/materiais/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: formData
+        })
+        .then(async res => {
+            const data = await res.json();
+            if (!res.ok) {
+                showToast(data.erro || 'Erro ao adicionar material', 'error');
+                return;
+            }
+            showToast(data.mensagem || 'Material adicionado com sucesso!', 'success');
+            descricaoInput.value = '';
+        tentarAtualizarSelecaoMateriais();
+            carregarMateriais();
 
-    })
-    .catch(err => {
-        console.error(err);
-        showToast('Erro inesperado ao tentar adicionar.', 'error');
-    })
-    .finally(() => {
-        // Restaura o botão
-        btnSalvarNovoMaterial.innerHTML = originalBtnContent;
-        btnSalvarNovoMaterial.disabled = false;
+            const modalGerenciarMaterialEl = document.getElementById('gerenciarMateriaisModal');
+            const modalNovoMaterialEl = document.getElementById('novoMaterialModal');
+            const modalGerenciarMaterial = modalGerenciarMaterialEl
+                ? bootstrap.Modal.getInstance(modalGerenciarMaterialEl) || new bootstrap.Modal(modalGerenciarMaterialEl)
+                : null;
+            const modalNovoMaterial = modalNovoMaterialEl
+                ? bootstrap.Modal.getInstance(modalNovoMaterialEl) || new bootstrap.Modal(modalNovoMaterialEl)
+                : null;
+
+            modalNovoMaterial?.hide();
+            modalGerenciarMaterial?.show();
+        })
+        .catch(err => {
+            console.error(err);
+            showToast('Erro inesperado ao tentar adicionar.', 'error');
+        })
+        .finally(() => {
+            // Restaura o bot??o
+            btnSalvarNovoMaterial.innerHTML = originalBtnContent;
+            btnSalvarNovoMaterial.disabled = false;
+        });
     });
-});
+}
+
+if (materialEditarForm) {
+    bindTipoArquivo(materialEditarForm);
+}
+
+if (materialEditarForm) {
+    materialEditarForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const id = materialEditarId?.value;
+        const descricao = materialEditarDescricao?.value.trim();
+        const tipoSelecionado = obterTipoSelecionado(materialEditarForm);
+        if (!id || !descricao) {
+            showToast('Descricao nao pode ser vazia.', 'error');
+            return;
+        }
+        if (!validarArquivoPorTipo(materialEditarForm, tipoSelecionado, true)) {
+            return;
+        }
+
+        const submitBtn = materialEditarForm.querySelector('button[type="submit"]');
+        const originalBtnContent = submitBtn.innerHTML;
+        submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...`;
+        submitBtn.disabled = true;
+
+        const formData = new FormData(materialEditarForm);
+        formData.set('descricao', descricao);
+
+        fetch(`/api/materiais/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: formData
+        })
+        .then(async res => {
+            const data = await res.json();
+            if (!res.ok) {
+                showToast(data.erro || 'Erro ao atualizar material', 'error');
+                return;
+            }
+            showToast(data.mensagem || 'Material atualizado com sucesso!', 'success');
+            editarMaterialModal?.hide();
+            carregarMateriais();
+            tentarAtualizarSelecaoMateriais();
+        })
+        .catch(err => {
+            console.error(err);
+            showToast('Erro inesperado ao tentar salvar.', 'error');
+        })
+        .finally(() => {
+            submitBtn.innerHTML = originalBtnContent;
+            submitBtn.disabled = false;
+        });
+    });
+}
 
 const modalGerenciarMaterialEl = document.getElementById('gerenciarMateriaisModal');
-const modalGerenciarMaterial = bootstrap.Modal.getInstance(modalGerenciarMaterialEl) || new bootstrap.Modal(modalGerenciarMaterialEl);
 const modalNovoMaterialEl = document.getElementById('novoMaterialModal');
+const modalGerenciarMaterial = modalGerenciarMaterialEl
+    ? bootstrap.Modal.getInstance(modalGerenciarMaterialEl) || new bootstrap.Modal(modalGerenciarMaterialEl)
+    : null;
 
-modalNovoMaterialEl.addEventListener('hidden.bs.modal', function () {
-    modalGerenciarMaterial.show();
-});
+if (modalGerenciarMaterial && modalNovoMaterialEl) {
+    modalNovoMaterialEl.addEventListener('hidden.bs.modal', function () {
+        modalGerenciarMaterial.show();
+    });
+}
 
 // Função para pegar o CSRF token do cookie
 function getCookie(name) {

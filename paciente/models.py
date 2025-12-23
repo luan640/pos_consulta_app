@@ -1,4 +1,6 @@
 from django.db import models
+import uuid
+import os
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -30,13 +32,34 @@ class Consulta(models.Model):
 
 ### Materiais e Anotações
 
+def gerar_nome_arquivo(prefixo, filename):
+    _, ext = os.path.splitext(filename)
+    return f"{prefixo}/{uuid.uuid4().hex}{ext}"
+
+
+def gerar_nome_arquivo_materiais(instance, filename):
+    return gerar_nome_arquivo('materiais', filename)
+
+
 class Material(models.Model):
+    class TipoArquivo(models.TextChoices):
+        PDF = ('pdf', 'PDF')
+        VIDEO = ('video', 'Video')
+        IMAGEM = ('imagem', 'Imagem')
+        FOTO = ('foto', 'Foto')
+
     descricao = models.CharField(max_length=100, null=True, blank=True)
+    tipo_arquivo = models.CharField(max_length=20, choices=TipoArquivo.choices, null=True, blank=True)
+    arquivo_pdf = models.FileField(upload_to=gerar_nome_arquivo_materiais, null=True, blank=True)
+    arquivo_video = models.FileField(upload_to=gerar_nome_arquivo_materiais, null=True, blank=True)
+    arquivo_imagem = models.FileField(upload_to=gerar_nome_arquivo_materiais, null=True, blank=True)
+    arquivo_foto = models.FileField(upload_to=gerar_nome_arquivo_materiais, null=True, blank=True)
     dono = models.ForeignKey(User, on_delete=models.CASCADE, related_name='materiais_criados')
     criado_em = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.descricao or 'Sem descrição'}"
+
 
 class GrupoLembrete(models.Model):
     dono = models.ForeignKey(User, on_delete=models.CASCADE, related_name='grupos_lembrete')

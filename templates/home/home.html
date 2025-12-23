@@ -47,14 +47,18 @@
                 <i class="bi bi-plus"></i>
                 Novo Paciente
             </button>
-            <button id="btnModalRegra" class="btn btn-info mx-auto" data-bs-toggle="modal" data-bs-target="#regraModal">
+            <a id="btnModalRegra" class="btn btn-info mx-auto" href="{% url 'regras' %}">
                 <i class="bi bi-gear"></i>
                 Regras
-            </button>
-            <button id="btnModalMaterial" class="btn btn-info mx-auto" data-bs-toggle="modal" data-bs-target="#gerenciarMateriaisModal">
+            </a>
+            <a id="btnModalMaterial" class="btn btn-info mx-auto" href="{% url 'materiais' %}">
                 <i class="bi bi-gear"></i>
                 Materiais
-            </button>
+            </a>
+            <a class="btn btn-primary d-flex align-items-center gap-2" href="{% url 'perfil' %}">
+                <i class="bi bi-person-circle"></i>
+                Perfil
+            </a>
             <form method="post" action="{% url 'logout' %}" class="d-inline-flex">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-outline-secondary d-flex align-items-center gap-2">
@@ -322,215 +326,6 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="button" class="btn btn-danger" id="confirm-delete">Excluir</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Grupos de Regras -->
-        <div class="modal fade" id="regraModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-xl">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Fluxo de regras</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-
-                    <div class="modal-body p-0">
-                        <div class="row g-0">
-                            <!-- Painel Lateral - Grupos -->
-                            <div class="col-md-3 border-end">
-                                <div class="p-3 d-flex justify-content-between align-items-center border-bottom">
-                                    <button class="btn btn-primary d-flex align-items-center gap-2" id="novoGrupoBtn">Add grupo de regra
-                                        <i class="bi bi-plus-circle"></i>
-                                    </button>
-                                </div>
-                                <div class="list-group list-group-flush" id="grupos-lista">
-                                </div>
-                            </div>
-
-                            <!-- Conteúdo Principal - Regras do Grupo -->
-                            <div class="col-md-9">
-                                <div class="p-3">
-                                    <!-- Cabeçalho do Grupo -->
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <h6 class="fw-bold" id="grupo-selecionado-titulo">Primeiro Contato</h6>
-                                        <div>
-                                            <button class="btn btn-outline-secondary btn-sm me-2" id="modalEditarGrupoBtn">
-                                                <i class="bi bi-pencil me-1"></i> Editar Grupo
-                                            </button>
-                                            <button class="btn btn-primary btn-sm" id="btnNovaRegra">
-                                                <i class="bi bi-plus-circle me-1"></i> Nova Regra
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Descrição do Grupo -->
-                                    <div class="alert alert-light mb-3" id="grupo-descricao">
-                                        Escolha ou crie um grupo de regras.
-                                    </div>
-
-                                    <!-- Tabela de Regras do Grupo -->
-                                    <div class="table-responsive">
-                                        <table class="table table-bordered table-sm">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th>Nome</th>
-                                                    <th>Dias Após</th>
-                                                    <th>Descrição</th>
-                                                    <th>Materiais</th>
-                                                    <th>Ações</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="regras-tbody">
-
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    <!-- Mensagem quando não há regras -->
-                                    <div id="sem-regras" class="text-center p-4 d-none">
-                                        <i class="bi bi-exclamation-circle text-secondary fs-3"></i>
-                                        <p class="mt-2 text-secondary">Nenhuma regra cadastrada neste grupo.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Novo Grupo -->
-        <div class="modal fade" id="novoGrupoModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="grupoModalLabel">Novo Grupo de Regras</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="grupoForm">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="grupoNome" placeholder="Nome do Grupo" required>
-                                <label for="grupoNome" class="form-label">Nome do Grupo</label>
-                            </div>
-                            <div class="form-floating mb-3">
-                                <textarea class="form-control" name="grupoDescricao" id="grupoDescricao" placeholder="Descrição" style="height: 100px"></textarea>
-                                <label for="grupoDescricao">Descrição</label>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary btn-cancelar-grupo" data-bs-dismiss="modal">Voltar</button>
-                                <button type="submit" class="btn btn-success" id="salvarGrupoBtn">Salvar</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Editar Grupo -->
-        <div class="modal fade" id="editarGrupo" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                <h5 class="modal-title" id="grupoModalLabel">Editar Grupo de Regras</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                </div>
-                <div class="modal-body">
-                <form id="editarGrupoForm">
-                    <div class="form-floating mb-3">
-                    <input type="text" class="form-control" id="editarGrupoNome" placeholder="Nome do Grupo" required>
-                    <label for="editarGrupoNome" class="form-label">Nome do Grupo</label>
-                    </div>
-                    <div class="form-floating mb-3">
-                    <textarea class="form-control" id="editarGrupoDescricao" placeholder="Descrição" style="height: 100px"></textarea>
-                    <label for="editarGrupoDescricao">Descrição</label>
-                    </div>
-                    
-                    <div class="modal-footer d-flex justify-content-between">
-                    <button type="button" class="btn btn-danger" id="excluirGrupoBtn">Excluir</button>
-                    <div>
-                        <button type="button" class="btn btn-secondary btn-cancelar-grupo" data-bs-dismiss="modal">Voltar</button>
-                        <button type="submit" class="btn btn-success" id="editarGrupoBtn">Salvar</button>
-                    </div>
-                    </div>
-                </form>
-                </div>
-            </div>
-            </div>
-        </div>
-
-        <!-- Modal: confirmar exclusão grupo de regra -->
-        <div class="modal fade" id="confirmarExclusaoGrupoModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-md">
-                <div class="modal-content fade-in">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="bi bi-exclamation-triangle-fill"></i>
-                            Excluir Grupo de Regras
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    
-                    <div class="modal-body text-center">
-                        <div class="alert alert-danger d-flex align-items-start" role="alert">
-                            <i class="bi bi-exclamation-circle-fill text-danger me-2 mt-1"></i>
-                            <div class="text-start">
-                                <strong>Atenção:</strong> Esta ação não pode ser desfeita e todas as regras deste grupo serão removidas permanentemente.
-                            </div>
-                        </div>
-                        
-                        <div class="alert alert-warning d-flex align-items-start" role="alert">
-                            <i class="bi bi-info-circle-fill text-warning me-2 mt-1"></i>
-                            <div class="text-start">
-                                <strong>Importante:</strong> Caso algum paciente esteja cadastrado a este grupo de regras, ele ficará sem grupo de regras atribuído.
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" id="voltar-editar-grupo-btn">Voltar</button>
-                        <button type="button" class="btn btn-danger" id="confirmar-exclusao-grupo-btn">Excluir</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Nova Regra -->
-        <div class="modal fade" id="novaRegraModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Nova Regra</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="nova-regra-form">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="nova-regra-nome" placeholder="Nome da Regra" required>
-                                <label for="nova-regra-nome">Nome da Regra</label>
-                            </div>
-                            <div class="form-floating mb-3">
-                                <input type="number" class="form-control" id="nova-regra-dias" placeholder="Dias Após" min="1" required>
-                                <label for="nova-regra-dias">Dias Após</label>
-                            </div>
-                            <div class="form-floating mb-3">
-                                <textarea class="form-control" id="nova-regra-descricao" placeholder="Descrição" style="height: 100px"></textarea>
-                                <label for="nova-regra-descricao">Descrição</label>
-                            </div>
-                            <div class="mb-3">
-                                <label for="nova-regra-materiais" class="form-label">Materiais (opcional)</label>
-                                <div id="nova-regra-materiais" class="materiais-multiselect border rounded p-2 small text-muted" style="max-height: 220px; overflow-y: auto;" aria-describedby="nova-regra-materiais-help" role="group">
-                                    Carregando materiais...
-                                </div>
-                                <div id="nova-regra-materiais-help" class="form-text">Clique nos botões para selecionar os materiais que acompanham esta regra (pode escolher mais de um).</div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Voltar</button>
-                                <button type="submit" class="btn btn-success" id="salvarRegraBtn">Salvar</button>
-                            </div>
-                        </form>
                     </div>
                 </div>
             </div>
@@ -804,17 +599,46 @@
 
         <!-- Modal: Novo material -->
         <div class="modal fade" id="novoMaterialModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-lg modal-dialog-centered material-modal">
                 <div class="modal-content">
-                    <form id="novo-material-form">
+                    <form id="novo-material-form" enctype="multipart/form-data">
                     <div class="modal-header">
                         <h5 class="modal-title">Novo Material</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                     </div>
                     <div class="modal-body">
+                        <p class="text-muted small mb-3">Escolha um tipo de arquivo e envie apenas um.</p>
                         <div class="form-floating mb-3">
-                            <input type="text" class="form-control" id="novo-material-nome" name="novo-material-nome" placeholder="Nome do Material" required>
+                            <input type="text" class="form-control" id="novo-material-nome" name="descricao" placeholder="Nome do Material" required>
                             <label for="novo-material-nome">Nome do Material</label>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="novo-material-tipo">Tipo de arquivo</label>
+                            <select class="form-select" id="novo-material-tipo" name="tipo_arquivo">
+                                <option value="pdf" selected>PDF</option>
+                                <option value="imagem">Imagem</option>
+                                <option value="foto">Foto</option>
+                                <option value="video">Video</option>
+                                <option value="">Sem arquivo</option>
+                            </select>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6 material-arquivo-wrapper">
+                                <label for="novo-material-pdf" class="form-label">Anexar PDF</label>
+                                <input type="file" class="form-control material-arquivo-input" id="novo-material-pdf" name="arquivo_pdf" accept="application/pdf" data-tipo="pdf">
+                            </div>
+                            <div class="col-md-6 material-arquivo-wrapper">
+                                <label for="novo-material-video" class="form-label">Anexar video</label>
+                                <input type="file" class="form-control material-arquivo-input" id="novo-material-video" name="arquivo_video" accept="video/*" data-tipo="video">
+                            </div>
+                            <div class="col-md-6 material-arquivo-wrapper">
+                                <label for="novo-material-imagem" class="form-label">Anexar imagem</label>
+                                <input type="file" class="form-control material-arquivo-input" id="novo-material-imagem" name="arquivo_imagem" accept="image/*" data-tipo="imagem">
+                            </div>
+                            <div class="col-md-6 material-arquivo-wrapper">
+                                <label for="novo-material-foto" class="form-label">Anexar foto</label>
+                                <input type="file" class="form-control material-arquivo-input" id="novo-material-foto" name="arquivo_foto" accept="image/*" data-tipo="foto">
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
