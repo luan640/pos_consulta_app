@@ -45,6 +45,10 @@ def materiais_page(request):
     return render(request, 'materiais.html')
 
 @login_required
+def pacientes_page(request):
+    return render(request, 'pacientes.html')
+
+@login_required
 def perfil(request):
     def obter_nome_usuario(usuario):
         nome = ''
@@ -257,6 +261,7 @@ def listar_pacientes_com_consultas(request):
             'id': paciente.id,
             'nome': paciente.nome,
             'telefone': paciente.telefone,
+            'criado_em': paciente.created_at.strftime('%d/%m/%Y') if paciente.created_at else None,
             'ultima_consulta': paciente.ultima_consulta_data,
             'proximo_lembrete': ultimo.data_lembrete if ultimo else None,
             'penultimo_lembrete': penultimo.data_lembrete if penultimo else None,
@@ -444,7 +449,12 @@ def paciente_detalhe(request, pk):
 def grupo_regras_list_create(request):
 
     if request.method == 'GET':
-        grupo_regras = GrupoLembrete.objects.filter(dono=request.user).prefetch_related('regras')
+        grupo_regras = (
+            GrupoLembrete.objects
+            .filter(dono=request.user, regras__isnull=False)
+            .prefetch_related('regras')
+            .distinct()
+        )
         data = [{
             'id': r.id,
             'nome': r.nome,
@@ -733,10 +743,17 @@ def atualizar_cards(request):
         data_lembrete__lt=date.today()
     ).count()
 
+    sem_regra = Paciente.objects.filter(
+        dono=request.user,
+        ativo=True,
+        grupo_lembrete__isnull=True
+    ).count()
+
     return JsonResponse({
         'total_pacientes': total_pacientes,
         'alertas_ativos': alertas_ativos,
-        'lembretes_atrasados': lembretes_atrasados
+        'lembretes_atrasados': lembretes_atrasados,
+        'pacientes_sem_regra': sem_regra
     })
 
 @login_required

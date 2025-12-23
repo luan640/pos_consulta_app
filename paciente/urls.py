@@ -7,6 +7,7 @@ urlpatterns = [
     path('regras/', views.regras, name='regras'),
     path('materiais/', views.materiais_page, name='materiais'),
     path('perfil/', views.perfil, name='perfil'),
+    path('pacientes/', views.pacientes_page, name='pacientes'),
     path('politica-de-privacidade/', views.politica_privacidade, name='politica_privacidade'),
     path('termos-de-servico/', views.termos_servico, name='termos_servico'),
     path('webhook/', webhook, name='webhook'),

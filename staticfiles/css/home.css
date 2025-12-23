@@ -310,6 +310,7 @@ body {
 .stat-card.appointments::before { background: linear-gradient(135deg, #27ae60, #229954); }
 .stat-card.emergencies::before { background: linear-gradient(135deg, #e74c3c, #c0392b); }
 .stat-card.treatments::before { background: linear-gradient(135deg, #8e44ad, #7d3c98); }
+.stat-card.no-rules::before { background: linear-gradient(135deg, #f4b400, #f39c12); }
 
 .stat-icon {
     width: 60px;
@@ -327,6 +328,7 @@ body {
 .stat-icon.appointments { background: linear-gradient(135deg, #eafaf1, #d1fae5); color: #27ae60; }
 .stat-icon.emergencies { background: linear-gradient(135deg, #fdf2f2, #fee2e2); color: #e74c3c; }
 .stat-icon.treatments { background: linear-gradient(135deg, #f3ebff, #e9d5ff); color: #8e44ad; }
+.stat-icon.no-rules { background: linear-gradient(135deg, #fff4d6, #ffe6a3); color: #f4b400; }
 
 .stat-number {
     font-size: 2.5rem;

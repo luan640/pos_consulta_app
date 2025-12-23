@@ -1,27 +1,22 @@
+{% extends 'navbar.html' %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- <title>Pós-Atendimento Nutricional</title> -->
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{% static 'css/home.css' %}">
-    <link rel="stylesheet" href="{% static 'css/input_material.css' %}">
-    <link rel="stylesheet" href="{% static 'css/toast-styles.css' %}">
-    <link rel="stylesheet" href="{% static 'css/contact-modal.css' %}">
-    <link rel="stylesheet" href="{% static 'css/card-pacientes.css' %}">
-    <link rel="stylesheet" href="{% static 'css/modal-historico-consulta.css' %}">
-    <link rel="stylesheet" href="{% static 'css/calendar.css' %}">
-</head>
-<body class="bg-light">
+{% block title %}Home | LembraPro{% endblock %}
+{% block nav_home_active %}active{% endblock %}
+{% block nav_home_aria %}aria-current="page"{% endblock %}
 
-    <div class="container py-4">
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+<link rel="stylesheet" href="{% static 'css/input_material.css' %}">
+<link rel="stylesheet" href="{% static 'css/toast-styles.css' %}">
+<link rel="stylesheet" href="{% static 'css/contact-modal.css' %}">
+<link rel="stylesheet" href="{% static 'css/card-pacientes.css' %}">
+<link rel="stylesheet" href="{% static 'css/modal-historico-consulta.css' %}">
+<link rel="stylesheet" href="{% static 'css/calendar.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
 
         <input type="hidden" id="regra-grupo-id">
         <input type="hidden" id="nome-grupo">
@@ -29,44 +24,9 @@
         <input type="hidden" id="paciente-id">
     
         <!-- Header -->
-        <div class="mb-4">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-            <div class="d-flex align-items-center">
-            <!-- Substitui o <p> pela logo -->
-            <img
-                src="{% static 'img/logo.png' %}"
-                alt="LembraPro — pós-atendimento nutricional"
-                style="height: 100px; width: auto;"
-                class="me-2"
-            />
-            <!-- Opcional: um texto auxiliar pequeno ao lado -->
-            <!-- <span class="text-secondary small">Gerencie o acompanhamento dos seus pacientes</span> -->
-            </div>
-            <div class="d-flex gap-2 flex-wrap justify-content-end">
-            <button id="btnModalNovoPaciente" class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newPatientModal">
-                <i class="bi bi-plus"></i>
-                Novo Paciente
-            </button>
-            <a id="btnModalRegra" class="btn btn-info mx-auto" href="{% url 'regras' %}">
-                <i class="bi bi-gear"></i>
-                Regras
-            </a>
-            <a id="btnModalMaterial" class="btn btn-info mx-auto" href="{% url 'materiais' %}">
-                <i class="bi bi-gear"></i>
-                Materiais
-            </a>
-            <a class="btn btn-primary d-flex align-items-center gap-2" href="{% url 'perfil' %}">
-                <i class="bi bi-person-circle"></i>
-                Perfil
-            </a>
-            <form method="post" action="{% url 'logout' %}" class="d-inline-flex">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-secondary d-flex align-items-center gap-2">
-                    <i class="bi bi-box-arrow-right"></i>
-                    Sair
-                </button>
-            </form>
-            </div>
+            <div class="d-flex align-items-center"></div>
+            <div class="d-flex gap-2 flex-wrap justify-content-end"></div>
         </div>
 
         <!-- Stats Cards -->
@@ -74,22 +34,28 @@
             <!-- <h2 class="section-title">📊 Indicadores de Saúde</h2> -->
             <div class="medical-stats">
                 <div class="stat-card patients">
-                    <div class="stat-icon patients">👥</div>
+                    <div class="stat-icon patients"><i class="bi bi-people-fill"></i></div>
                     <div class="stat-number" id="total-patients">-</div>
                     <div class="stat-label">Total de Pacientes</div>
                 </div>
 
                 <div class="stat-card treatments">
-                    <div class="stat-icon treatments">📅</div>
+                    <div class="stat-icon treatments"><i class="bi bi-bell-fill"></i></div>
                     <div class="stat-number" id="lembrete-atrasado">-</div>
                     <div class="stat-label">Lembretes em atraso</div>
                 </div>
 
                 <div class="stat-card emergencies">
-                    <div class="stat-icon emergencies">🚨</div>
+                    <div class="stat-icon emergencies"><i class="bi bi-exclamation-triangle-fill"></i></div>
                     <div class="stat-number" id="active-alerts">-</div>
                     <div class="stat-label">Alertas ativos</div>
-                    <!-- <div class="stat-trend trend-down">↘️ -2 desde ontem</div> -->
+                    <!-- <div class="stat-trend trend-down">??~??? -2 desde ontem</div> -->
+                </div>
+
+                <div class="stat-card no-rules">
+                    <div class="stat-icon no-rules"><i class="bi bi-shield-exclamation"></i></div>
+                    <div class="stat-number" id="patients-no-rule">-</div>
+                    <div class="stat-label">Ativos sem regra</div>
                 </div>
             </div>
         </section>
@@ -119,6 +85,17 @@
                                 <option value="">Todos</option>
                                 <option value="True">Ativo</option>
                                 <option value="False">Inativo</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="filter-reminder-due" class="form-label small text-muted">
+                                <i class="bi bi-clock-history me-1"></i> Prazo do Lembrete
+                            </label>
+                            <select class="form-select form-select-sm" id="filter-reminder-due">
+                                <option value="">Todos</option>
+                                <option value="atrasado">Atrasado</option>
+                                <option value="emdia">Em dia</option>
                             </select>
                         </div>
 
@@ -154,15 +131,21 @@
         <div class="mb-4">
             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2" id="patients-view-switcher">
                 <h2 class="fs-5 mb-0 text-secondary">Visão de Pacientes</h2>
-                <div class="btn-group btn-group-sm" role="group" aria-label="Alternar visualização de pacientes">
-                    <button type="button" class="btn btn-outline-primary active" id="view-toggle-list" disabled aria-disabled="true">
-                        <i class="bi bi-card-list me-1"></i>
-                        Lista
+                <div class="d-flex align-items-center gap-2">
+                    <button id="btnModalNovoPaciente" class="btn btn-primary btn-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newPatientModal">
+                        <i class="bi bi-plus"></i>
+                        Novo Paciente
                     </button>
-                    <button type="button" class="btn btn-outline-primary" id="view-toggle-calendar" disabled aria-disabled="true">
-                        <i class="bi bi-calendar3 me-1"></i>
-                        Calendário
-                    </button>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Alternar visualiza????o de pacientes">
+                        <button type="button" class="btn btn-outline-primary active" id="view-toggle-list" disabled aria-disabled="true">
+                            <i class="bi bi-card-list me-1"></i>
+                            Cartões
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" id="view-toggle-calendar" disabled aria-disabled="true">
+                            <i class="bi bi-calendar3 me-1"></i>
+                            Calendário
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -175,6 +158,7 @@
                 Cadastrar Primeiro Paciente
                 </button> -->
             </div>
+
 
             <div id="calendar-view" class="d-none">
                 <div class="card card-body shadow-sm border-light-subtle mb-3">
@@ -210,7 +194,7 @@
                 <!-- Patient cards will be inseridos via JavaScript -->
                 </div>
                 <div id="load-more-wrapper" class="text-center mt-3 d-none">
-                    <button id="load-more-patients" class="btn btn-outline-primary">
+                    <button id="load-more-patients" class="btn btn-primary">
                         Ver mais
                     </button>
                 </div>
@@ -528,8 +512,16 @@
                                 <label for="grupo-select" class="form-label">Selecione o Grupo de Regras</label>
                                 <select class="form-select" id="grupo-select" required>
                                     <option value="" disabled selected>Escolha um grupo</option>
-                                    <!-- Opções de grupos serão inseridas via JavaScript -->
+                                    <!-- Op????es de grupos ser??o inseridas via JavaScript -->
                                 </select>
+                            </div>
+                            <div class="alert alert-info d-flex align-items-center gap-2">
+                                <i class="bi bi-info-circle"></i>
+                                <span>Somente grupos que possuem regras cadastradas serão exibidos.</span>
+                                <a class="btn btn-primary d-inline-flex align-items-center gap-2" href="{% url 'regras' %}">
+                                    <i class="bi bi-gear"></i>
+                                    Ir para Regras
+                                </a>
                             </div>
                             <div id="grupo-descricao-preview" class="alert alert-light d-none"></div>
                         </div>
@@ -734,16 +726,14 @@
         </div>
 
     </div>
+{% endblock %}
 
-    <!-- Bootstrap JS Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Custom JS -->
-    <script type="module" src="{% static 'js/home.js' %}"></script>
-    <script type="module" src="{% static 'js/registrar-contato.js' %}"></script>
-    <script type="module" src="{% static 'js/message.js' %}"></script>
-    <script type="module" src="{% static 'js/cadastrar-regra.js' %}"></script>
-    <script type="module" src="{% static 'js/materiais.js' %}"></script>
-    <script type="module" src="{% static 'js/verifica-cadastro.js' %}"></script>
-    <script type="module" src="{% static 'js/filtro.js' %}"></script>
-</body>
-</html>
+{% block extra_js %}
+<script type="module" src="{% static 'js/home.js' %}"></script>
+<script type="module" src="{% static 'js/registrar-contato.js' %}"></script>
+<script type="module" src="{% static 'js/message.js' %}"></script>
+<script type="module" src="{% static 'js/cadastrar-regra.js' %}"></script>
+<script type="module" src="{% static 'js/materiais.js' %}"></script>
+<script type="module" src="{% static 'js/verifica-cadastro.js' %}"></script>
+<script type="module" src="{% static 'js/filtro.js' %}"></script>
+{% endblock %}

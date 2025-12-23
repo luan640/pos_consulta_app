@@ -1,0 +1,16 @@
+.pacientes-table th {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.pacientes-table td {
+    vertical-align: middle;
+}
+
+.pacientes-table .btn-editar {
+    white-space: nowrap;
+}
+
+.pacientes-empty {
+    min-height: 120px;
+}

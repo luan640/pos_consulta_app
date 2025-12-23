@@ -1,0 +1,145 @@
+{% extends 'navbar.html' %}
+{% load static %}
+
+{% block title %}Pacientes | LembraPro{% endblock %}
+{% block nav_home_active %}{% endblock %}
+{% block nav_home_aria %}{% endblock %}
+{% block nav_pacientes_active %}active{% endblock %}
+{% block nav_pacientes_aria %}aria-current="page"{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+<link rel="stylesheet" href="{% static 'css/pacientes.css' %}">
+<link rel="stylesheet" href="{% static 'css/toast-styles.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h1 class="h3 mb-1">Pacientes</h1>
+            <p class="text-muted mb-0">Gerencie os dados cadastrados dos pacientes.</p>
+        </div>
+        <button class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#novoPacienteModal">
+            <i class="bi bi-plus-circle"></i>
+            Novo paciente
+        </button>
+    </div>
+
+    <div class="card shadow-sm border-light-subtle mb-4">
+        <div class="card-body">
+            <form id="pacientes-filtros" class="row g-2 align-items-end">
+                <div class="col-md-5">
+                    <label for="filtro-nome" class="form-label small text-muted">Nome</label>
+                    <input type="text" class="form-control" id="filtro-nome" placeholder="Buscar por nome">
+                </div>
+                <div class="col-md-4">
+                    <label for="filtro-telefone" class="form-label small text-muted">Telefone</label>
+                    <input type="text" class="form-control" id="filtro-telefone" placeholder="Buscar por telefone">
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100">Aplicar</button>
+                    <button type="button" class="btn btn-outline-secondary w-100" id="filtro-limpar">Limpar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-light-subtle">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 pacientes-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nome</th>
+                        <th>Telefone</th>
+                        <th>Data de criacao</th>
+                        <th class="text-end">Acoes</th>
+                    </tr>
+                </thead>
+                <tbody id="pacientes-tbody">
+                    <!-- Linhas inseridas via JS -->
+                </tbody>
+            </table>
+        </div>
+        <div id="pacientes-vazio" class="text-center text-secondary py-4 d-none">
+            <i class="bi bi-person-x fs-3"></i>
+            <p class="mt-2 mb-0">Nenhum paciente encontrado.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Novo paciente -->
+<div class="modal fade" id="novoPacienteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form id="novo-paciente-form">
+                <div class="modal-header">
+                    <h5 class="modal-title">Novo paciente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="novo-paciente-nome" class="form-label">Nome</label>
+                            <input type="text" class="form-control" id="novo-paciente-nome" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="novo-paciente-telefone" class="form-label">Telefone</label>
+                            <input type="tel" class="form-control" id="novo-paciente-telefone" placeholder="(11) 99999-9999">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="novo-paciente-data" class="form-label">Data da ultima consulta</label>
+                            <input type="date" class="form-control" id="novo-paciente-data" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="novo-paciente-tipo" class="form-label">Tipo de consulta</label>
+                            <select class="form-select" id="novo-paciente-tipo">
+                                <option value="consulta">Consulta</option>
+                                <option value="retorno">Retorno</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Editar paciente -->
+<div class="modal fade" id="editarPacienteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <form id="editar-paciente-form">
+                <input type="hidden" id="editar-paciente-id">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar paciente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editar-paciente-nome" class="form-label">Nome</label>
+                        <input type="text" class="form-control" id="editar-paciente-nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editar-paciente-telefone" class="form-label">Telefone</label>
+                        <input type="tel" class="form-control" id="editar-paciente-telefone">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script type="module" src="{% static 'js/message.js' %}"></script>
+<script type="module" src="{% static 'js/pacientes.js' %}"></script>
+{% endblock %}

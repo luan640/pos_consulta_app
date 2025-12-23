@@ -235,13 +235,39 @@ function removerCardPaciente(pacienteId) {
 function obterFiltrosPacientes() {
   const nome = document.getElementById('filter-name')?.value?.trim() || '';
   const status = document.getElementById('filter-reminder')?.value?.trim() || '';
+  const statusPrazo = document.getElementById('filter-reminder-due')?.value?.trim() || '';
   const sort = document.getElementById('filter-sort')?.value?.trim() || '';
 
   return {
     nome,
     status,
+    statusPrazo,
     sort,
   };
+}
+
+function obterStatusPrazoLembrete(paciente) {
+  if (!paciente || !paciente.proximo_lembrete) {
+    return null;
+  }
+
+  const data = new Date(paciente.proximo_lembrete);
+  if (Number.isNaN(data.getTime())) {
+    return null;
+  }
+
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  data.setHours(0, 0, 0, 0);
+
+  return data < hoje ? 'atrasado' : 'emdia';
+}
+
+function filtrarPorPrazoLembrete(lista, statusPrazo) {
+  if (!statusPrazo) {
+    return lista;
+  }
+  return lista.filter((paciente) => obterStatusPrazoLembrete(paciente) === statusPrazo);
 }
 
 export function listarPacientes(reset = true) {
@@ -268,7 +294,7 @@ export function listarPacientes(reset = true) {
     listaCompletaCarregada = false;
   }
 
-  const { nome: filtroNome, status: filtroStatus, sort: filtroSort } = obterFiltrosPacientes();
+  const { nome: filtroNome, status: filtroStatus, statusPrazo: filtroStatusPrazo, sort: filtroSort } = obterFiltrosPacientes();
 
   const params = new URLSearchParams();
 
@@ -320,7 +346,7 @@ export function listarPacientes(reset = true) {
   const requisicao = fetch(`/api/pacientes/?${params.toString()}`)
     .then(response => response.json())
     .then(data => {
-      const lista = data?.pacientes || [];
+      const lista = filtrarPorPrazoLembrete(data?.pacientes || [], filtroStatusPrazo);
       const possuiMais = Boolean(data?.has_more);
 
       if (reset) {
@@ -639,7 +665,7 @@ async function buscarEventosCalendario(mes, ano) {
     ano = hoje.getFullYear();
   }
 
-  const { nome, status, sort } = obterFiltrosPacientes();
+  const { nome, status, statusPrazo, sort } = obterFiltrosPacientes();
   const pacientesMes = [];
   let pagina = 1;
   let possuiMais = true;
@@ -672,7 +698,8 @@ async function buscarEventosCalendario(mes, ano) {
     }
 
     const data = await response.json();
-    pacientesMes.push(...(data?.pacientes || []));
+    const filtrados = filtrarPorPrazoLembrete(data?.pacientes || [], statusPrazo);
+    pacientesMes.push(...filtrados);
     possuiMais = Boolean(data?.has_more);
     pagina += 1;
 
@@ -2509,11 +2536,15 @@ function atualizarCards() {
   const cardTotalPatientes = document.getElementById('total-patients');
   const cardTotalLembretes = document.getElementById('active-alerts');
   const cardLembreteAtrasado = document.getElementById('lembrete-atrasado');
+  const cardSemRegra = document.getElementById('patients-no-rule');
 
   // Mostra spinner de loading em cada card
   cardTotalPatientes.innerHTML = `<span class="spinner-border text-primary" role="status"></span>`;
   cardTotalLembretes.innerHTML = `<span class="spinner-border text-primary" role="status"></span>`;
   cardLembreteAtrasado.innerHTML = `<span class="spinner-border text-primary" role="status"></span>`;
+  if (cardSemRegra) {
+    cardSemRegra.innerHTML = `<span class="spinner-border text-primary" role="status"></span>`;
+  }
 
   fetch('/api/cards-home/')
     .then(response => response.json())
@@ -2521,12 +2552,18 @@ function atualizarCards() {
       cardTotalPatientes.textContent = data.total_pacientes;
       cardTotalLembretes.textContent = data.alertas_ativos;
       cardLembreteAtrasado.textContent = data.lembretes_atrasados;
+      if (cardSemRegra) {
+        cardSemRegra.textContent = data.pacientes_sem_regra ?? '-';
+      }
     })
     .catch(err => {
       showToast('Erro ao carregar estatísticas', 'error');
       cardTotalPatientes.textContent = '--';
       cardTotalLembretes.textContent = '--';
       cardLembreteAtrasado.textContent = '--';
+      if (cardSemRegra) {
+        cardSemRegra.textContent = '--';
+      }
     });
 }
 
