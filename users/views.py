@@ -41,19 +41,19 @@ def solicitar_acesso(request):
 
     AccessRequest.objects.create(nome=nome, email=email, whatsapp=whatsapp)
 
-    # mensagem = (
-    #     'Novo pedido de acesso recebido:\n'
-    #     f'Nome: {nome}\n'
-    #     f'E-mail: {email}\n'
-    #     f'WhatsApp: {whatsapp}'
-    # )
+    mensagem = (
+        'Novo pedido de acesso recebido:\n'
+        f'Nome: {nome}\n'
+        f'E-mail: {email}\n'
+        f'WhatsApp: {whatsapp}'
+    )
 
-    # send_mail(
-    #     subject='Novo pedido de acesso - LembraPro',
-    #     message=mensagem,
-    #     from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'lembrapro@gmail.com'),
-    #     recipient_list=[getattr(settings, 'SUPPORT_EMAIL', 'lembrapro@gmail.com')],
-    #     fail_silently=True,
-    # )
+    send_mail(
+        subject='Novo pedido de acesso - LembraPro',
+        message=mensagem,
+        from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'lembrapro@gmail.com'),
+        recipient_list=[getattr(settings, 'SUPPORT_EMAIL', 'lembrapro@gmail.com')],
+        fail_silently=True,
+    )
 
     return JsonResponse({'mensagem': 'Recebemos seus dados! Em breve entraremos em contato.'})
