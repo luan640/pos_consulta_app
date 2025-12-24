@@ -54,9 +54,10 @@ INSTALLED_APPS = [
 
     'users',
     'paciente',
-    
 
 ]
+
+INSTALLED_APPS += ["anymail"]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',      
@@ -193,15 +194,11 @@ AUTH_USER_MODEL = 'users.CustomUser'
 LOGIN_REDIRECT_URL = '/home/'
 
 # EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_BACKEND = "django_resend.backend.ResendEmailBackend"
+EMAIL_BACKEND = "anymail.backends.resend.EmailBackend"
 
-# EMAIL_HOST = env('EMAIL_HOST')
-# EMAIL_PORT = env.int('EMAIL_PORT')
-EMAIL_HOST_USER = env('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
-
-# EMAIL_USE_TLS = True
-# EMAIL_USE_SSL = False
+ANYMAIL = {
+    "RESEND_API_KEY": env("RESEND_API_KEY"),
+}
 
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
 
