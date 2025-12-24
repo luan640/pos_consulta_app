@@ -16,3 +16,4 @@ requests==2.32.4
 redis==5.0.8
 django-storages
 boto3   
+resend
