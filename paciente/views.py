@@ -981,6 +981,7 @@ def materiais(request, pk):
             arquivo_video = request.FILES.get('arquivo_video')
             arquivo_imagem = request.FILES.get('arquivo_imagem')
             arquivo_foto = request.FILES.get('arquivo_foto')
+            youtube_url = (request.POST.get('youtube_url') or '').strip() or None
         else:
             data = json.loads(request.body)
             descricao = data.get('descricao', material.descricao)
@@ -990,6 +991,7 @@ def materiais(request, pk):
             arquivo_video = None
             arquivo_imagem = None
             arquivo_foto = None
+            youtube_url = (data.get('youtube_url') or '').strip() or None
 
         # Verifica se j?? existe outro material com a mesma descri????o para o usu??rio
         if Material.objects.filter(dono=request.user, descricao=descricao).exclude(pk=pk).exists():
@@ -1002,6 +1004,8 @@ def materiais(request, pk):
             ('foto', arquivo_foto),
         ]
         arquivos_enviados = [(tipo, arquivo) for tipo, arquivo in arquivos if arquivo]
+        if youtube_url:
+            arquivos_enviados.append(('youtube', youtube_url))
         if len(arquivos_enviados) > 1:
             return JsonResponse({'erro': 'Envie apenas um tipo de arquivo por material.'}, status=400)
 
@@ -1010,6 +1014,7 @@ def materiais(request, pk):
             material.arquivo_video = None
             material.arquivo_imagem = None
             material.arquivo_foto = None
+            material.youtube_url = None
             material.tipo_arquivo = None
 
         if arquivos_enviados:
@@ -1022,6 +1027,7 @@ def materiais(request, pk):
                 'video' if material.arquivo_video else
                 'imagem' if material.arquivo_imagem else
                 'foto' if material.arquivo_foto else
+                'youtube' if material.youtube_url else
                 None
             )
             if tipo_atual and tipo_atual != tipo_detectado and not remover_arquivo:
@@ -1032,6 +1038,10 @@ def materiais(request, pk):
             material.arquivo_video = arquivo_video if tipo_detectado == 'video' else None
             material.arquivo_imagem = arquivo_imagem if tipo_detectado == 'imagem' else None
             material.arquivo_foto = arquivo_foto if tipo_detectado == 'foto' else None
+            material.youtube_url = youtube_url if tipo_detectado == 'youtube' else None
+        elif tipo_arquivo == 'youtube' and youtube_url:
+            material.tipo_arquivo = 'youtube'
+            material.youtube_url = youtube_url
 
         material.descricao = descricao
         material.save()
@@ -1062,12 +1072,14 @@ def buscar_materiais(request):
                     'video' if m.arquivo_video else
                     'imagem' if m.arquivo_imagem else
                     'foto' if m.arquivo_foto else
+                    'youtube' if m.youtube_url else
                     None
                 ),
                 'pdf_url': m.arquivo_pdf.url if m.arquivo_pdf else None,
                 'video_url': m.arquivo_video.url if m.arquivo_video else None,
                 'imagem_url': m.arquivo_imagem.url if m.arquivo_imagem else None,
                 'foto_url': m.arquivo_foto.url if m.arquivo_foto else None,
+                'youtube_url': m.youtube_url,
             }
             for m in material
         ]
@@ -1081,6 +1093,7 @@ def buscar_materiais(request):
             arquivo_video = request.FILES.get('arquivo_video')
             arquivo_imagem = request.FILES.get('arquivo_imagem')
             arquivo_foto = request.FILES.get('arquivo_foto')
+            youtube_url = (request.POST.get('youtube_url') or '').strip() or None
         else:
             data = json.loads(request.body)
             descricao = data.get('descricao')
@@ -1089,6 +1102,7 @@ def buscar_materiais(request):
             arquivo_video = None
             arquivo_imagem = None
             arquivo_foto = None
+            youtube_url = (data.get('youtube_url') or '').strip() or None
 
         arquivos = [
             ('pdf', arquivo_pdf),
@@ -1097,9 +1111,13 @@ def buscar_materiais(request):
             ('foto', arquivo_foto),
         ]
         arquivos_enviados = [(tipo, arquivo) for tipo, arquivo in arquivos if arquivo]
+        if youtube_url:
+            arquivos_enviados.append(('youtube', youtube_url))
         if len(arquivos_enviados) > 1:
             return JsonResponse({'erro': 'Envie apenas um tipo de arquivo por material.'}, status=400)
         if tipo_arquivo and not arquivos_enviados:
+            if tipo_arquivo == 'youtube':
+                return JsonResponse({'erro': 'Informe o link do YouTube.'}, status=400)
             return JsonResponse({'erro': 'Selecione o arquivo correspondente ao tipo escolhido.'}, status=400)
         if arquivos_enviados:
             tipo_detectado = arquivos_enviados[0][0]
@@ -1119,6 +1137,7 @@ def buscar_materiais(request):
                 arquivo_video=arquivo_video,
                 arquivo_imagem=arquivo_imagem,
                 arquivo_foto=arquivo_foto,
+                youtube_url=youtube_url if tipo_arquivo == 'youtube' else None,
             )
 
         return JsonResponse({'mensagem': 'Novo material adicionado com sucesso'})

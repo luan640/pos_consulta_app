@@ -47,6 +47,7 @@ class Material(models.Model):
         VIDEO = ('video', 'Video')
         IMAGEM = ('imagem', 'Imagem')
         FOTO = ('foto', 'Foto')
+        YOUTUBE = ('youtube', 'Video do YouTube')
 
     descricao = models.CharField(max_length=100, null=True, blank=True)
     tipo_arquivo = models.CharField(max_length=20, choices=TipoArquivo.choices, null=True, blank=True)
@@ -54,6 +55,7 @@ class Material(models.Model):
     arquivo_video = models.FileField(upload_to=gerar_nome_arquivo_materiais, null=True, blank=True)
     arquivo_imagem = models.FileField(upload_to=gerar_nome_arquivo_materiais, null=True, blank=True)
     arquivo_foto = models.FileField(upload_to=gerar_nome_arquivo_materiais, null=True, blank=True)
+    youtube_url = models.URLField(null=True, blank=True)
     dono = models.ForeignKey(User, on_delete=models.CASCADE, related_name='materiais_criados')
     criado_em = models.DateTimeField(auto_now_add=True)
 

@@ -23,6 +23,7 @@ const materialEditarForm = document.getElementById('material-editar-form');
 const materialEditarId = document.getElementById('material-editar-id');
 const materialEditarDescricao = document.getElementById('material-editar-descricao');
 const materialEditarArquivos = document.getElementById('material-editar-arquivos');
+const materialEditarRemoverInfo = document.getElementById('material-editar-remover-info');
 const materialEditarTipoSelect = materialEditarForm
     ? materialEditarForm.querySelector('select[name="tipo_arquivo"]')
     : null;
@@ -118,16 +119,23 @@ function validarArquivoPorTipo(form, tipoSelecionado, permitirExistente = false)
         return true;
     }
     const input = form.querySelector(`.material-arquivo-input[data-tipo="${tipoSelecionado}"]`);
-    if (!input || !input.files || input.files.length === 0) {
+    const isArquivo = input && input.type === 'file';
+    const valor = input ? input.value.trim() : '';
+    if (!input || (isArquivo && (!input.files || input.files.length === 0)) || (!isArquivo && !valor)) {
         if (permitirExistente) {
             const remover = form.querySelector('input[name="remover_arquivo"]');
             const possuiAtual = form.dataset.temArquivo === '1';
             const tipoAtual = form.dataset.tipoAtual || '';
-            if (possuiAtual && tipoAtual === tipoSelecionado && !remover?.checked) {
+            const tipoCompat = tipoAtual === tipoSelecionado
+                || (tipoAtual === 'foto' && tipoSelecionado === 'imagem');
+            if (possuiAtual && tipoCompat && !remover?.checked) {
                 return true;
             }
         }
-        showToast('Selecione o arquivo correspondente ao tipo escolhido.', 'error');
+        const msg = tipoSelecionado === 'youtube'
+            ? 'Informe o link do YouTube.'
+            : 'Selecione o arquivo correspondente ao tipo escolhido.';
+        showToast(msg, 'error');
         return false;
     }
     return true;
@@ -172,18 +180,22 @@ function preencherArquivosAtuais(item) {
     const videoUrl = item.dataset.videoUrl || '';
     const imagemUrl = item.dataset.imagemUrl || '';
     const fotoUrl = item.dataset.fotoUrl || '';
+    const youtubeUrl = item.dataset.youtubeUrl || '';
 
     if (pdfUrl) {
-        links.push({ label: 'PDF atual', url: pdfUrl });
+        links.push({ label: 'PDF atual', url: pdfUrl, tipo: 'pdf' });
     }
     if (videoUrl) {
-        links.push({ label: 'Video atual', url: videoUrl });
+        links.push({ label: 'Video atual', url: videoUrl, tipo: 'video' });
     }
     if (imagemUrl) {
-        links.push({ label: 'Imagem atual', url: imagemUrl });
+        links.push({ label: 'Imagem atual', url: imagemUrl, tipo: 'imagem' });
     }
     if (fotoUrl) {
-        links.push({ label: 'Foto atual', url: fotoUrl });
+        links.push({ label: 'Imagem atual', url: fotoUrl, tipo: 'foto' });
+    }
+    if (youtubeUrl) {
+        links.push({ label: 'Video do YouTube', url: youtubeUrl, tipo: 'youtube' });
     }
 
     if (!links.length) {
@@ -192,18 +204,49 @@ function preencherArquivosAtuais(item) {
     }
 
     const lista = document.createElement('ul');
-    lista.className = 'mb-0 ps-3';
+    lista.className = 'material-arquivos-list mb-0';
     links.forEach((itemLink) => {
         const li = document.createElement('li');
+        li.className = 'material-arquivo-item';
         const link = document.createElement('a');
         link.href = itemLink.url;
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
         link.textContent = itemLink.label;
+        const removerBtn = document.createElement('button');
+        removerBtn.type = 'button';
+        removerBtn.className = 'material-arquivo-remove';
+        removerBtn.dataset.tipo = itemLink.tipo;
+        removerBtn.setAttribute('aria-label', `Remover ${itemLink.label}`);
+        removerBtn.innerHTML = '<i class="bi bi-trash"></i>';
         li.appendChild(link);
+        li.appendChild(removerBtn);
         lista.appendChild(li);
     });
     materialEditarArquivos.appendChild(lista);
+}
+
+function atualizarAvisoRemover() {
+    if (!materialEditarRemover || !materialEditarRemoverInfo) return;
+    materialEditarRemoverInfo.classList.toggle('d-none', !materialEditarRemover.checked);
+    if (!materialEditarRemover.checked) {
+        materialEditarArquivos?.querySelectorAll('.material-arquivo-item').forEach((item) => {
+            item.classList.remove('material-arquivo-removido');
+        });
+    }
+}
+
+function marcarRemocaoArquivo() {
+    if (!materialEditarRemover) return;
+    materialEditarRemover.checked = true;
+    atualizarAvisoRemover();
+    if (materialEditarTipoSelect) {
+        materialEditarTipoSelect.value = '';
+    }
+    atualizarVisibilidadeArquivos(materialEditarForm);
+    materialEditarArquivos?.querySelectorAll('.material-arquivo-item').forEach((item) => {
+        item.classList.add('material-arquivo-removido');
+    });
 }
 
 function abrirModalEditarMaterial(item) {
@@ -217,15 +260,25 @@ function abrirModalEditarMaterial(item) {
     const tipoAtual = item.dataset.tipoArquivo || '';
     const temArquivo = Boolean(item.dataset.pdfUrl || item.dataset.videoUrl || item.dataset.imagemUrl || item.dataset.fotoUrl);
     materialEditarForm.dataset.tipoAtual = tipoAtual;
-    materialEditarForm.dataset.temArquivo = temArquivo ? '1' : '0';
+    const temYoutube = Boolean(item.dataset.youtubeUrl);
+    materialEditarForm.dataset.temArquivo = (temArquivo || temYoutube) ? '1' : '0';
     if (materialEditarTipoSelect) {
-        materialEditarTipoSelect.value = tipoAtual || '';
+        const tipoSelect = tipoAtual === 'foto' ? 'imagem' : (tipoAtual || '');
+        materialEditarTipoSelect.value = tipoSelect;
     }
     if (materialEditarRemover) {
         materialEditarRemover.checked = false;
     }
+    atualizarAvisoRemover();
     atualizarVisibilidadeArquivos(materialEditarForm);
     preencherArquivosAtuais(item);
+    if (materialEditarArquivos) {
+        materialEditarArquivos.querySelectorAll('.material-arquivo-remove').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                marcarRemocaoArquivo();
+            });
+        });
+    }
     editarMaterialModal.show();
 }
 
@@ -277,22 +330,26 @@ function carregarMateriais() {
                     material.video_url ? 'video' :
                     material.imagem_url ? 'imagem' :
                     material.foto_url ? 'foto' :
+                    material.youtube_url ? 'youtube' :
                     ''
                 );
                 const coverLabelMap = {
                     pdf: 'PDF',
                     video: 'Video',
                     imagem: 'Imagem',
-                    foto: 'Foto',
+                    foto: 'Imagem',
+                    youtube: 'YouTube',
                 };
                 const coverIconMap = {
                     pdf: 'bi-file-earmark-pdf',
                     video: 'bi-camera-video',
                     imagem: 'bi-image',
-                    foto: 'bi-camera',
+                    foto: 'bi-image',
+                    youtube: 'bi-youtube',
                 };
                 const coverLabel = coverLabelMap[tipoArquivo] || 'Sem arquivo';
                 const coverIcon = coverIconMap[tipoArquivo] || 'bi-file-earmark';
+                const arquivoUrl = material.youtube_url || material.pdf_url || material.video_url || material.imagem_url || material.foto_url || '';
                 const col = document.createElement('div');
                 col.className = 'col-12 col-md-6 col-xl-4';
                 col.dataset.materialId = material.id;
@@ -301,6 +358,7 @@ function carregarMateriais() {
                 col.dataset.videoUrl = material.video_url || '';
                 col.dataset.imagemUrl = material.imagem_url || '';
                 col.dataset.fotoUrl = material.foto_url || '';
+                col.dataset.youtubeUrl = material.youtube_url || '';
                 col.innerHTML = `
                     <div class="card material-card h-100 shadow-sm border-light-subtle">
                         <div class="material-card-cover material-card-cover--${tipoArquivo || 'none'}">
@@ -311,8 +369,15 @@ function carregarMateriais() {
                         </div>
                         <div class="card-body material-card-body">
                             <div class="descricao material-card-title">${material.descricao}</div>
+                            ${arquivoUrl ? '' : '<span class="material-no-attachment">Sem anexo</span>'}
                         </div>
                         <div class="card-footer material-card-footer bg-white border-0">
+                            ${arquivoUrl ? `
+                            <a class="btn btn-sm btn-outline-primary" href="${arquivoUrl}" target="_blank" rel="noopener noreferrer">
+                                <i class="bi bi-box-arrow-up-right"></i>
+                                Ver arquivo
+                            </a>
+                            ` : ''}
                             <button class="btn btn-sm btn-primary btn-editar" title="Editar">
                                 <i class="bi bi-pencil"></i>
                                 Editar
@@ -517,6 +582,9 @@ if (novoMaterialForm) {
 
 if (materialEditarForm) {
     bindTipoArquivo(materialEditarForm);
+    if (materialEditarRemover) {
+        materialEditarRemover.addEventListener('change', atualizarAvisoRemover);
+    }
 }
 
 if (materialEditarForm) {
