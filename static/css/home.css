@@ -752,6 +752,7 @@ body {
     display: flex;
     gap: 0.5rem;
     padding: 12px 16px 16px;
+    justify-content: flex-end;
 }
 
 .material-card-footer .btn {
