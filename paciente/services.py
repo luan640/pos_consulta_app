@@ -171,7 +171,7 @@ def _send_whatsapp_template(
 
     # Monta string dos materiais
     if materiais:
-        materiais_msg = "; ".join([f"• {m}" for m in materiais])
+        materiais_msg = " ".join([f"{i + 1}) {materiais[i]}" for i in range(len(materiais))])
     else:
         materiais_msg = "Nenhum material necessário."
 

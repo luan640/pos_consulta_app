@@ -271,6 +271,7 @@ function filtrarPorPrazoLembrete(lista, statusPrazo) {
 }
 
 export function listarPacientes(reset = true) {
+  
   if (modoVisualizacao === MODO_CALENDARIO) {
     return carregarCalendario();
   }

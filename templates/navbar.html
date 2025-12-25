@@ -21,9 +21,9 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarMain">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 flex-lg-row-reverse">
                     <li class="nav-item">
-                        <a class="nav-link {% block nav_home_active %}{% endblock %}" {% block nav_home_aria %}{% endblock %} href="{% url 'home' %}">Home</a>
+                        <a class="nav-link {% block nav_perfil_active %}{% endblock %}" {% block nav_perfil_aria %}{% endblock %} href="{% url 'perfil' %}">Perfil</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% block nav_regras_active %}{% endblock %}" {% block nav_regras_aria %}{% endblock %} href="{% url 'regras' %}">Regras</a>
@@ -35,7 +35,7 @@
                         <a class="nav-link {% block nav_materiais_active %}{% endblock %}" {% block nav_materiais_aria %}{% endblock %} href="{% url 'materiais' %}">Materiais</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% block nav_perfil_active %}{% endblock %}" {% block nav_perfil_aria %}{% endblock %} href="{% url 'perfil' %}">Perfil</a>
+                        <a class="nav-link {% block nav_home_active %}{% endblock %}" {% block nav_home_aria %}{% endblock %} href="{% url 'home' %}">Home</a>
                     </li>
                 </ul>
                 <form method="post" action="{% url 'logout' %}" class="d-flex">

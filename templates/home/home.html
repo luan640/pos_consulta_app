@@ -4,6 +4,7 @@
 {% block title %}Home | LembraPro{% endblock %}
 {% block nav_home_active %}active{% endblock %}
 {% block nav_home_aria %}aria-current="page"{% endblock %}
+{% block body_class %}bg-light home-page{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/home.css' %}">
@@ -49,7 +50,6 @@
                     <div class="stat-icon emergencies"><i class="bi bi-exclamation-triangle-fill"></i></div>
                     <div class="stat-number" id="active-alerts">-</div>
                     <div class="stat-label">Alertas ativos</div>
-                    <!-- <div class="stat-trend trend-down">??~??? -2 desde ontem</div> -->
                 </div>
 
                 <div class="stat-card no-rules">
@@ -136,7 +136,7 @@
                         <i class="bi bi-plus"></i>
                         Novo Paciente
                     </button>
-                    <div class="btn-group btn-group-sm" role="group" aria-label="Alternar visualiza????o de pacientes">
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Alternar visualização de pacientes">
                         <button type="button" class="btn btn-outline-primary active" id="view-toggle-list" disabled aria-disabled="true">
                             <i class="bi bi-card-list me-1"></i>
                             Cartões
@@ -194,7 +194,7 @@
                 <!-- Patient cards will be inseridos via JavaScript -->
                 </div>
                 <div id="load-more-wrapper" class="text-center mt-3 d-none">
-                    <button id="load-more-patients" class="btn btn-primary">
+                    <button id="load-more-patients" class="btn btn-primary" type="button">
                         Ver mais
                     </button>
                 </div>
@@ -512,7 +512,7 @@
                                 <label for="grupo-select" class="form-label">Selecione o Grupo de Regras</label>
                                 <select class="form-select" id="grupo-select" required>
                                     <option value="" disabled selected>Escolha um grupo</option>
-                                    <!-- Op????es de grupos ser??o inseridas via JavaScript -->
+                                    <!-- Opções de grupos serão inseridas via JavaScript -->
                                 </select>
                             </div>
                             <div class="alert alert-info d-flex align-items-center gap-2">
@@ -615,7 +615,7 @@
                             </select>
                         </div>
                         <div class="row g-3">
-                            <div class="col-md-6 material-arquivo-wrapper">
+                            <div class="">
                                 <label for="novo-material-pdf" class="form-label">Anexar PDF</label>
                                 <input type="file" class="form-control material-arquivo-input" id="novo-material-pdf" name="arquivo_pdf" accept="application/pdf" data-tipo="pdf">
                             </div>
@@ -729,7 +729,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script type="module" src="{% static 'js/home.js' %}"></script>
 <script type="module" src="{% static 'js/registrar-contato.js' %}"></script>
 <script type="module" src="{% static 'js/message.js' %}"></script>
 <script type="module" src="{% static 'js/cadastrar-regra.js' %}"></script>

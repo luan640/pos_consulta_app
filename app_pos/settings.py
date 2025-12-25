@@ -36,7 +36,8 @@ env = environ.Env()
 SECRET_KEY = 'django-insecure-llo3s@)477a5$cyqu*bm=wg1s*)(f@1yph2h%x9=4qfv%-@t$i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env('DEBUG')
+
+DEBUG = env.bool('DEBUG')
 
 # ALLOWED_HOSTS = ['lembrapro.onrender.com', '127.0.0.1']
 ALLOWED_HOSTS = ['*']
@@ -99,15 +100,15 @@ WSGI_APPLICATION = 'app_pos.wsgi.application'
 #     }
 # }
 
-schema = env('DB_SCHEMA', default='lembra_pro_dev')
+schema = env('DB_SCHEMA')
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DB_NAME', default='postgres'),
-        'USER': env('DB_USER', default='postgres'),
-        'PASSWORD': env('DB_PASSWORD', default=''),
-        'HOST': env('DB_HOST', default='localhost'),
-        'PORT': env('DB_PORT', default='5432'),
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST'),
+        'PORT': env('DB_PORT'),
         'OPTIONS': {
             'options': f'-c search_path={schema}'
         }

@@ -2,7 +2,6 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
-from datetime import date
 from django.http import JsonResponse, HttpResponseNotAllowed, HttpResponse
 from django.db.models import Max, Min, Prefetch, Q, F
 from django.views.decorators.csrf import csrf_exempt
@@ -27,6 +26,7 @@ from datetime import timedelta, datetime, date
 import time
 import environ
 import random
+from datetime import date
 
 logger = logging.getLogger(__name__)
 env = environ.Env()
@@ -970,7 +970,7 @@ def materiais(request, pk):
     try:
         material = Material.objects.get(dono=request.user, pk=pk)
     except Material.DoesNotExist:
-        return JsonResponse({'erro': 'Material n??o encontrado'}, status=404)
+        return JsonResponse({'erro': 'Material não encontrado'}, status=404)
 
     if request.method in ['PUT', 'POST']:
         if request.content_type and request.content_type.startswith('multipart/form-data'):
@@ -993,9 +993,9 @@ def materiais(request, pk):
             arquivo_foto = None
             youtube_url = (data.get('youtube_url') or '').strip() or None
 
-        # Verifica se j?? existe outro material com a mesma descri????o para o usu??rio
+        # Verifica se já existe outro material com a mesma descrição para o usuário
         if Material.objects.filter(dono=request.user, descricao=descricao).exclude(pk=pk).exists():
-            return JsonResponse({'erro': 'J?? existe um material com essa descri????o.'}, status=400)
+            return JsonResponse({'erro': 'Já existe um material com essa descrição.'}, status=400)
 
         arquivos = [
             ('pdf', arquivo_pdf),
@@ -1049,7 +1049,7 @@ def materiais(request, pk):
 
     elif request.method == 'DELETE':
         material.delete()
-        return JsonResponse({'mensagem': 'Material exclu??do com sucesso'})
+        return JsonResponse({'mensagem': 'Material excluído com sucesso'})
 
     return HttpResponseNotAllowed(['PUT', 'POST', 'DELETE'])
 
@@ -1257,7 +1257,8 @@ def verificar_e_disparar_mensagem(request):
     lembretes = Lembrete.objects.select_related('regra', 'paciente').prefetch_related('regra__materiais').filter(
         whatsapp_status__in=('pendente', 'erro', None, ''), 
         data_lembrete=data_alvo,
-        concluido=False
+        concluido=False,
+        paciente__dono__perfil__whatsapp_notificacoes=True,
     ).order_by('criado_em')[:5]
     
     if lembretes.exists():
@@ -1270,8 +1271,17 @@ def verificar_e_disparar_mensagem(request):
 
             if materiais.exists():
                 for material in materiais:
-                    print(material)
-                    materiais_list.append(material.descricao)
+                    link = (
+                        material.youtube_url
+                        or (material.arquivo_pdf.url if material.arquivo_pdf else None)
+                        or (material.arquivo_video.url if material.arquivo_video else None)
+                        or (material.arquivo_imagem.url if material.arquivo_imagem else None)
+                        or (material.arquivo_foto.url if material.arquivo_foto else None)
+                    )
+                    if link:
+                        materiais_list.append(f"{material.descricao}: {link}")
+                    else:
+                        materiais_list.append(material.descricao)
             
             if ja_passou_24h:
 

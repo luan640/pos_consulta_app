@@ -47,7 +47,7 @@
 
                                 <div class="form-floating mb-3">
                                     <input type="text" class="form-control" id="perfil-nome" name="nome" placeholder="Nome completo" value="{{ perfil.nome }}">
-                                    <label for="perfil-nome">Como você gostaria que fosse chamado</label>
+                                    <label for="perfil-nome">Nome</label>
                                 </div>
                                 <div class="form-floating mb-3">
                                     <input type="tel" class="form-control" id="perfil-telefone" name="telefone" placeholder="Telefone" value="{{ user.telefone|default_if_none:'' }}">
@@ -60,7 +60,9 @@
                                     <label class="form-check-label" for="perfil-whatsapp">Receber notificacoes no WhatsApp</label>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary">Salvar dados</button>
+                                <div class="d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-primary">Salvar dados</button>
+                                </div>
                             </form>
                         </div>
                     </div>
@@ -93,7 +95,9 @@
                                     </div>
                                 {% endif %}
 
-                                <button type="submit" class="btn btn-primary">Atualizar senha</button>
+                                <div class="d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-primary">Atualizar senha</button>
+                                </div>
                             </form>
                         </div>
                     </div>

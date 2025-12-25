@@ -442,7 +442,7 @@ function carregarMateriais() {
         });
 }
 
-// submiss??o do formulario novo-material-form
+// submissão do formulario novo-material-form
 const novoMaterialForm = document.getElementById('novo-material-form');
 const btnSalvarNovoMaterial = novoMaterialForm
     ? novoMaterialForm.querySelector('button[type="submit"]')
@@ -458,14 +458,14 @@ if (novoMaterialForm) {
         const tipoSelecionado = obterTipoSelecionado(novoMaterialForm);
 
         if (!descricao) {
-            showToast('Descri????o n??o pode ser vazia.', 'error');
+            showToast('Descrição não pode ser vazia.', 'error');
             return;
         }
         if (!validarArquivoPorTipo(novoMaterialForm, tipoSelecionado)) {
             return;
         }
 
-        // Mostra loading no bot??o
+        // Mostra loading no botão
         const originalBtnContent = btnSalvarNovoMaterial.innerHTML;
         btnSalvarNovoMaterial.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...`;
         btnSalvarNovoMaterial.disabled = true;
@@ -508,7 +508,7 @@ if (novoMaterialForm) {
             showToast('Erro inesperado ao tentar adicionar.', 'error');
         })
         .finally(() => {
-            // Restaura o bot??o
+            // Restaura o botão
             btnSalvarNovoMaterial.innerHTML = originalBtnContent;
             btnSalvarNovoMaterial.disabled = false;
         });
