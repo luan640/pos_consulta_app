@@ -10,7 +10,7 @@ urlpatterns = [
     path('login/', CustomLoginView.as_view(), name='login'),
     path(
         'logout/',
-        LogoutView.as_view(next_page='http://127.0.0.1:8000/login/'),
+        LogoutView.as_view(next_page='login'),
         name='logout'
     ),
     path('solicitar-acesso/', solicitar_acesso, name='solicitar_acesso'),
