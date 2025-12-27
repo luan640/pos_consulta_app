@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return materiaisCachePromise;
   }
 
-  function mostrarMensagemMateriais(container, mensagem, tipo = 'muted') {
+  function mostrarMensagemMateriais(container, mensagem, tipo = 'muted', linkHref = null) {
     if (!container) return;
 
     container.classList.remove('d-flex', 'flex-wrap', 'gap-2');
@@ -59,7 +59,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const span = document.createElement('span');
     span.className = `${tipo === 'danger' ? 'text-danger' : 'text-muted'} small`;
-    span.textContent = mensagem;
+    if (linkHref) {
+      span.append(document.createTextNode(`${mensagem} `));
+      const link = document.createElement('a');
+      link.href = linkHref;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.className = 'btn btn-outline-primary btn-sm ms-2';
+      link.textContent = 'Clique aqui para adicionar materiais';
+      span.appendChild(link);
+    } else {
+      span.textContent = mensagem;
+    }
     container.appendChild(span);
   }
 
@@ -71,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     container.classList.remove('text-muted');
 
     if (!materiaisCache.length) {
-      mostrarMensagemMateriais(container, 'Nenhum material cadastrado.');
+      mostrarMensagemMateriais(container, 'Voce ainda nao cadastrou nenhum material.', 'muted', '/materiais/');
       return;
     }
 
@@ -129,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
       })
       .catch(err => {
         console.error('Erro ao carregar materiais:', err);
-        mostrarMensagemMateriais(materiaisContainer, 'Erro ao carregar materiais.', 'danger');
+        mostrarMensagemMateriais(materiaisContainer, 'Voce ainda nao cadastrou nenhum material.', 'danger', '/materiais/');
       });
   }
 
@@ -326,9 +337,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 `row-${id}-material`
               );
             } else if (carregamentoOk) {
-              mostrarMensagemMateriais(editorContainer, 'Nenhum material cadastrado.');
+              mostrarMensagemMateriais(editorContainer, 'Voce ainda nao cadastrou nenhum material.', 'muted', '/materiais/');
             } else {
-              mostrarMensagemMateriais(editorContainer, 'Erro ao carregar materiais.', 'danger');
+              mostrarMensagemMateriais(editorContainer, 'Voce ainda nao cadastrou nenhum material.', 'danger', '/materiais/');
             }
 
             row.querySelector('.btn-salvar').addEventListener('click', () => salvarEdicao(id, row));

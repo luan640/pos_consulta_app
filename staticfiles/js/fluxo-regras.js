@@ -124,9 +124,23 @@ function carregarMateriais(force = false) {
   return materiaisPromise;
 }
 
-function prepararContainerMateriais(container, mensagem) {
+function prepararContainerMateriais(container, mensagem, linkHref = null) {
   if (!container) return;
-  container.textContent = mensagem;
+  container.innerHTML = '';
+  const span = document.createElement('span');
+  if (linkHref) {
+    span.append(document.createTextNode(`${mensagem} `));
+    const link = document.createElement('a');
+    link.href = linkHref;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.className = 'btn btn-outline-primary btn-sm ms-2';
+    link.textContent = 'Clique aqui para adicionar materiais';
+    span.appendChild(link);
+  } else {
+    span.textContent = mensagem;
+  }
+  container.appendChild(span);
   container.classList.add('text-muted', 'small');
   container.classList.remove('materiais-checkbox-group', 'd-flex', 'flex-wrap', 'gap-2');
 }
@@ -171,9 +185,11 @@ function renderizarMateriais(disponiveisEl, selecionadosEl, selecionados = []) {
   selecionadosEl.classList.add('materiais-checkbox-group', 'd-flex', 'flex-wrap', 'gap-2');
 
   if (!materiaisCache.length) {
-    disponiveisEl.textContent = 'Nenhum material cadastrado.';
-    disponiveisEl.classList.add('text-muted', 'small');
-    disponiveisEl.classList.remove('materiais-checkbox-group', 'd-flex', 'flex-wrap', 'gap-2');
+    prepararContainerMateriais(
+      disponiveisEl,
+      'Voce ainda nao cadastrou nenhum material.',
+      '/materiais/'
+    );
     return;
   }
 

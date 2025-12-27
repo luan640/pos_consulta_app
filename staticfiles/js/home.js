@@ -2509,7 +2509,7 @@ export function inicializarSelecaoMateriais(preSelecionados = []) {
       suggestionsContainer.innerHTML = '';
 
       if (!data.materiais || !data.materiais.length) {
-        suggestionsContainer.innerHTML = '<span class="text-muted small">Nenhum material cadastrado.</span>';
+        suggestionsContainer.innerHTML = '<span class="text-muted small">Voce ainda nao cadastrou nenhum material. <a class="btn btn-outline-primary btn-sm ms-2" target="_blank" rel="noopener noreferrer" href="/materiais/">Clique aqui para adicionar materiais</a></span>';
         return;
       }
 
@@ -2529,7 +2529,7 @@ export function inicializarSelecaoMateriais(preSelecionados = []) {
     })
     .catch((error) => {
       console.error('Erro ao carregar materiais:', error);
-      suggestionsContainer.innerHTML = '<span class="text-danger small">Erro ao carregar materiais.</span>';
+      suggestionsContainer.innerHTML = '<span class="text-danger small">Voce ainda nao cadastrou nenhum material. <a class="btn btn-outline-primary btn-sm ms-2" target="_blank" rel="noopener noreferrer" href="/materiais/">Clique aqui para adicionar materiais</a></span>';
     });
 }
 

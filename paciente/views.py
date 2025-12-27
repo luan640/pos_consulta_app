@@ -449,9 +449,19 @@ def paciente_detalhe(request, pk):
 def grupo_regras_list_create(request):
 
     if request.method == 'GET':
+        filtrar_regras = request.GET.get('com_regras')
+        if filtrar_regras is not None:
+            filtrar_regras = filtrar_regras.strip().lower()
+
+        filtros = {'dono': request.user}
+        if filtrar_regras in {'true', '1', 'yes'}:
+            filtros['regras__isnull'] = False
+        elif filtrar_regras in {'false', '0', 'no'}:
+            filtros['regras__isnull'] = True
+
         grupo_regras = (
             GrupoLembrete.objects
-            .filter(dono=request.user, regras__isnull=False)
+            .filter(**filtros)
             .prefetch_related('regras')
             .distinct()
         )

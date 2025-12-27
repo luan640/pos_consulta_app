@@ -17,3 +17,5 @@ redis==5.0.8
 django-storages
 boto3   
 django-anymail[resend]
+pillow
+django-storages
