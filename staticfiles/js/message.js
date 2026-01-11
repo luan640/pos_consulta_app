@@ -1,39 +1,60 @@
 // Toast notification system
 export function showToast(message, type = "success") {
-  // Remove existing toast if any
-  const existingToast = document.querySelector(".custom-toast")
+  const existingToast = document.querySelector(".custom-toast");
   if (existingToast) {
-    existingToast.remove()
+    existingToast.remove();
   }
 
-  // Create toast element
-  const toast = document.createElement("div")
-  toast.className = `custom-toast toast-${type}`
+  const toast = document.createElement("div");
+  toast.className = `custom-toast toast-${type}`;
+  toast.setAttribute("role", "status");
+  toast.setAttribute("aria-live", "polite");
 
-  const icon = type === "success" ? "bi-check-circle-fill" : "bi-exclamation-triangle-fill"
-  const iconColor = type === "success" ? "text-success" : "text-danger"
+  const typeConfig = {
+    success: {
+      label: "Sucesso",
+      hint: "Tudo certo!",
+      icon: "check_circle",
+    },
+    error: {
+      label: "Erro",
+      hint: "Atenção necessária",
+      icon: "error",
+    },
+    info: {
+      label: "Info",
+      hint: "Mensagem informativa",
+      icon: "info",
+    },
+  };
+
+  const { label, hint, icon } = typeConfig[type] || typeConfig.info;
 
   toast.innerHTML = `
-    <div class="toast-content">
-      <i class="bi ${icon} ${iconColor} me-2"></i>
-      <span>${message}</span>
+    <div class="toast-sheen"></div>
+    <div class="toast-icon">
+      <span class="material-symbols-outlined">${icon}</span>
     </div>
-    <button type="button" class="toast-close" onclick="this.parentElement.remove()">
-      <i class="bi bi-x"></i>
+    <div class="toast-content">
+      <span class="toast-label">${label}</span>
+      <span class="toast-message">${message}</span>
+      <small>${hint}</small>
+    </div>
+    <button type="button" class="toast-close" aria-label="Fechar">
+      <span class="material-symbols-outlined">close</span>
     </button>
-  `
+    <span class="toast-progress"></span>
+  `;
 
-  // Add to body
-  document.body.appendChild(toast)
+  const closeToast = () => {
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 280);
+  };
 
-  // Show toast with animation
-  setTimeout(() => toast.classList.add("show"), 100)
+  toast.querySelector(".toast-close")?.addEventListener("click", closeToast);
 
-  // Auto remove after 5 seconds
-  setTimeout(() => {
-    if (toast.parentElement) {
-      toast.classList.remove("show")
-      setTimeout(() => toast.remove(), 300)
-    }
-  }, 5000)
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add("show"));
+
+  setTimeout(closeToast, 4800);
 }

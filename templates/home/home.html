@@ -1,10 +1,12 @@
-{% extends 'navbar.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
 {% block title %}Home | LembraPro{% endblock %}
 {% block nav_home_active %}active{% endblock %}
 {% block nav_home_aria %}aria-current="page"{% endblock %}
 {% block body_class %}bg-light home-page{% endblock %}
+
+{% block header_title %}Dashboard{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/home.css' %}">
@@ -14,719 +16,961 @@
 <link rel="stylesheet" href="{% static 'css/card-pacientes.css' %}">
 <link rel="stylesheet" href="{% static 'css/modal-historico-consulta.css' %}">
 <link rel="stylesheet" href="{% static 'css/calendar.css' %}">
+<style>
+    /* Compatibility for JS that toggles these classes */
+    .d-none {
+        display: none !important;
+    }
+
+    .d-flex {
+        display: flex !important;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="container py-4">
+<input type="hidden" id="regra-grupo-id">
+<input type="hidden" id="nome-grupo">
+<input type="hidden" id="descricao-grupo">
+<input type="hidden" id="paciente-id">
 
-        <input type="hidden" id="regra-grupo-id">
-        <input type="hidden" id="nome-grupo">
-        <input type="hidden" id="descricao-grupo">
-        <input type="hidden" id="paciente-id">
-    
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-            <div class="d-flex align-items-center"></div>
-            <div class="d-flex gap-2 flex-wrap justify-content-end"></div>
-        </div>
-
-        <!-- Stats Cards -->
-        <section class="section">
-            <!-- <h2 class="section-title">📊 Indicadores de Saúde</h2> -->
-            <div class="medical-stats">
-                <div class="stat-card patients">
-                    <div class="stat-icon patients"><i class="bi bi-people-fill"></i></div>
-                    <div class="stat-number" id="total-patients">-</div>
-                    <div class="stat-label">Total de Pacientes</div>
+<div class="w-full flex flex-col gap-8">
+    <!-- Stats Section -->
+    <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <!-- Stat 1: Total de Pacientes -->
+        <div
+            class="group relative overflow-hidden rounded-xl bg-white dark:bg-[#15202b] p-6 shadow-sm ring-1 ring-slate-900/5 transition-all hover:shadow-md">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Total de Pacientes</p>
+                    <p class="mt-2 text-3xl font-bold text-slate-900 dark:text-white" id="total-patients">-</p>
                 </div>
-
-                <div class="stat-card treatments">
-                    <div class="stat-icon treatments"><i class="bi bi-bell-fill"></i></div>
-                    <div class="stat-number" id="lembrete-atrasado">-</div>
-                    <div class="stat-label">Lembretes em atraso</div>
-                </div>
-
-                <div class="stat-card emergencies">
-                    <div class="stat-icon emergencies"><i class="bi bi-exclamation-triangle-fill"></i></div>
-                    <div class="stat-number" id="active-alerts">-</div>
-                    <div class="stat-label">Alertas ativos</div>
-                </div>
-
-                <div class="stat-card no-rules">
-                    <div class="stat-icon no-rules"><i class="bi bi-shield-exclamation"></i></div>
-                    <div class="stat-number" id="patients-no-rule">-</div>
-                    <div class="stat-label">Ativos sem regra</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Filter Panel -->
-        <div class="mb-4">
-            <div class="card card-body filter-panel shadow-sm border-light-subtle">
-                
-                <!-- Form completo: filtros + botões -->
-                <form id="filtros-form">
-                    <div class="row gy-2 gx-3">
-                        <!-- Filtros -->
-                        <div class="col-md-3">
-                            <label for="filter-name" class="form-label small text-muted">
-                                <i class="bi bi-search me-1"></i> Buscar por Nome
-                            </label>
-                            <div class="input-group input-group-sm">
-                                <input type="text" class="form-control" id="filter-name" placeholder="Digite o nome...">
-                            </div>
-                        </div>
-
-                        <div class="col-md-3">
-                            <label for="filter-reminder" class="form-label small text-muted">
-                                <i class="bi bi-bell me-1"></i> Status do Lembrete
-                            </label>
-                            <select class="form-select form-select-sm" id="filter-reminder">
-                                <option value="">Todos</option>
-                                <option value="True">Ativo</option>
-                                <option value="False">Inativo</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-3">
-                            <label for="filter-reminder-due" class="form-label small text-muted">
-                                <i class="bi bi-clock-history me-1"></i> Prazo do Lembrete
-                            </label>
-                            <select class="form-select form-select-sm" id="filter-reminder-due">
-                                <option value="">Todos</option>
-                                <option value="atrasado">Atrasado</option>
-                                <option value="emdia">Em dia</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-3">
-                            <label for="filter-sort" class="form-label small text-muted">
-                                <i class="bi bi-sort-down me-1"></i> Ordenar Por
-                            </label>
-                            <select class="form-select form-select-sm" id="filter-sort">
-                                <option value="">Todos</option>
-                                <option value="name-asc">Nome (A-Z)</option>
-                                <option value="name-desc">Nome (Z-A)</option>
-                                <option value="contact-nearest">Contato Mais Próximo</option>
-                                <option value="contact-farthest">Contato Mais Distante</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Botões alinhados à direita -->
-                    <div class="mt-3 d-flex justify-content-end gap-2">
-                        <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2" id="reset-filters" title="Limpar Filtros" style="font-size: 0.75rem;">
-                            <i class="bi bi-arrow-clockwise me-1" style="font-size: 0.9rem;"></i> Limpar
-                        </button>
-                        <button type="submit" class="btn btn-primary btn-sm py-1 px-2" id="apply-filters" title="Aplicar Filtros" style="font-size: 0.75rem;">
-                            <i class="bi bi-check2 me-1" style="font-size: 0.9rem;"></i> Aplicar
-                        </button>
-                    </div>
-                </form>
-
-            </div>
-        </div>
-
-        <!-- Patients List -->
-        <div class="mb-4">
-            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2" id="patients-view-switcher">
-                <h2 class="fs-5 mb-0 text-secondary">Alertas</h2>
-                <div class="d-flex align-items-center gap-2">
-                    <button id="btnModalNovoPaciente" class="btn btn-primary btn-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newPatientModal">
-                        <i class="bi bi-plus"></i>
-                        Novo Paciente
-                    </button>
-                    <div class="btn-group btn-group-sm" role="group" aria-label="Alternar visualização de pacientes">
-                        <button type="button" class="btn btn-outline-primary active" id="view-toggle-list" disabled aria-disabled="true">
-                            <i class="bi bi-card-list me-1"></i>
-                            Cartões
-                        </button>
-                        <button type="button" class="btn btn-outline-primary" id="view-toggle-calendar" disabled aria-disabled="true">
-                            <i class="bi bi-calendar3 me-1"></i>
-                            Calendário
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="empty-state" class="card text-center p-5">
-                <i class="bi bi-calendar3 fs-1 text-secondary mx-auto mb-3"></i>
-                <h3 class="fs-5 fw-medium mb-2">Nenhum paciente encontrado</h3>
-                <p class="text-secondary mb-4">Comece cadastrando seu primeiro paciente ou limpe os filtros.</p>
-                <!-- <button class="btn btn-primary mx-auto" data-bs-toggle="modal" data-bs-target="#newPatientModal">
-                <i class="bi bi-plus me-2"></i>
-                Cadastrar Primeiro Paciente
-                </button> -->
-            </div>
-
-
-            <div id="calendar-view" class="d-none">
-                <div class="card card-body shadow-sm border-light-subtle mb-3">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-2" id="calendar-prev" type="button">
-                            <i class="bi bi-chevron-left"></i>
-                            Mês anterior
-                        </button>
-                        <h3 class="fs-5 mb-0" id="calendar-month-label">&nbsp;</h3>
-                        <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-2" id="calendar-next" type="button">
-                            Próximo mês
-                            <i class="bi bi-chevron-right"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div id="calendar-empty-state" class="card text-center p-5 d-none">
-                    <i class="bi bi-calendar-x fs-1 text-secondary mx-auto mb-3"></i>
-                    <h3 class="fs-5 fw-medium mb-2">Nenhum lembrete encontrado para este mês</h3>
-                    <p class="text-secondary mb-0">Altere o mês ou ajuste os filtros para visualizar outros pacientes.</p>
-                </div>
-
-                <div class="calendar-grid-wrapper">
-                    <div id="calendar-grid"></div>
-                </div>
-            </div>
-
-            <div id="patients-list" class="d-none">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-
-                </div>
-                <div id="patients-container" class="patients-container">
-                <!-- Patient cards will be inseridos via JavaScript -->
-                </div>
-                <div id="load-more-wrapper" class="text-center mt-3 d-none">
-                    <button id="load-more-patients" class="btn btn-primary" type="button">
-                        Ver mais
-                    </button>
+                <div
+                    class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                    <span class="material-symbols-outlined text-[28px]">groups</span>
                 </div>
             </div>
         </div>
 
-        <!-- New Patient Modal -->
-        <div class="modal fade" id="newPatientModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Cadastrar Novo Paciente</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <!-- Stat 2: Lembretes Ativos (Mapped from 'active-alerts' or similar? Old had 'Lembretes em atraso' as 2nd) -->
+        <!-- Old: 1. Total, 2. Atrasado, 3. Alertas, 4. Sem Regra -->
+        <!-- New: 1. Total, 2. Ativos, 3. Atrasado, 4. Sem Regra -->
+
+        <!-- Stat 2: Alerts/Ativos -->
+        <div
+            class="group relative overflow-hidden rounded-xl bg-white dark:bg-[#15202b] p-6 shadow-sm ring-1 ring-slate-900/5 transition-all hover:shadow-md">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Alertas Ativos</p>
+                    <p class="mt-2 text-3xl font-bold text-slate-900 dark:text-white" id="active-alerts">-</p>
+                </div>
+                <div
+                    class="flex h-12 w-12 items-center justify-center rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400">
+                    <span class="material-symbols-outlined text-[28px]">notifications_active</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stat 3: Lembretes em Atraso -->
+        <div
+            class="group relative overflow-hidden rounded-xl bg-white dark:bg-[#15202b] p-6 shadow-sm ring-1 ring-red-100 dark:ring-red-900/30 transition-all hover:shadow-md">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Lembretes em Atraso</p>
+                    <p class="mt-2 text-3xl font-bold text-red-600 dark:text-red-400" id="lembrete-atrasado">-</p>
+                </div>
+                <div
+                    class="flex h-12 w-12 items-center justify-center rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
+                    <span class="material-symbols-outlined text-[28px]">priority_high</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stat 4: Sem Regras -->
+        <div
+            class="group relative overflow-hidden rounded-xl bg-white dark:bg-[#15202b] p-6 shadow-sm ring-1 ring-slate-900/5 transition-all hover:shadow-md">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Sem Regras Definidas</p>
+                    <p class="mt-2 text-3xl font-bold text-slate-900 dark:text-white" id="patients-no-rule">-</p>
+                </div>
+                <div
+                    class="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400">
+                    <span class="material-symbols-outlined text-[28px]">rule</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Filter Section -->
+    <section
+        class="flex flex-col gap-4 rounded-xl bg-white dark:bg-[#15202b] p-4 shadow-sm ring-1 ring-slate-900/5 lg:flex-row lg:items-start">
+        <form id="filtros-form"
+            class="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
+            <div class="relative w-full lg:w-64">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <span class="material-symbols-outlined text-[20px]">search</span>
+                </span>
+                <input id="filter-name"
+                    class="h-10 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#15202b] pl-10 pr-4 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+                    placeholder="Buscar paciente por nome..." type="text" />
+            </div>
+
+            <select id="filter-reminder"
+                class="h-10 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#15202b] px-3 text-sm text-slate-600 dark:text-slate-300 focus:border-primary focus:ring-1 focus:ring-primary w-full lg:w-40">
+                <option value="">Status Lembrete</option>
+                <option value="True">Ativo</option>
+                <option value="False">Inativo</option>
+            </select>
+
+            <select id="filter-reminder-due"
+                class="h-10 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#15202b] px-3 text-sm text-slate-600 dark:text-slate-300 focus:border-primary focus:ring-1 focus:ring-primary w-full lg:w-48">
+                <option value="">Prazo</option>
+                <option value="atrasado">Atrasado</option>
+                <option value="emdia">Em dia</option>
+            </select>
+
+            <select id="filter-sort"
+                class="h-10 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#15202b] px-3 text-sm text-slate-600 dark:text-slate-300 focus:border-primary focus:ring-1 focus:ring-primary w-full lg:w-48">
+                <option value="">Ordenar Por</option>
+                <option value="name-asc">Nome (A-Z)</option>
+                <option value="name-desc">Nome (Z-A)</option>
+                <option value="contact-nearest">Contato Mais Próximo</option>
+                <option value="contact-farthest">Contato Mais Distante</option>
+            </select>
+
+            <div class="flex flex-wrap gap-2 lg:ml-auto">
+                <button type="submit" id="apply-filters"
+                    class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary/90 transition-colors">
+                    <span class="material-symbols-outlined text-lg leading-none">filter_list</span>
+                    Filtrar
+                </button>
+                <button type="button" id="reset-filters"
+                    class="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    Limpar
+                </button>
+            </div>
+        </form>
+
+    </section>
+
+    <section class="flex flex-wrap items-center justify-between gap-3">
+        <div
+            class="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
+            <button type="button" id="view-toggle-list"
+                class="view-toggle flex items-center gap-1 rounded-full px-3 py-2 text-xs font-semibold text-slate-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <span class="material-symbols-outlined text-base">view_list</span>
+                <span class="hidden sm:inline">Lista</span>
+            </button>
+            <button type="button" id="view-toggle-calendar"
+                class="view-toggle flex items-center gap-1 rounded-full px-3 py-2 text-xs font-semibold text-slate-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <span class="material-symbols-outlined text-base">calendar_month</span>
+                <span class="hidden sm:inline">Calendário</span>
+            </button>
+        </div>
+        <button id="btnModalNovoPaciente"
+            class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-primary/90 transition-colors"
+            data-modal-toggle="newPatientModal">
+            <span class="material-symbols-outlined text-[20px]">add</span>
+            <span>Novo</span>
+        </button>
+</section>
+
+<!-- Modal: Eventos do Calendário -->
+<div id="calendarEventsModal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm"></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl">
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-[#111518]" id="calendar-modal-title">Eventos</h3>
+                            <p class="text-sm text-slate-500" id="calendar-modal-date"></p>
+                        </div>
+                        <button type="button" class="text-slate-500 hover:text-slate-700" data-modal-hide="calendarEventsModal" aria-label="Fechar">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
                     </div>
-                    <div class="modal-body">
-                        <form id="patient-form">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="name" placeholder="Nome completo" required>
-                                <label for="name" for="name" class="form-label">Nome do Paciente *</label>
+                    <div id="calendar-modal-body" class="flex flex-col gap-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Patients List -->
+<!-- Logic for List View -->
+<div id="patients-list">
+        <div id="patients-container" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <!-- JS injects cards here -->
+        </div>
+        <div id="load-more-wrapper" class="load-more-wrapper d-none">
+            <button id="load-more-patients" class="load-more-btn" type="button">
+                Ver mais
+            </button>
+        </div>
+    </div>
+
+    <!-- Calendar View (Hidden by default) -->
+    <div id="calendar-view" class="d-none">
+        <!-- Calendar controls -->
+        <div class="flex flex-wrap items-center gap-3 justify-between mb-4">
+            <div class="flex items-center gap-2">
+                <button class="btn btn-outline-primary btn-sm flex items-center gap-2" id="calendar-prev">
+                    <span class="material-symbols-outlined">chevron_left</span> Anterior
+                </button>
+                <button class="btn btn-outline-primary btn-sm flex items-center gap-2" id="calendar-next">
+                    Próximo <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+            </div>
+            <div class="flex items-center gap-2">
+                <h3 class="text-lg font-bold mb-0" id="calendar-month-label"></h3>
+                <input type="month" id="calendar-month-picker"
+                    class="form-control form-control-sm w-40 border border-slate-200 rounded-lg text-sm px-1 py-1 focus:ring-1 focus:ring-primary focus:border-primary" />
+            </div>
+        </div>
+        </div>
+        <div id="calendar-empty-state" class="text-center p-5 d-none">
+            <p>Nenhum lembrete.</p>
+        </div>
+        <div class="calendar-grid-wrapper">
+            <div id="calendar-grid"></div>
+        </div>
+    </div>
+
+    <div id="empty-state" class="text-center p-10 d-none">
+        <span class="material-symbols-outlined text-4xl text-slate-300">search_off</span>
+        <p class="text-slate-500 mt-2">Nenhum paciente encontrado.</p>
+    </div>
+
+</div>
+
+<!-- KEEPING MODALS AT THE BOTTOM -->
+<!-- Note: These use Bootstrap classes. They may look broken without Bootstrap CSS. -->
+<!-- I will leave them as is for now, as rewriting them is a huge task. -->
+<!-- I rely on JS to function. -->
+
+<!-- New Patient Modal -->
+<div id="newPatientModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div
+                class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <form id="patient-form">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-base font-semibold leading-6 text-gray-900">Cadastrar Novo Paciente</h3>
+                            <button type="button" class="text-gray-400 hover:text-gray-500"
+                                data-modal-hide="newPatientModal">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="name" class="block text-sm font-medium leading-6 text-gray-900">Nome do
+                                    Paciente *</label>
+                                <input type="text" id="name"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                    required placeholder="Nome completo">
                             </div>
-                            <div class="form-floating mb-3">
-                                <input type="tel" class="form-control" id="phone" placeholder="(11) 99999-9999">
-                                <label for="phone" for="phone" class="form-label">Telefone</label>
+                            <div>
+                                <label for="phone"
+                                    class="block text-sm font-medium leading-6 text-gray-900">Telefone</label>
+                                <input type="tel" id="phone"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                    placeholder="(11) 99999-9999">
                             </div>
-                            <div class="form-floating mb-3">
-                                <input type="date" class="form-control" id="lastConsultation" required>
-                                <label for="lastConsultation" for="lastConsultation" class="form-label">Data da Última Consulta *</label>
+                            <div>
+                                <label for="lastConsultation"
+                                    class="block text-sm font-medium leading-6 text-gray-900">Data da Última Consulta
+                                    *</label>
+                                <input type="date" id="lastConsultation"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                    required>
                             </div>
-                            <div class="form-floating mb-3">
-                                <select class="form-select" id="tipoConsulta" required>
+                            <div>
+                                <label for="tipoConsulta" class="block text-sm font-medium leading-6 text-gray-900">Tipo
+                                    de Consulta *</label>
+                                <select id="tipoConsulta"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                    required>
                                     <option value="" disabled selected>Selecione</option>
                                     <option value="consulta">Consulta</option>
                                     <option value="retorno">Retorno</option>
                                 </select>
-                                <label for="tipoConsulta">Tipo de Consulta *</label>
                             </div>
-                            <div class="d-flex justify-content-end">
-                                <button type="submit" class="btn btn-success" id="submit-contact-btn">Salvar</button>
-                            </div>       
-                        </form>
+                        </div>
                     </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="submit" id="submit-contact-btn"
+                            class="inline-flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contact Modal -->
+<div id="contactModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div
+                class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl">
+                <form id="contact-form">
+                    <div class="bg-primary px-4 py-3 sm:px-6 flex justify-between items-center rounded-t-lg">
+                        <h3 class="text-base font-semibold leading-6 text-white flex items-center gap-2">
+                            <span class="material-symbols-outlined">chat_bubble</span>
+                            Registrar Contato - <span id="contact-patient-name" class="font-bold"></span>
+                        </h3>
+                        <button type="button" class="text-white/80 hover:text-white" data-modal-hide="contactModal">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <input type="hidden" id="contact-patient-id">
+                        <input type="hidden" id="contact-type">
+
+                        <div class="mb-4">
+                            <label for="contact-notes"
+                                class="block text-sm font-medium leading-6 text-gray-900 mb-2 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-gray-400">description</span>
+                                Anotações do Contato
+                            </label>
+                            <textarea id="contact-notes" rows="5"
+                                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                placeholder="Descreva como foi o contato..."></textarea>
+                        </div>
+
+                        <div class="mb-4 p-4 bg-slate-50 rounded-lg border border-slate-100">
+                            <label class="block text-sm font-bold leading-6 text-gray-900 mb-2 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-gray-400">inventory_2</span>
+                                Materiais a entregar
+                            </label>
+                            <div id="selected-materials"
+                                class="flex flex-wrap gap-2 mb-3 p-2 border border-slate-200 rounded bg-white min-h-[50px]">
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 mb-2">Materiais disponíveis:</p>
+                                <div id="material-suggestions" class="flex flex-wrap gap-2"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <p id="contact-next-warning" class="text-sm text-amber-600 hidden"></p>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 rounded-b-lg">
+                        <button type="submit" id="btn-registrar-contato"
+                            class="inline-flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div
+                class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-base font-semibold leading-6 text-gray-900">Excluir Paciente</h3>
+                        <button type="button" class="text-gray-400 hover:text-gray-500" data-modal-hide="deleteModal">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                    <div class="mt-2">
+                        <p class="text-base text-gray-500">Tem certeza que deseja excluir <span id="delete-patient-name"
+                                class="font-semibold text-gray-900"></span>? Esta ação não pode ser desfeita.</p>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                    <button type="button" id="confirm-delete"
+                        class="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto">Excluir</button>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Contact Modal -->
-        <div class="modal fade" id="contactModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title">
-                        <i class="bi bi-chat-dots-fill me-2"></i>
-                        Registrar Contato - <span id="contact-patient-name" class="fw-bold"></span>
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <form id="contact-form">
-                            <input type="hidden" id="contact-patient-id">
-                            <input type="hidden" id="contact-type">
-
-                            <!-- Contact Notes Section -->
-                            <div class="mb-4">
-                                <label for="contact-notes" class="form-label fw-bold">
-                                <i class="bi bi-journal-text me-2"></i>Anotações do Contato
-                                </label>
-                                <textarea 
-                                class="form-control border border-2" 
-                                id="contact-notes" 
-                                rows="5" 
-                                placeholder="Descreva como foi o contato, feedback do paciente, orientações dadas..."
-                                ></textarea>
-                            </div>
-
-                            <!-- Materials Section -->
-                            <div class="mb-4 p-3 bg-light rounded">
-                                <label class="form-label fw-bold">
-                                <i class="bi bi-file-earmark-text me-2"></i>Materiais a entregar
-                                </label>
-                                
-                                <!-- Selected Materials -->
-                                <div id="selected-materials" class="d-flex flex-wrap gap-2 mb-3 p-2 border rounded bg-white min-height-50"></div>
-                                
-                                <!-- Material Suggestions -->
-                                <div>
-                                <p class="text-muted small mb-2">Materiais disponíveis:</p>
-                                <div id="material-suggestions" class="d-flex flex-wrap gap-2"></div>
-                                </div>
-                            </div>
-
-                            <!-- Action Buttons -->
-                            <div class="d-flex justify-content-end">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="submit" class="btn btn-success" id="btn-registrar-contato">Salvar</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Delete Confirmation Modal -->
-        <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Excluir Paciente</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Tem certeza que deseja excluir <span id="delete-patient-name"></span>? Esta ação não pode ser desfeita.</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-danger" id="confirm-delete">Excluir</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Desabilitar Lembrete -->
-        <div class="modal fade" id="desabilitarLembrete" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-large">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Desabilitar lembrete</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-
-                    <div class="modal-body text-center py-5">
-                        <input type="hidden" id="disable-patient-id">
-
-                        <i class="bi bi-bell-slash-fill text-warning fs-1 mb-3"></i>
-                        <h4 class="fw-bold mb-3">Desabilitar Lembrete</h4>
-                        <p class="mb-2">
-                            Deseja <span class="text-danger fw-semibold">desabilitar o lembrete</span> para o paciente 
-                            <span id="patient-name-disable" class="fw-bold text-primary"></span>?
+<!-- Modal: Desabilitar Lembrete -->
+<div id="desabilitarLembrete" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+      <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+      <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+          <div
+            class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+            <button type="button" class="absolute right-3 top-3 text-gray-400 hover:text-gray-600" data-modal-hide="desabilitarLembrete" aria-label="Fechar">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+            <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+              <div class="flex flex-col items-center justify-center text-center">
+                <input type="hidden" id="disable-patient-id">
+                <div
+                  class="mx-auto flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-yellow-100 mb-4">
+                            <span class="material-symbols-outlined text-3xl text-yellow-600">notifications_off</span>
+                        </div>
+                        <h3 class="text-xl font-bold leading-6 text-gray-900 mb-2">Desabilitar Lembrete</h3>
+                        <p class="text-sm text-gray-600 mb-2">
+                            Deseja <span class="text-red-600 font-semibold">desabilitar o lembrete</span> para o
+                            paciente <span id="patient-name-disable" class="font-bold text-gray-900"></span>?
                         </p>
-                        <p class="text-secondary mb-3">
+                        <p class="text-xs text-gray-500">
                             Você não receberá mais lembretes para este paciente.<br>
                             Caso queira, será possível reabilitar o lembrete futuramente.
                         </p>
                     </div>
-                    <div class="modal-footer justify-content-center">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-success" id="confirm-disable-reminder">Salvar</button>
-                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 justify-center">
+                    <button type="button" id="confirm-disable-reminder"
+                        class="inline-flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto">Confirmar</button>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Modal: Habilitar Lembrete -->
-        <div class="modal fade" id="habilitarLembrete" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-md">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Habilitar lembrete</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-
-                    <div class="modal-body text-center py-5">
+<!-- Modal: Habilitar Lembrete -->
+<div id="habilitarLembrete" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div
+                class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="flex flex-col items-center justify-center text-center">
                         <input type="hidden" id="enable-patient-id">
-
-                        <i class="bi bi-bell-fill text-success fs-1 mb-3"></i>
-                        <h4 class="fw-bold mb-3">Habilitar Lembrete</h4>
-                        <p class="mb-2">
-                            Deseja <span class="text-success fw-semibold">habilitar o lembrete</span> para o paciente 
-                            <span id="patient-name-enable" class="fw-bold text-primary"></span>?
+                        <div
+                            class="mx-auto flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-green-100 mb-4">
+                            <span class="material-symbols-outlined text-3xl text-green-600">notifications_active</span>
+                        </div>
+                        <h3 class="text-xl font-bold leading-6 text-gray-900 mb-2">Habilitar Lembrete</h3>
+                        <p class="text-sm text-gray-600 mb-2">
+                            Deseja <span class="text-green-600 font-semibold">habilitar o lembrete</span> para o
+                            paciente <span id="patient-name-enable" class="font-bold text-gray-900"></span>?
                         </p>
-                        <p class="text-secondary mb-3">
-                            Você voltará a receber lembretes para este paciente.<br>
-                            Caso queira, será possível desabilitar o lembrete futuramente.
+                        <p class="text-xs text-gray-500">
+                            Você voltará a receber lembretes para este paciente.
                         </p>
                     </div>
-                    <div class="modal-footer justify-content-center">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-success" id="confirm-enable-reminder">Habilitar Lembrete</button>
-                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 justify-center">
+                    <button type="button" id="confirm-enable-reminder"
+                        class="inline-flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto">Habilitar</button>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Modal: Desativar Paciente Temporariamente -->
-        <div class="modal fade" id="desativarPacienteModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-md">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Desativar Paciente Temporariamente</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-                    <div class="modal-body text-center py-5">
+<!-- Modal: Desativar Paciente Temporariamente -->
+<div id="desativarPacienteModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div
+                class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <button type="button" class="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                    data-modal-hide="desativarPacienteModal" aria-label="Fechar">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="flex flex-col items-center justify-center text-center">
                         <input type="hidden" id="deactivate-patient-id">
-                        <i class="bi bi-pause-circle-fill text-warning fs-1 mb-3"></i>
-                        <h4 class="fw-bold mb-3">Desativar Paciente</h4>
-                        <p class="mb-2">
-                            Deseja <span class="text-warning fw-semibold">desativar temporariamente</span> o paciente 
-                            <span id="patient-name-deactivate" class="fw-bold text-primary"></span>?
+                        <div
+                            class="mx-auto flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-orange-100 mb-4">
+                            <span class="material-symbols-outlined text-3xl text-orange-600">pause_circle</span>
+                        </div>
+                        <h3 class="text-xl font-bold leading-6 text-gray-900 mb-2">Desativar Paciente</h3>
+                        <p class="text-sm text-gray-600 mb-2">
+                            Deseja <span class="text-orange-600 font-semibold">desativar temporariamente</span> o
+                            paciente <span id="patient-name-deactivate" class="font-bold text-gray-900"></span>?
                         </p>
-                        <p class="text-secondary mb-3">
+                        <p class="text-xs text-gray-500">
                             O paciente será removido da lista de acompanhamento, mas seus dados serão mantidos.<br>
                             Você poderá reativá-lo a qualquer momento.
                         </p>
                     </div>
-                    <div class="modal-footer justify-content-center">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-success" id="confirm-deactivate-patient">Salvar</button>
-                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 justify-center">
+                    <button type="button" id="confirm-deactivate-patient"
+                        class="inline-flex w-full justify-center rounded-md bg-orange-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-500 sm:ml-3 sm:w-auto">Desativar</button>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Modal: Excluir Paciente Permantente -->
-        <div class="modal fade" id="excluirPacienteModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-md">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Excluir paciente permanentemente</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-                    <div class="modal-body text-center py-5">
-                        <input type="hidden" id="excluir-patient-id">
-                        <i class="bi bi-pause-circle-fill text-danger fs-1 mb-3"></i>
-                        <h4 class="fw-bold mb-3">Excluir paciente</h4>
-                        <p class="mb-2">
-                            Deseja <span class="text-danger fw-semibold">excluir permanentemente</span> o paciente 
-                            <span id="patient-name-excluir" class="fw-bold text-primary"></span>?
+<!-- Modal: Excluir Paciente Permantente -->
+<div id="excluirPacienteModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+      <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+      <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+          <div
+            class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+            <button type="button" class="absolute right-3 top-3 text-gray-400 hover:text-gray-600" data-modal-hide="excluirPacienteModal" aria-label="Fechar">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+            <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+              <div class="flex flex-col items-center justify-center text-center">
+                <input type="hidden" id="excluir-patient-id">
+                <div
+                  class="mx-auto flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-red-100 mb-4">
+                            <span class="material-symbols-outlined text-3xl text-red-600">delete_forever</span>
+                        </div>
+                        <h3 class="text-xl font-bold leading-6 text-gray-900 mb-2">Excluir Paciente Permanentemente</h3>
+                        <p class="text-sm text-gray-600 mb-2">
+                            Deseja <span class="text-red-600 font-semibold">excluir permanentemente</span> o paciente
+                            <span id="patient-name-excluir" class="font-bold text-gray-900"></span>?
                         </p>
-                        <p class="text-secondary mb-3">
+                        <p class="text-xs text-gray-500">
                             O paciente será removido da lista de acompanhamento, e todos seus dados serão perdidos.<br>
                             Você não poderá resgatá-lo.
                         </p>
                     </div>
-                    <div class="modal-footer justify-content-center">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-success" id="confirm-excluir-patient">Salvar</button>
-                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 justify-center">
+                    <button type="button" id="confirm-excluir-patient"
+                        class="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto">Excluir</button>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Modal: Reativar Paciente -->
-        <div class="modal fade" id="reativarPacienteModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-md">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Reativar Paciente</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+<!-- Modal: Reativar Paciente -->
+<div id="reativarPacienteModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div
+                class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="flex justify-end">
+                        <button type="button" class="text-gray-400 hover:text-gray-500"
+                            data-modal-hide="reativarPacienteModal">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
                     </div>
-                    <div class="modal-body text-center py-5">
+                    <div class="flex flex-col items-center justify-center text-center">
                         <input type="hidden" id="reactivate-patient-id">
-                        <i class="bi bi-play-circle-fill text-success fs-1 mb-3"></i>
-                        <h4 class="fw-bold mb-3">Reativar Paciente</h4>
-                        <p class="mb-2">
-                            Deseja <span class="text-success fw-semibold">reativar</span> o paciente 
-                            <span id="patient-name-reactivate" class="fw-bold text-primary"></span>?
+                        <div
+                            class="mx-auto flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-green-100 mb-4">
+                            <span class="material-symbols-outlined text-3xl text-green-600">play_circle</span>
+                        </div>
+                        <h3 class="text-xl font-bold leading-6 text-gray-900 mb-2">Reativar Paciente</h3>
+                        <p class="text-sm text-gray-600 mb-2">
+                            Deseja <span class="text-green-600 font-semibold">reativar</span> o paciente <span
+                                id="patient-name-reactivate" class="font-bold text-gray-900"></span>?
                         </p>
-                        <p class="text-secondary mb-3">
+                        <p class="text-xs text-gray-500">
                             O paciente voltará para a lista de acompanhamento.<br>
                             Você poderá desativá-lo novamente a qualquer momento.
                         </p>
                     </div>
-                    <div class="modal-footer justify-content-center">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-success" id="confirm-reactivate-patient">Salvar</button>
-                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 justify-center">
+                    <button type="button" id="confirm-reactivate-patient"
+                        class="inline-flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto">Salvar</button>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Modal: Registrar consulta de paciente, pode ser uma consulta ou retorno -->
-        <div class="modal fade" id="registrarConsultaModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <form id="registrar-consulta-form">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Registrar Consulta para <span id="consulta-patient-name" class="fw-bold text-primary"></span></h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+<!-- Modal: Registrar consulta de paciente -->
+<div id="registrarConsultaModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div
+                class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <form id="registrar-consulta-form">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h5 class="text-base font-semibold leading-6 text-gray-900">Registrar Consulta para <span
+                                    id="consulta-patient-name" class="font-bold text-primary"></span></h5>
+                            <button type="button" class="text-gray-400 hover:text-gray-500"
+                                data-modal-hide="registrarConsultaModal">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
                         </div>
-                        <div class="modal-body">
+                        <div class="space-y-4">
                             <input type="hidden" id="consulta-patient-id">
-                            <div class="mb-3">
-                                <label for="consulta-tipo" class="form-label">Tipo de Consulta</label>
-                                <select class="form-select" id="consulta-tipo" required>
+                            <div>
+                                <label for="consulta-tipo"
+                                    class="block text-sm font-medium leading-6 text-gray-900">Tipo de Consulta</label>
+                                <select id="consulta-tipo"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                    required>
                                     <option value="" disabled selected>Selecione</option>
                                     <option value="consulta">Consulta</option>
                                     <option value="retorno">Retorno</option>
                                 </select>
                             </div>
-                            <div class="mb-3">
-                                <label for="consulta-data" class="form-label">Data</label>
-                                <input type="date" class="form-control" id="consulta-data" required>
+                            <div>
+                                <label for="consulta-data"
+                                    class="block text-sm font-medium leading-6 text-gray-900">Data</label>
+                                <input type="date" id="consulta-data"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                    required>
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-success" id="btn-registrar-consulta">Salvar</button>
-                        </div>
-                    </form>
-                </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="submit" id="btn-registrar-consulta"
+                            class="inline-flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto">Salvar</button>
+                    </div>
+                </form>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Modal: Atribuir Grupo de Regras ao Paciente -->
-        <div class="modal fade" id="atribuirGrupoModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <form id="atribuir-grupo-form">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Atribuir Grupo de Regras</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+<!-- Modal: Atribuir Grupo de Regras ao Paciente -->
+<div id="atribuirGrupoModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div
+                class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <form id="atribuir-grupo-form">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h5 class="text-base font-semibold leading-6 text-gray-900">Atribuir Grupo de Regras</h5>
+                            <button type="button" class="text-gray-400 hover:text-gray-500"
+                                data-modal-hide="atribuirGrupoModal">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
                         </div>
-                        <div class="modal-body">
+                        <div class="space-y-4">
                             <input type="hidden" id="atribuir-patient-id">
-                            <div class="mb-3">
-                                <label for="grupo-select" class="form-label">Selecione o Grupo de Regras</label>
-                                <select class="form-select" id="grupo-select" required>
+                            <div>
+                                <label for="grupo-select"
+                                    class="block text-sm font-medium leading-6 text-gray-900">Selecione o Grupo de
+                                    Regras</label>
+                                <select id="grupo-select"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                    required>
                                     <option value="" disabled selected>Escolha um grupo</option>
-                                    <!-- Opções de grupos serão inseridas via JavaScript -->
                                 </select>
                             </div>
-                            <div class="alert alert-info d-flex align-items-center gap-2">
-                                <i class="bi bi-info-circle"></i>
-                                <span>Somente grupos que possuem regras cadastradas serão exibidos.</span>
-                                <a class="btn btn-primary d-inline-flex align-items-center gap-2" href="{% url 'regras' %}">
-                                    <i class="bi bi-gear"></i>
+                            <div
+                                class="flex items-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-md text-sm border border-blue-100">
+                                <span class="material-symbols-outlined text-base">info</span>
+                                <div class="flex-1">Somente grupos com regras cadastradas são exibidos.</div>
+                                <a href="{% url 'regras' %}"
+                                    class="font-semibold underline hover:text-blue-800 flex items-center gap-1">
                                     Ir para Regras
                                 </a>
                             </div>
-                            <div id="grupo-descricao-preview" class="alert alert-light d-none"></div>
+                            <div id="grupo-descricao-preview"
+                                class="hidden p-3 bg-slate-50 text-slate-600 rounded-md text-sm border border-slate-100">
+                            </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-success">Salvar</button>
-                        </div>
-                    </form>
-                </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="submit"
+                            class="inline-flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto">Salvar</button>
+                    </div>
+                </form>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Modal: Gerenciar Materiais -->
-        <div class="modal fade" id="gerenciarMateriaisModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Gerenciar Materiais</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+<!-- Modal: Gerenciar Materiais -->
+<div id="gerenciarMateriaisModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div
+                class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl">
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h5 class="text-base font-semibold leading-6 text-gray-900">Gerenciar Materiais</h5>
+                        <button type="button" class="text-gray-400 hover:text-gray-500"
+                            data-modal-hide="gerenciarMateriaisModal">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
                     </div>
-                    <div class="modal-body">
-                        <!-- Lista de Materiais -->
-                        <div class="d-flex justify-content-end align-items-center mb-3">
-                            <button class="btn btn-primary btn-sm mb-3" id="btnNovoMaterial" data-bs-toggle="modal" data-bs-target="#novoMaterialModal">
-                                <i class="bi bi-plus-circle me-1"></i> Novo Material
-                            </button>
-                        </div>
-                        <div class="table-responsive">
-                        <table class="table table-bordered table-sm align-middle">
-                            <thead class="table-light">
-                            <tr>
-                                <th>Nome</th>
-                                <th class="text-center" style="width: 120px;">Ações</th>
-                            </tr>
+
+                    <div class="flex justify-end items-center mb-3">
+                        <button
+                            class="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            id="btnNovoMaterial" data-modal-toggle="novoMaterialModal">
+                            <span class="material-symbols-outlined text-[18px] mr-1">add_circle</span> Novo Material
+                        </button>
+                    </div>
+
+                    <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg mb-4">
+                        <table class="min-w-full divide-y divide-gray-300">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col"
+                                        class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
+                                        Nome</th>
+                                    <th scope="col"
+                                        class="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 w-[120px]">
+                                        Ações</th>
+                                </tr>
                             </thead>
-                            <tbody id="materiais-tbody">
-                            <!-- Linhas de materiais via JS -->
+                            <tbody id="materiais-tbody" class="divide-y divide-gray-200 bg-white">
+                                <!-- Dynamically Filled -->
                             </tbody>
                         </table>
-                        <div id="sem-materiais" class="text-center text-secondary py-4 d-none">
-                            <i class="bi bi-file-earmark-text fs-3"></i>
-                            <p class="mt-2 mb-0">Nenhum material cadastrado.</p>
+                        <div id="sem-materiais" class="text-center text-gray-500 py-6 hidden">
+                            <span class="material-symbols-outlined text-4xl text-gray-300">description</span>
+                            <p class="mt-2 mb-0 text-sm">Nenhum material cadastrado.</p>
                         </div>
-                        </div>
-                        <!-- Formulário de Novo/Editar Material (exibido via JS) -->
-                        <div id="material-form-wrapper" class="d-none">
-                            <form id="material-form">
+                    </div>
+
+                    <div id="material-form-wrapper" class="hidden p-4 bg-gray-50 rounded-lg border border-gray-100">
+                        <form id="material-form">
                             <input type="hidden" id="material-id">
                             <div class="mb-3">
-                                <label for="material-nome" class="form-label">Nome do Material</label>
-                                <input type="text" class="form-control" id="material-nome" required>
+                                <label for="material-nome"
+                                    class="block text-sm font-medium leading-6 text-gray-900">Nome do Material</label>
+                                <input type="text" id="material-nome"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                    required>
                             </div>
                             <div class="mb-3">
-                                <label for="material-descricao" class="form-label">Descrição</label>
-                                <textarea class="form-control" id="material-descricao" rows="2"></textarea>
+                                <label for="material-descricao"
+                                    class="block text-sm font-medium leading-6 text-gray-900">Descrição</label>
+                                <textarea id="material-descricao" rows="2"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"></textarea>
                             </div>
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-success" id="salvar-material-btn">Salvar</button>
-                                <button type="button" class="btn btn-secondary" id="cancelar-material-btn">Cancelar</button>
+                            <div class="flex gap-2 justify-end">
+                                <button type="button"
+                                    class="inline-flex justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                                    id="cancelar-material-btn">Cancelar</button>
+                                <button type="submit"
+                                    class="inline-flex justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500"
+                                    id="salvar-material-btn">Salvar</button>
                             </div>
-                            </form>
-                        </div>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Modal: Novo material -->
-        <div class="modal fade" id="novoMaterialModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-centered material-modal">
-                <div class="modal-content">
-                    <form id="novo-material-form" enctype="multipart/form-data">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Novo Material</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p class="text-muted small mb-3">Escolha um tipo de arquivo e envie apenas um.</p>
-                        <div class="form-floating mb-3">
-                            <input type="text" class="form-control" id="novo-material-nome" name="descricao" placeholder="Nome do Material" required>
-                            <label for="novo-material-nome">Nome do Material</label>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label" for="novo-material-tipo">Tipo de arquivo</label>
-                            <select class="form-select" id="novo-material-tipo" name="tipo_arquivo">
-                                <option value="pdf" selected>PDF</option>
-                                <option value="imagem">Imagem</option>
-                                <option value="foto">Foto</option>
-                                <option value="video">Video</option>
-                                <option value="">Sem arquivo</option>
-                            </select>
-                        </div>
-                        <div class="row g-3">
-                            <div class="">
-                                <label for="novo-material-pdf" class="form-label">Anexar PDF</label>
-                                <input type="file" class="form-control material-arquivo-input" id="novo-material-pdf" name="arquivo_pdf" accept="application/pdf" data-tipo="pdf">
-                            </div>
-                            <div class="col-md-6 material-arquivo-wrapper">
-                                <label for="novo-material-video" class="form-label">Anexar video</label>
-                                <input type="file" class="form-control material-arquivo-input" id="novo-material-video" name="arquivo_video" accept="video/*" data-tipo="video">
-                            </div>
-                            <div class="col-md-6 material-arquivo-wrapper">
-                                <label for="novo-material-imagem" class="form-label">Anexar imagem</label>
-                                <input type="file" class="form-control material-arquivo-input" id="novo-material-imagem" name="arquivo_imagem" accept="image/*" data-tipo="imagem">
-                            </div>
-                            <div class="col-md-6 material-arquivo-wrapper">
-                                <label for="novo-material-foto" class="form-label">Anexar foto</label>
-                                <input type="file" class="form-control material-arquivo-input" id="novo-material-foto" name="arquivo_foto" accept="image/*" data-tipo="foto">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success">Salvar</button>
-                    </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Histórico de Consultas -->
-        <div class="modal fade" id="consultasModal" tabindex="-1" aria-labelledby="consultasModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-sm">
-                <div class="modal-content">
-                    <div class="modal-header">
-                    <h5 class="modal-title" id="consultasModalLabel">
-                        <i class="bi bi-journal-medical me-2"></i>
-                        Histórico de consultas
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body" id="consultas-historico-body">
-                    <!-- Consultas serão inseridas via JS -->
-                    </div>
-                    <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Histórico de Contatos -->
-        <div class="modal fade" id="contatosModal" tabindex="-1" aria-labelledby="contatosModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                <h5 class="modal-title" id="contatosModalLabel">
-                    <i class="bi bi-chat-dots me-2"></i>
-                    Histórico de Contatos<span id="contatosModalPatientName"></span>
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="contatosModalBody">
-                <!-- Histórico de contatos será inserido via JS -->
-                </div>
-                <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                </div>
-            </div>
-            </div>
-        </div>
-
-        <!-- Modal: Editar Paciente -->
-        <div class="modal fade" id="editarPacienteModal" tabindex="-1" aria-labelledby="editarPacienteModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                    <h5 class="modal-title" id="editarPacienteModalLabel">
-                        <i class="bi bi-pencil me-2"></i>
-                        Editar Informações do Paciente
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                    <form id="editarPacienteForm">
-                        <input type="hidden" id="editarPacienteId">
-                        <div class="form-floating mb-3">
-                        <input type="text" class="form-control" id="nomeInput" placeholder="Nome completo" required>
-                        <label for="nomeInput">Nome completo</label>
-                        </div>
-                        <div class="form-floating mb-3">
-                        <input type="tel" class="form-control" id="telefoneInput" placeholder="Telefone" required>
-                        <label for="telefoneInput">Telefone</label>
-                        <div class="form-text">Digite apenas números (DDD + número)</div>
-                        <!-- </div>
-                        <div class="form-floating mb-3">
-                        <input type="email" class="form-control" id="emailInput" placeholder="E-mail (opcional)">
-                        <label for="emailInput">E-mail (opcional)</label>
-                        </div>
-                        <div class="form-floating mb-3">
-                        <textarea class="form-control" id="observacoesInput" placeholder="Observações" style="height: 100px"></textarea>
-                        <label for="observacoesInput">Observações gerais</label>
-                        </div> -->
-                    </form>
-                    </div>
-                    <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-success" id="salvarEdicaoPacienteBtn">Salvar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     </div>
-{% endblock %}
+</div>
+
+<!-- Modal: Novo material -->
+<div id="novoMaterialModal" class="fixed inset-0 z-[60] hidden" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div
+                class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <form id="novo-material-form" enctype="multipart/form-data">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h5 class="text-base font-semibold leading-6 text-gray-900">Novo Material</h5>
+                            <button type="button" class="text-gray-400 hover:text-gray-500"
+                                data-modal-hide="novoMaterialModal">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div class="space-y-4">
+                            <p class="text-xs text-gray-500">Escolha um tipo de arquivo e envie apenas um.</p>
+                            <div>
+                                <label for="novo-material-nome"
+                                    class="block text-sm font-medium leading-6 text-gray-900">Nome do Material</label>
+                                <input type="text" id="novo-material-nome" name="descricao"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                    required placeholder="Nome do Material">
+                            </div>
+                            <div>
+                                <label for="novo-material-tipo"
+                                    class="block text-sm font-medium leading-6 text-gray-900">Tipo de arquivo</label>
+                                <select id="novo-material-tipo" name="tipo_arquivo"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6">
+                                    <option value="pdf" selected>PDF</option>
+                                    <option value="imagem">Imagem</option>
+                                    <option value="foto">Foto</option>
+                                    <option value="video">Video</option>
+                                    <option value="">Sem arquivo</option>
+                                </select>
+                            </div>
+                            <div class="space-y-4">
+                                <!-- PDF -->
+                                <div class="material-arquivo-wrapper flex flex-col gap-1">
+                                    <label for="novo-material-pdf"
+                                        class="block text-sm font-medium leading-6 text-gray-900">Anexar PDF</label>
+                                    <input type="file" id="novo-material-pdf" name="arquivo_pdf"
+                                        accept="application/pdf" data-tipo="pdf"
+                                        class="material-arquivo-input block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20">
+                                </div>
+                                <!-- Video -->
+                                <div class="material-arquivo-wrapper flex flex-col gap-1 hidden">
+                                    <label for="novo-material-video"
+                                        class="block text-sm font-medium leading-6 text-gray-900">Anexar video</label>
+                                    <input type="file" id="novo-material-video" name="arquivo_video" accept="video/*"
+                                        data-tipo="video"
+                                        class="material-arquivo-input block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20">
+                                </div>
+                                <!-- Imagem -->
+                                <div class="material-arquivo-wrapper flex flex-col gap-1 hidden">
+                                    <label for="novo-material-imagem"
+                                        class="block text-sm font-medium leading-6 text-gray-900">Anexar imagem</label>
+                                    <input type="file" id="novo-material-imagem" name="arquivo_imagem" accept="image/*"
+                                        data-tipo="imagem"
+                                        class="material-arquivo-input block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20">
+                                </div>
+                                <!-- Foto -->
+                                <div class="material-arquivo-wrapper flex flex-col gap-1 hidden">
+                                    <label for="novo-material-foto"
+                                        class="block text-sm font-medium leading-6 text-gray-900">Anexar foto</label>
+                                    <input type="file" id="novo-material-foto" name="arquivo_foto" accept="image/*"
+                                        data-tipo="foto"
+                                        class="material-arquivo-input block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="submit"
+                            class="inline-flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Histórico de Consultas -->
+<div id="consultasModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div
+                class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-md">
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h5 class="text-base font-semibold leading-6 text-gray-900 flex items-center gap-2">
+                            <span class="material-symbols-outlined">history</span>
+                            Histórico de consultas
+                        </h5>
+                        <button type="button" class="text-gray-400 hover:text-gray-500"
+                            data-modal-hide="consultasModal">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                    <div id="consultas-historico-body" class="mt-2 max-h-96 overflow-y-auto">
+                        <!-- Content injected by JS -->
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 justify-center">
+                    <button type="button"
+                        class="inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                        data-modal-hide="consultasModal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Histórico de Contatos -->
+<div id="contatosModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div
+                class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl">
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h5 class="text-base font-semibold leading-6 text-gray-900 flex items-center gap-2">
+                            <span class="material-symbols-outlined">chat</span>
+                            Histórico de Contatos <span id="contatosModalPatientName"
+                                class="font-normal ml-1 text-gray-500"></span>
+                        </h5>
+                        <button type="button" class="text-gray-400 hover:text-gray-500" data-modal-hide="contatosModal">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                    <div id="contatosModalBody" class="mt-2 max-h-[60vh] overflow-y-auto p-1">
+                        <!-- Content injected by JS -->
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 justify-center">
+                    <button type="button"
+                        class="inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                        data-modal-hide="contatosModal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Editar Paciente -->
+<div id="editarPacienteModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div
+                class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <form id="editarPacienteForm">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h5 class="text-base font-semibold leading-6 text-gray-900 flex items-center gap-2">
+                                <span class="material-symbols-outlined">edit</span>
+                                Editar Informações do Paciente
+                            </h5>
+                            <button type="button" class="text-gray-400 hover:text-gray-500"
+                                data-modal-hide="editarPacienteModal">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div class="space-y-4">
+                            <input type="hidden" id="editarPacienteId">
+                            <div>
+                                <label for="nomeInput" class="block text-sm font-medium leading-6 text-gray-900">Nome
+                                    completo</label>
+                                <input type="text" id="nomeInput"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                    required placeholder="Nome completo">
+                            </div>
+                            <div>
+                                <label for="telefoneInput"
+                                    class="block text-sm font-medium leading-6 text-gray-900">Telefone</label>
+                                <input type="tel" id="telefoneInput"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                    required placeholder="Telefone">
+                                <p class="mt-1 text-xs text-gray-500">Digite apenas números (DDD + número)</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="button" id="salvarEdicaoPacienteBtn"
+                            class="inline-flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% block extra_js %}
 <script type="module" src="{% static 'js/registrar-contato.js' %}"></script>
@@ -735,4 +979,5 @@
 <script type="module" src="{% static 'js/materiais.js' %}"></script>
 <script type="module" src="{% static 'js/verifica-cadastro.js' %}"></script>
 <script type="module" src="{% static 'js/filtro.js' %}"></script>
+{% endblock %}
 {% endblock %}

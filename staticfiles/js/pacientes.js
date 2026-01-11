@@ -6,16 +6,41 @@ const filtrosForm = document.getElementById('pacientes-filtros');
 const filtroNome = document.getElementById('filtro-nome');
 const filtroTelefone = document.getElementById('filtro-telefone');
 const filtroLimpar = document.getElementById('filtro-limpar');
+const paginacaoStatus = document.getElementById('pacientes-paginacao-status');
+const paginacaoPrev = document.getElementById('pacientes-prev');
+const paginacaoNext = document.getElementById('pacientes-next');
+const btnNovoPaciente = document.getElementById('btn-novo-paciente');
+
+const PAGE_SIZE = 15;
+let paginaAtual = 1;
+let pacientesCache = [];
+let pacientesFiltrados = [];
+let hasMaisPaginas = false;
+let totalRegistros = null;
+let filtrosAtuais = { nome: '', telefone: '' };
 
 const novoForm = document.getElementById('novo-paciente-form');
 const novoModalEl = document.getElementById('novoPacienteModal');
-const novoModal = novoModalEl ? new bootstrap.Modal(novoModalEl) : null;
+const novoModal = criarModalController(novoModalEl);
 
 const editarForm = document.getElementById('editar-paciente-form');
 const editarModalEl = document.getElementById('editarPacienteModal');
-const editarModal = editarModalEl ? new bootstrap.Modal(editarModalEl) : null;
+const editarModal = criarModalController(editarModalEl);
 
-let pacientesCache = [];
+function criarModalController(el) {
+    if (!el) return null;
+    if (typeof bootstrap !== 'undefined' && bootstrap?.Modal) {
+        const instance = bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
+        return {
+            show: () => instance.show(),
+            hide: () => instance.hide(),
+        };
+    }
+    return {
+        show: () => el.classList.remove('hidden'),
+        hide: () => el.classList.add('hidden'),
+    };
+}
 
 function getCookie(name) {
     let cookieValue = null;
@@ -32,29 +57,56 @@ function getCookie(name) {
     return cookieValue;
 }
 
-function renderPacientes(lista) {
+function renderPacientes(lista, { page = 1, hasMore = false, total = null } = {}) {
     if (!tbody) return;
     tbody.innerHTML = '';
 
     if (!lista.length) {
         emptyState?.classList.remove('d-none');
+        if (paginacaoStatus) paginacaoStatus.textContent = 'Nenhum resultado';
+        if (paginacaoPrev) paginacaoPrev.disabled = true;
+        if (paginacaoNext) paginacaoNext.disabled = true;
         return;
     }
 
     emptyState?.classList.add('d-none');
+    paginaAtual = Math.max(1, page);
+    const inicio = (paginaAtual - 1) * PAGE_SIZE;
+    const fim = inicio + lista.length;
+    const paginaItens = lista;
+
     const fragment = document.createDocumentFragment();
 
-    lista.forEach((paciente) => {
+    paginaItens.forEach((paciente) => {
         const tr = document.createElement('tr');
         tr.dataset.pacienteId = paciente.id;
+        tr.className = 'hover:bg-gray-50 transition-colors group';
+
+        const initials = paciente.nome ? paciente.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '??';
+
         tr.innerHTML = `
-            <td class="paciente-nome">${paciente.nome || '-'}</td>
-            <td class="paciente-telefone">${paciente.telefone || '-'}</td>
-            <td>${paciente.criado_em || '-'}</td>
-            <td class="text-end">
-                <button type="button" class="btn btn-sm btn-outline-primary btn-editar">
-                    <i class="bi bi-pencil"></i>
-                    Editar
+            <td class="py-3 px-4">
+                <div class="flex items-center gap-3">
+                    <div class="size-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-sm font-bold">
+                        ${initials}
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-[#111518] paciente-nome">${paciente.nome || '-'}</p>
+                    </div>
+                </div>
+            </td>
+            <td class="py-3 px-4">
+                <div class="inline-flex items-center gap-1.5 text-sm text-[#111518]">
+                    <span class="material-symbols-outlined text-[18px] text-green-600">chat</span>
+                    <span class="paciente-telefone">${paciente.telefone || '-'}</span>
+                </div>
+            </td>
+            <td class="py-3 px-4">
+                <span class="text-sm text-[#64748b]">${paciente.criado_em || '-'}</span>
+            </td>
+            <td class="py-3 px-4 text-right">
+                <button type="button" class="text-[#94a3b8] hover:text-primary p-1 rounded hover:bg-blue-50 transition-colors btn-editar" title="Editar">
+                    <span class="material-symbols-outlined text-[20px]">edit</span>
                 </button>
             </td>
         `;
@@ -62,6 +114,16 @@ function renderPacientes(lista) {
     });
 
     tbody.appendChild(fragment);
+
+    if (paginacaoStatus) {
+        const exibindoInicio = lista.length === 0 ? 0 : inicio + 1;
+        const exibindoFim = lista.length === 0 ? 0 : fim;
+        const totalTexto = total ? ` de ${total} resultados` : hasMore ? ' de mais resultados' : ` de ${exibindoFim} resultados`;
+        paginacaoStatus.textContent = `Mostrando ${exibindoInicio}-${exibindoFim}${totalTexto}`;
+    }
+    if (paginacaoPrev) paginacaoPrev.disabled = paginaAtual <= 1;
+    const podeAvancar = hasMore || (total ? fim < total : lista.length === PAGE_SIZE && hasMore);
+    if (paginacaoNext) paginacaoNext.disabled = !podeAvancar;
 }
 
 function aplicarFiltroTelefone(lista, telefone) {
@@ -71,26 +133,32 @@ function aplicarFiltroTelefone(lista, telefone) {
     return lista.filter((paciente) => (paciente.telefone || '').toLowerCase().includes(filtro));
 }
 
-function carregarPacientes({ nome = '', telefone = '' } = {}) {
+function carregarPacientes({ nome = '', telefone = '', page = 1 } = {}) {
     if (!tbody) return;
-    tbody.innerHTML = `
-        <tr>
-            <td colspan="4" class="text-center text-muted py-4">Carregando pacientes...</td>
-        </tr>
-    `;
+    tbody.innerHTML = '';
     emptyState?.classList.add('d-none');
+    if (paginacaoStatus) paginacaoStatus.textContent = 'Carregando pacientes...';
+
+    filtrosAtuais = { nome, telefone };
+    paginaAtual = page;
 
     const params = new URLSearchParams();
     if (nome) params.set('nome', nome);
-    params.set('page', '1');
-    params.set('page_size', '200');
+    params.set('page', String(page));
+    params.set('page_size', String(PAGE_SIZE));
 
     fetch(`/api/pacientes/?${params.toString()}`)
         .then((res) => res.json())
         .then((data) => {
             pacientesCache = data?.pacientes || [];
-            const lista = aplicarFiltroTelefone(pacientesCache, telefone);
-            renderPacientes(lista);
+            pacientesFiltrados = aplicarFiltroTelefone(pacientesCache, telefone);
+            totalRegistros = typeof data?.total === 'number' ? data.total : null;
+            hasMaisPaginas = Boolean(data?.has_more);
+            renderPacientes(pacientesFiltrados, {
+                page,
+                hasMore: hasMaisPaginas,
+                total: totalRegistros,
+            });
         })
         .catch(() => {
             tbody.innerHTML = '';
@@ -105,6 +173,7 @@ if (filtrosForm) {
         carregarPacientes({
             nome: filtroNome?.value || '',
             telefone: filtroTelefone?.value || '',
+            page: 1,
         });
     });
 }
@@ -113,7 +182,23 @@ if (filtroLimpar) {
     filtroLimpar.addEventListener('click', () => {
         if (filtroNome) filtroNome.value = '';
         if (filtroTelefone) filtroTelefone.value = '';
-        carregarPacientes();
+        carregarPacientes({ page: 1 });
+    });
+}
+
+if (paginacaoPrev) {
+    paginacaoPrev.addEventListener('click', () => {
+        if (paginaAtual > 1) {
+            carregarPacientes({ ...filtrosAtuais, page: paginaAtual - 1 });
+        }
+    });
+}
+
+if (paginacaoNext) {
+    paginacaoNext.addEventListener('click', () => {
+        if (hasMaisPaginas || pacientesFiltrados.length === PAGE_SIZE) {
+            carregarPacientes({ ...filtrosAtuais, page: paginaAtual + 1 });
+        }
     });
 }
 
@@ -253,5 +338,18 @@ if (novoForm) {
             });
     });
 }
+
+if (btnNovoPaciente && novoModal) {
+    btnNovoPaciente.addEventListener('click', () => {
+        novoModal.show();
+    });
+}
+
+document.querySelectorAll('[data-modal-hide="novoPacienteModal"]').forEach((btn) => {
+    btn.addEventListener('click', () => novoModal?.hide());
+});
+document.querySelectorAll('[data-modal-hide="editarPacienteModal"]').forEach((btn) => {
+    btn.addEventListener('click', () => editarModal?.hide());
+});
 
 carregarPacientes();

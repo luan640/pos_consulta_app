@@ -39,14 +39,51 @@ let materiaisCache = [];
 let materiaisCarregados = false;
 let materiaisPromise = null;
 
+function estilizarGrupoItem(item, ativo) {
+  if (!item) return;
+  const baseClasses = 'group flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors mb-1 regra-grupo-item';
+  item.className = baseClasses;
+  if (ativo) {
+    item.classList.add('bg-primary/5', 'border', 'border-primary/20', 'active');
+  }
+
+  const iconEl = item.querySelector('[data-role="grupo-icon"]');
+  if (iconEl) {
+    iconEl.className = `size-10 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+      ativo ? 'bg-white text-primary shadow-sm' : 'bg-slate-100 text-slate-500'
+    }`;
+  }
+
+  const titleEl = item.querySelector('[data-role="grupo-title"]');
+  if (titleEl) {
+    titleEl.className = `text-sm font-semibold truncate ${ativo ? 'text-primary' : 'text-slate-700'}`;
+  }
+
+  const arrowEl = item.querySelector('[data-role="grupo-arrow"]');
+  if (arrowEl) {
+    arrowEl.classList.toggle('hidden', !ativo);
+  }
+}
+
+function criarSpinnerSuave(mensagem, subtitulo = 'So leva um instante...') {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'regra-loading flex flex-col items-center justify-center py-8 text-slate-600 gap-2';
+  wrapper.innerHTML = `
+    <div class="relative inline-flex items-center justify-center">
+      <div class="h-12 w-12 rounded-full border-2 border-slate-200"></div>
+      <div class="absolute inset-0 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+      <div class="absolute inset-3 rounded-full bg-white"></div>
+    </div>
+    <p class="text-sm font-semibold text-slate-700">${mensagem}</p>
+    <p class="text-xs text-slate-400">${subtitulo}</p>
+  `;
+  return wrapper;
+}
+
 function renderizarLoading(container, mensagem) {
   if (!container) return;
-  container.innerHTML = `
-    <div class="regra-loading">
-      <div class="spinner-border text-primary" role="status"></div>
-      <span>${mensagem}</span>
-    </div>
-  `;
+  container.innerHTML = '';
+  container.appendChild(criarSpinnerSuave(mensagem));
 }
 
 function ativarLoadingSuave(container) {
@@ -59,16 +96,45 @@ function desativarLoadingSuave(container) {
   container.classList.remove('regra-flow-list--loading');
 }
 
+function adicionarOverlayLoading(container, mensagem) {
+  if (!container) return;
+  removerOverlayLoading(container);
+  container.classList.add('relative');
+
+  const overlay = document.createElement('div');
+  overlay.className = 'regra-loading-overlay absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10';
+  overlay.appendChild(criarSpinnerSuave(mensagem, 'Atualizando visualizacao...'));
+  container.appendChild(overlay);
+}
+
+function removerOverlayLoading(container) {
+  const overlay = container?.querySelector('.regra-loading-overlay');
+  if (overlay) {
+    overlay.remove();
+  }
+}
+
 function definirLoadingBotao(botao, loading) {
   if (!botao) return;
   if (loading) {
-    botao.dataset.originalHtml = botao.innerHTML;
+    if (botao.dataset.loading === 'true') return;
+    botao.dataset.loading = 'true';
     botao.disabled = true;
-    botao.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
-  } else if (botao.dataset.originalHtml) {
+    botao.classList.add('loading');
+
+    if (!botao.querySelector('.btn-spinner')) {
+      const spinner = document.createElement('span');
+      spinner.className = 'btn-spinner ml-2 inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin align-middle';
+      spinner.setAttribute('role', 'status');
+      spinner.setAttribute('aria-hidden', 'true');
+      botao.appendChild(spinner);
+    }
+  } else {
+    botao.dataset.loading = 'false';
     botao.disabled = false;
-    botao.innerHTML = botao.dataset.originalHtml;
-    delete botao.dataset.originalHtml;
+    botao.classList.remove('loading');
+    const spinner = botao.querySelector('.btn-spinner');
+    if (spinner) spinner.remove();
   }
 }
 
@@ -134,23 +200,154 @@ function prepararContainerMateriais(container, mensagem, linkHref = null) {
     link.href = linkHref;
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
-    link.className = 'btn btn-outline-primary btn-sm ms-2';
-    link.textContent = 'Clique aqui para adicionar materiais';
+    link.className = 'inline-flex items-center px-3 py-1 text-xs font-semibold text-primary border border-primary rounded-md hover:bg-primary/10 ml-2';
+    link.textContent = 'Adicionar materiais';
     span.appendChild(link);
   } else {
     span.textContent = mensagem;
   }
   container.appendChild(span);
-  container.classList.add('text-muted', 'small');
+  container.classList.add('text-slate-500', 'text-xs');
   container.classList.remove('materiais-checkbox-group', 'd-flex', 'flex-wrap', 'gap-2');
+  container.classList.add('flex', 'flex-wrap', 'gap-2');
 }
 
 function moverChip(chip, destino) {
   destino.appendChild(chip);
-  chip.classList.add('regras-material-chip--move');
-  window.setTimeout(() => {
-    chip.classList.remove('regras-material-chip--move');
-  }, 200);
+  if (chip.animate) {
+    chip.animate(
+      [
+        { transform: 'scale(0.96)', opacity: 0.85 },
+        { transform: 'scale(1)', opacity: 1 },
+      ],
+      { duration: 180, easing: 'ease-out' }
+    );
+  }
+}
+
+function aplicarClasseChip(chip, selecionado = false, destacar = false) {
+  if (!chip) return;
+  atualizarConteudoChip(chip, selecionado);
+  const base = [
+    'regras-material-chip',
+    'inline-flex',
+    'items-center',
+    'justify-center',
+    'px-3',
+    'py-1.5',
+    'rounded-full',
+    'text-xs',
+    'font-semibold',
+    'tracking-tight',
+    'transition',
+    'duration-200',
+    'border',
+    'shadow-sm',
+  ];
+
+  const disponivel = [
+    'bg-indigo-50',
+    'text-indigo-700',
+    'border-indigo-200',
+    'hover:bg-indigo-100',
+    'hover:-translate-y-px',
+    'active:translate-y-0',
+  ];
+
+  const escolhido = [
+    'bg-emerald-600',
+    'text-white',
+    'border-emerald-600',
+    'shadow-lg',
+    'hover:bg-emerald-700',
+  ];
+
+  chip.className = '';
+  const classes = [...base, ...(selecionado ? escolhido : disponivel)];
+  if (destacar) {
+    classes.push('ring-2', 'ring-offset-2', selecionado ? 'ring-emerald-200' : 'ring-indigo-100');
+  }
+  chip.classList.add(...classes);
+
+  if (destacar) {
+    setTimeout(() => {
+      chip.classList.remove('ring-2', 'ring-offset-2', 'ring-emerald-200', 'ring-indigo-100');
+    }, 220);
+  }
+}
+
+function atualizarConteudoChip(chip, selecionado) {
+  const labelWrapper = document.createElement('span');
+  labelWrapper.className = 'flex items-center gap-2 truncate';
+
+  const label = document.createElement('span');
+  label.textContent = chip.dataset.materialLabel || chip.textContent || '';
+  label.className = 'truncate';
+
+  const tipoLabel = chip.dataset.materialTypeLabel || '';
+  if (tipoLabel) {
+    const tipo = document.createElement('span');
+    tipo.className = selecionado
+      ? 'text-[10px] font-semibold uppercase tracking-wide text-white/70'
+      : 'text-[10px] font-semibold uppercase tracking-wide text-slate-500';
+    tipo.textContent = tipoLabel;
+    labelWrapper.appendChild(label);
+    labelWrapper.appendChild(tipo);
+  } else {
+    labelWrapper.appendChild(label);
+  }
+
+  const close = document.createElement('span');
+  close.className = 'ml-2 text-[11px] font-bold opacity-80';
+  close.textContent = 'x';
+  close.setAttribute('aria-hidden', 'true');
+
+  chip.innerHTML = '';
+  chip.appendChild(labelWrapper);
+  if (selecionado) {
+    chip.appendChild(close);
+  }
+}
+
+function obterTipoMaterial(material) {
+  if (!material) return '';
+  return material.tipo_arquivo || (
+    material.pdf_url ? 'pdf' :
+      material.video_url ? 'video' :
+        material.imagem_url ? 'imagem' :
+          material.foto_url ? 'foto' :
+            material.youtube_url ? 'youtube' :
+              ''
+  );
+}
+
+function formatarTipoMaterial(tipo) {
+  const mapa = {
+    pdf: 'PDF',
+    video: 'Video',
+    imagem: 'Imagem',
+    foto: 'Foto',
+    youtube: 'YouTube',
+  };
+  return mapa[tipo] || '';
+}
+
+
+
+function atualizarChipVisual(chip, destino) {
+  if (!chip || !destino) return;
+  const paraSelecionados = destino?.id?.includes('selecionados');
+
+  aplicarClasseChip(chip, paraSelecionados, true);
+  if (chip.animate) {
+    chip.animate(
+      [
+        { transform: 'scale(0.95)', opacity: 0.9 },
+        { transform: 'scale(1)', opacity: 1 },
+      ],
+      { duration: 180, easing: 'ease-out' }
+    );
+  }
 }
 
 function habilitarInteracaoMateriais(disponiveisEl, selecionadosEl) {
@@ -162,14 +359,14 @@ function habilitarInteracaoMateriais(disponiveisEl, selecionadosEl) {
   disponiveisEl.addEventListener('click', (event) => {
     const chip = event.target.closest('[data-material-id]');
     if (!chip) return;
-    chip.classList.add('regras-material-chip--selected');
+    atualizarChipVisual(chip, selecionadosEl);
     moverChip(chip, selecionadosEl);
   });
 
   selecionadosEl.addEventListener('click', (event) => {
     const chip = event.target.closest('[data-material-id]');
     if (!chip) return;
-    chip.classList.remove('regras-material-chip--selected');
+    atualizarChipVisual(chip, disponiveisEl);
     moverChip(chip, disponiveisEl);
   });
 }
@@ -181,8 +378,10 @@ function renderizarMateriais(disponiveisEl, selecionadosEl, selecionados = []) {
   selecionadosEl.innerHTML = '';
   disponiveisEl.classList.remove('text-muted', 'small');
   selecionadosEl.classList.remove('text-muted', 'small');
-  disponiveisEl.classList.add('materiais-checkbox-group', 'd-flex', 'flex-wrap', 'gap-2');
-  selecionadosEl.classList.add('materiais-checkbox-group', 'd-flex', 'flex-wrap', 'gap-2');
+  disponiveisEl.classList.remove('materiais-checkbox-group', 'd-flex');
+  selecionadosEl.classList.remove('materiais-checkbox-group', 'd-flex');
+  disponiveisEl.classList.add('flex', 'flex-wrap', 'gap-2');
+  selecionadosEl.classList.add('flex', 'flex-wrap', 'gap-2');
 
   if (!materiaisCache.length) {
     prepararContainerMateriais(
@@ -198,14 +397,17 @@ function renderizarMateriais(disponiveisEl, selecionadosEl, selecionados = []) {
   materiaisCache.forEach((material) => {
     const chip = document.createElement('button');
     chip.type = 'button';
-    chip.className = 'btn btn-primary btn-sm regras-material-chip';
     chip.dataset.materialId = material.id;
+    chip.dataset.materialLabel = material.descricao;
+    const tipoMaterial = obterTipoMaterial(material);
+    chip.dataset.materialTypeLabel = formatarTipoMaterial(tipoMaterial);
     chip.textContent = material.descricao;
 
     if (selecionadosSet.has(Number(material.id))) {
-      chip.classList.add('regras-material-chip--selected');
+      aplicarClasseChip(chip, true);
       selecionadosEl.appendChild(chip);
     } else {
+      aplicarClasseChip(chip, false);
       disponiveisEl.appendChild(chip);
     }
   });
@@ -225,7 +427,7 @@ function atualizarEstadoGrupoSelecionado(grupo) {
     grupoNomeEl.textContent = 'Selecione um grupo';
     grupoDescricaoEl.textContent = 'Escolha um grupo para visualizar e editar as regras.';
     regraListEl.innerHTML = '';
-    regraEmptyEl.classList.remove('d-none');
+    regraEmptyEl.classList.remove('hidden');
     regraCountEl.textContent = '0 regras';
     setBotaoEstado(btnEditarGrupo, false);
     setBotaoEstado(btnExcluirGrupo, false);
@@ -244,32 +446,35 @@ function renderizarGrupos(grupos) {
   gruposListEl.innerHTML = '';
 
   if (!grupos.length) {
-    gruposEmptyEl.classList.remove('d-none');
+    gruposEmptyEl.classList.remove('hidden');
     atualizarEstadoGrupoSelecionado(null);
     return;
   }
 
-  gruposEmptyEl.classList.add('d-none');
+  gruposEmptyEl.classList.add('hidden');
   const fragment = document.createDocumentFragment();
 
   grupos.forEach((grupo) => {
-    const item = document.createElement('button');
-    item.type = 'button';
-    item.className = 'list-group-item list-group-item-action regra-grupo-item';
+    const item = document.createElement('div');
+    item.className = 'group flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors mb-1 regra-grupo-item';
     item.dataset.grupoId = grupo.id;
+
     item.innerHTML = `
-      <div class="d-flex justify-content-between align-items-center">
-        <span>${grupo.nome}</span>
-        <span class="badge bg-light text-dark border">${grupo.tamanho_grupo || 0}</span>
+      <div class="size-10 rounded-lg flex items-center justify-center shrink-0 transition-colors bg-slate-100 text-slate-500" data-role="grupo-icon">
+        <span class="material-symbols-outlined">folder_open</span>
       </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-slate-700 truncate" data-role="grupo-title">${grupo.nome}</p>
+        <p class="text-xs text-slate-500 truncate">${grupo.tamanho_grupo || 0} regras</p>
+      </div>
+      <span class="material-symbols-outlined text-primary text-[20px] hidden" data-role="grupo-arrow">chevron_right</span>
     `;
 
-    if (grupoSelecionadoId && Number(grupoSelecionadoId) === Number(grupo.id)) {
-      item.classList.add('active');
-    }
+    const isActive = grupoSelecionadoId && Number(grupoSelecionadoId) === Number(grupo.id);
+    estilizarGrupoItem(item, Boolean(isActive));
 
     item.addEventListener('click', () => {
-      selecionarGrupo(grupo.id);
+      selecionarGrupo(grupo.id, { suave: true });
     });
 
     fragment.appendChild(item);
@@ -287,85 +492,109 @@ function renderizarRegras(regras) {
   regraCountEl.textContent = `${regras.length} regra${regras.length === 1 ? '' : 's'}`;
 
   if (!regras.length) {
-    regraEmptyEl.classList.remove('d-none');
+    regraEmptyEl.classList.remove('hidden');
     return;
   }
 
-  regraEmptyEl.classList.add('d-none');
+  regraEmptyEl.classList.add('hidden');
   const fragment = document.createDocumentFragment();
 
   regras.forEach((regra, index) => {
     const item = document.createElement('div');
-    item.className = 'regra-flow-item';
+    item.className = 'flex gap-6 group/step regra-flow-item';
     item.dataset.regraId = regra.id;
 
-    const diasTexto = regra.dias_apos !== null && regra.dias_apos !== undefined
-      ? `${regra.dias_apos} dia${Number(regra.dias_apos) === 1 ? '' : 's'}`
-      : '--';
+    const dias = Number(regra.dias_apos || 0);
+    const diasTexto = dias === 0 ? 'Imediato' : `${dias} dia${dias === 1 ? '' : 's'} depois`;
+
+    let colorClass = 'bg-blue-500';
+    let ringClass = 'ring-slate-50';
+    let icon = 'mail';
+
+    if (dias === 0) {
+      colorClass = 'bg-green-500';
+      icon = 'bolt';
+    } else if (dias > 15) {
+      colorClass = 'bg-amber-500';
+      icon = 'notifications_active';
+    }
 
     const materiais = Array.isArray(regra.materiais) ? regra.materiais : [];
     const materiaisHtml = materiais.length
-      ? materiais.map((material) => `<span class="badge bg-light text-dark border">${material.descricao}</span>`).join('')
-      : '<span class="text-muted small">Sem materiais</span>';
+      ? materiais.map((material) => `<span class="bg-slate-100 text-slate-600 text-xs font-semibold px-2 py-1 rounded border border-slate-200">${material.descricao}</span>`).join('')
+      : '<span class="text-slate-400 text-xs italic">Sem materiais</span>';
 
     const isPrimeira = index === 0;
     const isUltima = index === regras.length - 1;
 
     item.innerHTML = `
-      <div class="regra-flow-header">
-        <div>
-          <h3 class="regra-flow-title">${regra.nome || 'Regra sem titulo'}</h3>
-          <div class="regra-flow-meta">Apos ${diasTexto} do ultimo contato</div>
+      <!-- Connector -->
+      <div class="flex flex-col items-center w-12 shrink-0">
+        <div class="size-8 rounded-full ${colorClass} text-white flex items-center justify-center shadow-sm z-10 ring-4 ${ringClass}">
+          <span class="material-symbols-outlined text-[18px]">${icon}</span>
         </div>
-        <div class="regra-flow-actions">
-          <button class="btn btn-sm btn-outline-primary" data-action="subir" data-id="${regra.id}" ${isPrimeira ? 'disabled' : ''}>
-            <i class="bi bi-arrow-up"></i>
-          </button>
-          <button class="btn btn-sm btn-outline-primary" data-action="descer" data-id="${regra.id}" ${isUltima ? 'disabled' : ''}>
-            <i class="bi bi-arrow-down"></i>
-          </button>
-          <button class="btn btn-sm btn-outline-secondary" data-action="editar" data-id="${regra.id}">
-            <i class="bi bi-pencil"></i>
-          </button>
-          <button class="btn btn-sm btn-outline-danger" data-action="excluir" data-id="${regra.id}">
-            <i class="bi bi-trash"></i>
-          </button>
+        <div class="w-0.5 bg-slate-200 h-full -mt-2 group-last/step:h-0"></div>
+      </div>
+      
+      <!-- Content Card -->
+      <div class="flex-1 pb-8">
+        <div class="bg-white border border-[#e5e7eb] rounded-xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group/card">
+          <div class="absolute left-0 top-0 bottom-0 w-1 ${colorClass.replace('bg-', 'bg-')}"></div>
+           
+          <div class="p-5">
+            <div class="flex justify-between items-start mb-3">
+              <div class="flex items-center gap-3">
+                <span class="bg-slate-100 text-slate-600 text-xs font-semibold px-2.5 py-1 rounded-md border border-slate-200 flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[14px]">schedule</span>
+                  ${diasTexto}
+                </span>
+                <h3 class="font-semibold text-[#111518] regra-flow-title">${regra.nome || 'Regra sem título'}</h3>
+              </div>
+              
+              <div class="flex items-center group-hover/card:opacity-100 transition-opacity gap-1 regra-flow-actions">
+                 <button class="size-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-primary transition-colors" data-action="subir" data-id="${regra.id}" ${isPrimeira ? 'disabled' : ''} title="Mover para Cima">
+                  <span class="material-symbols-outlined text-[18px]">arrow_upward</span>
+                </button>
+                <button class="size-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-primary transition-colors" data-action="descer" data-id="${regra.id}" ${isUltima ? 'disabled' : ''} title="Mover para Baixo">
+                  <span class="material-symbols-outlined text-[18px]">arrow_downward</span>
+                </button>
+                <button class="size-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-primary transition-colors" data-action="editar" data-id="${regra.id}" title="Editar">
+                  <span class="material-symbols-outlined text-[18px]">edit</span>
+                </button>
+                <button class="size-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-red-500 transition-colors" data-action="excluir" data-id="${regra.id}" title="Excluir">
+                  <span class="material-symbols-outlined text-[18px]">delete</span>
+                </button>
+              </div>
+            </div>
+            
+            <p class="text-sm text-[#64748b] mb-3 regra-flow-description line-clamp-2">${regra.descricao || 'Sem descrição.'}</p>
+            <div class="flex flex-wrap gap-2 regra-flow-materiais">
+                ${materiaisHtml}
+            </div>
+            
+             <div class="hidden regra-flow-meta">${diasTexto}</div>
+          </div>
         </div>
       </div>
-      <p class="regra-flow-description mb-0">${regra.descricao || 'Sem descricao.'}</p>
-      <div class="regra-flow-materiais">${materiaisHtml}</div>
     `;
 
     item.dataset.materiaisIds = materiais.map((material) => material.id).join(',');
-
     fragment.appendChild(item);
-
-    if (index < regras.length - 1) {
-      const arrow = document.createElement('div');
-      arrow.className = 'regra-flow-arrow';
-      arrow.innerHTML = `
-        <span class="regra-flow-arrow-icon">
-          <i class="bi bi-arrow-down"></i>
-        </span>
-        <span class="regra-flow-arrow-text">Proxima regra</span>
-      `;
-      fragment.appendChild(arrow);
-    }
   });
 
   regraListEl.appendChild(fragment);
 }
-
-function selecionarGrupo(grupoId) {
+function selecionarGrupo(grupoId, options = {}) {
   grupoSelecionadoId = grupoId;
   const grupo = gruposCache.find((item) => Number(item.id) === Number(grupoId));
   atualizarEstadoGrupoSelecionado(grupo);
 
   gruposListEl.querySelectorAll('.regra-grupo-item').forEach((item) => {
-    item.classList.toggle('active', Number(item.dataset.grupoId) === Number(grupoId));
+    const ativo = Number(item.dataset.grupoId) === Number(grupoId);
+    estilizarGrupoItem(item, ativo);
   });
 
-  carregarRegras(grupoId);
+  carregarRegras(grupoId, options);
 }
 
 function carregarGrupos() {
@@ -386,11 +615,14 @@ function carregarRegras(grupoId, options = {}) {
 
   const { suave = false } = options;
 
+  removerOverlayLoading(regraListEl);
+
   if (!suave) {
     renderizarLoading(regraListEl, 'Carregando regras...');
-    regraEmptyEl.classList.add('d-none');
+    regraEmptyEl.classList.add('hidden');
   } else {
     ativarLoadingSuave(regraListEl);
+    adicionarOverlayLoading(regraListEl, 'Carregando regras do grupo...');
   }
 
   fetch(`/api/regras/${grupoId}/`)
@@ -401,11 +633,13 @@ function carregarRegras(grupoId, options = {}) {
       renderizarRegras(regras);
       if (suave) {
         desativarLoadingSuave(regraListEl);
+        removerOverlayLoading(regraListEl);
       }
     })
     .catch(() => {
       if (suave) {
         desativarLoadingSuave(regraListEl);
+        removerOverlayLoading(regraListEl);
         showToast('Erro ao carregar regras', 'error');
       } else {
         regraEmptyEl.textContent = 'Erro ao carregar regras.';
@@ -448,7 +682,7 @@ function abrirModalRegraNova() {
       renderizarMateriais(regraMateriaisDisponiveisEl, regraMateriaisSelecionadosEl, []);
     })
     .catch(() => {
-      prepararContainerMateriais(regraMateriaisDisponiveisEl, 'Erro ao carregar materiais.');
+      prepararContainerMateriais(regraMateriaisDisponiveisEl, 'Voce ainda nao cadastrou nenhum material.', '/materiais/');
     });
 }
 
@@ -484,9 +718,9 @@ function abrirModalRegraEditar(regraId) {
       renderizarMateriais(regraEditarMateriaisDisponiveisEl, regraEditarMateriaisSelecionadosEl, materiaisIds);
     })
     .catch(() => {
-      prepararContainerMateriais(regraEditarMateriaisDisponiveisEl, 'Erro ao carregar materiais.');
+      prepararContainerMateriais(regraEditarMateriaisDisponiveisEl, 'Voce ainda nao cadastrou nenhum material.', '/materiais/');
     })
-    .finally(() => {});
+    .finally(() => { });
 }
 
 function abrirModalRegraExcluir(regraId) {
@@ -519,12 +753,12 @@ document.addEventListener('DOMContentLoaded', () => {
       body: JSON.stringify({ nome, descricao }),
     })
       .then((res) => res.json())
-    .then((data) => {
+      .then((data) => {
         modalGrupoNovo?.hide();
         grupoSelecionadoId = data?.id || data?.grupo_id || null;
         showToast('Grupo criado com sucesso!', 'success');
         renderizarLoading(regraListEl, 'Carregando regras...');
-        regraEmptyEl.classList.add('d-none');
+        regraEmptyEl.classList.add('hidden');
         carregarRegras(grupoSelecionadoId);
         carregarGrupos();
       })

@@ -15,6 +15,10 @@ let calendarioMesAtual = null;
 let calendarioAnoAtual = null;
 let bloqueiosBotoesVisualizacao = 0;
 
+function paginaHomeDisponivel() {
+  return Boolean(document.getElementById('patients-container'));
+}
+
 const MESES_PT_BR = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
@@ -120,20 +124,78 @@ function executarAcaoVisualizacao(acao) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  if (!paginaHomeDisponivel()) {
+    return;
+  }
+
+  // Fechar modal desabilitar lembrete via botÇœes com data-modal-hide
+  document.querySelectorAll('[data-modal-hide="desabilitarLembrete"]').forEach((btn) => {
+    if (btn.dataset.listenerAdded) return;
+    btn.dataset.listenerAdded = 'true';
+    btn.addEventListener('click', () => fecharModalPorId('desabilitarLembrete'));
+  });
+
+  // Fechar modal excluir paciente via botÇœes com data-modal-hide
+  document.querySelectorAll('[data-modal-hide="excluirPacienteModal"]').forEach((btn) => {
+    if (btn.dataset.listenerAdded) return;
+    btn.dataset.listenerAdded = 'true';
+    btn.addEventListener('click', () => fecharModalPorId('excluirPacienteModal'));
+  });
+
+  // Abrir/fechar modal de novo material (home)
+  const btnNovoMaterialHome = document.getElementById('btnNovoMaterial');
+  const novoMaterialModal = document.getElementById('novoMaterialModal');
+  if (btnNovoMaterialHome && novoMaterialModal) {
+    btnNovoMaterialHome.addEventListener('click', () => {
+      marcarProximoModalParaRetorno(novoMaterialModal);
+      novoMaterialModal.classList.remove('hidden');
+    });
+    document.querySelectorAll('[data-modal-hide="novoMaterialModal"]').forEach((btn) => {
+      if (btn.dataset.listenerAdded) return;
+      btn.dataset.listenerAdded = 'true';
+      btn.addEventListener('click', () => {
+        novoMaterialModal.classList.add('hidden');
+        reabrirCalendarioSeMarcado(novoMaterialModal);
+      });
+    });
+  }
+
+  const calendarEventsModal = document.getElementById('calendarEventsModal');
+  if (calendarEventsModal) {
+    calendarEventsModal.querySelectorAll('[data-modal-hide="calendarEventsModal"]').forEach((btn) => {
+      if (btn.dataset.listenerAdded) return;
+      btn.dataset.listenerAdded = 'true';
+      btn.addEventListener('click', fecharModalAcoesCalendario);
+    });
+
+    const overlay = calendarEventsModal.querySelector('[class*="bg-gray-900/75"]');
+    if (overlay && !overlay.dataset.listenerAdded) {
+      overlay.dataset.listenerAdded = 'true';
+      overlay.addEventListener('click', fecharModalAcoesCalendario);
+    }
+  }
+
   botaoCarregarMais = document.getElementById('load-more-patients');
   wrapperCarregarMais = document.getElementById('load-more-wrapper');
 
   desabilitarBotoesVisualizacao();
 
   if (botaoCarregarMais) {
-    botaoCarregarMais.addEventListener('click', () => listarPacientes(false));
+    botaoCarregarMais.addEventListener('click', () => {
+      botaoCarregarMais.disabled = true;
+      botaoCarregarMais.classList.add('loading');
+      listarPacientes(false).finally(() => {
+        botaoCarregarMais.disabled = false;
+        botaoCarregarMais.classList.remove('loading');
+      });
+    });
   }
 
   inicializarControleVisualizacao();
   const carregamentoInicial = Promise.resolve(listarPacientes());
 
   carregamentoInicial
-    .catch(() => {})
+    .catch(() => { })
     .finally(() => {
       habilitarBotoesVisualizacao();
     });
@@ -152,6 +214,16 @@ document.addEventListener('DOMContentLoaded', () => {
   inicializarEdicaoPaciente();
   inicializarSelecaoMateriais();
   inicializarExcluirPaciente();
+
+  document.querySelectorAll('form').forEach((form) => {
+    form.addEventListener('submit', (event) => {
+      const submitButton = form.querySelector('[type="submit"]');
+      if (submitButton && !submitButton.dataset.loadingAdded) {
+        submitButton.dataset.loadingAdded = 'true';
+        submitButton.classList.add('loading');
+      }
+    });
+  });
 
 });
 
@@ -271,7 +343,7 @@ function filtrarPorPrazoLembrete(lista, statusPrazo) {
 }
 
 export function listarPacientes(reset = true) {
-  
+
   if (modoVisualizacao === MODO_CALENDARIO) {
     return carregarCalendario();
   }
@@ -332,13 +404,8 @@ export function listarPacientes(reset = true) {
       wrapperCarregarMais.classList.add('d-none');
     }
   } else {
-    const indicadorCarregando = document.createElement('div');
-    indicadorCarregando.id = 'patients-loading-indicator';
-    indicadorCarregando.className = 'text-center py-3';
-    indicadorCarregando.innerHTML = '<div class="spinner-border text-primary" role="status"></div>';
-    container.appendChild(indicadorCarregando);
     if (wrapperCarregarMais) {
-      wrapperCarregarMais.classList.add('d-none');
+      wrapperCarregarMais.classList.remove('d-none');
     }
   }
 
@@ -352,11 +419,6 @@ export function listarPacientes(reset = true) {
 
       if (reset) {
         container.innerHTML = '';
-      } else {
-        const indicador = document.getElementById('patients-loading-indicator');
-        if (indicador) {
-          indicador.remove();
-        }
       }
 
       if (reset && lista.length === 0) {
@@ -425,6 +487,7 @@ function inicializarControleVisualizacao() {
   const botaoCalendario = document.getElementById('view-toggle-calendar');
   const botaoAnterior = document.getElementById('calendar-prev');
   const botaoProximo = document.getElementById('calendar-next');
+  const seletorMes = document.getElementById('calendar-month-picker');
 
   const hoje = new Date();
   calendarioMesAtual = hoje.getMonth();
@@ -439,6 +502,7 @@ function inicializarControleVisualizacao() {
         return;
       }
       modoVisualizacao = MODO_LISTA;
+      calendarioRequisicaoAtual += 1; // invalida requisições de calendário em andamento
       salvarModoVisualizacao(modoVisualizacao);
       atualizarEstadoBotoesVisualizacao(botaoLista, botaoCalendario);
       mostrarVisualizacaoLista();
@@ -473,6 +537,25 @@ function inicializarControleVisualizacao() {
       navegarCalendario(1);
     });
   }
+
+  if (seletorMes) {
+    seletorMes.addEventListener('change', () => {
+      if (modoVisualizacao !== MODO_CALENDARIO) {
+        return;
+      }
+      const valor = seletorMes.value;
+      if (!valor || !valor.includes('-')) {
+        return;
+      }
+      const [anoStr, mesStr] = valor.split('-');
+      const novoAno = Number(anoStr);
+      const novoMes = Number(mesStr) - 1;
+      if (Number.isNaN(novoAno) || Number.isNaN(novoMes) || novoMes < 0 || novoMes > 11) {
+        return;
+      }
+      carregarCalendario(novoMes, novoAno);
+    });
+  }
 }
 
 function atualizarEstadoBotoesVisualizacao(botaoLista, botaoCalendario) {
@@ -480,28 +563,43 @@ function atualizarEstadoBotoesVisualizacao(botaoLista, botaoCalendario) {
     return;
   }
 
+  const setActive = (button) => {
+    button.classList.add('bg-primary', 'text-white', 'shadow-md');
+    button.classList.remove('text-slate-500', 'hover:bg-slate-100', 'bg-transparent');
+    button.setAttribute('aria-pressed', 'true');
+  };
+
+  const setInactive = (button) => {
+    button.classList.remove('bg-primary', 'text-white', 'shadow-md');
+    button.classList.add('text-slate-500', 'hover:bg-slate-100', 'bg-transparent');
+    button.setAttribute('aria-pressed', 'false');
+  };
+
   const botaoAtivo = modoVisualizacao === MODO_LISTA ? botaoLista : botaoCalendario;
   const botaoInativo = modoVisualizacao === MODO_LISTA ? botaoCalendario : botaoLista;
 
-  botaoAtivo.classList.add('active', 'btn-primary');
-  botaoAtivo.classList.remove('btn-outline-primary');
-  botaoAtivo.setAttribute('aria-pressed', 'true');
-
-  botaoInativo.classList.remove('active', 'btn-primary');
-  botaoInativo.classList.add('btn-outline-primary');
-  botaoInativo.setAttribute('aria-pressed', 'false');
+  setActive(botaoAtivo);
+  setInactive(botaoInativo);
 }
 
 function mostrarVisualizacaoLista() {
   const listSection = document.getElementById('patients-list');
   const calendarSection = document.getElementById('calendar-view');
+  const calendarGridWrapper = document.querySelector('.calendar-grid-wrapper');
 
   if (calendarSection) {
     calendarSection.classList.add('d-none');
+    calendarSection.classList.add('hidden');
+    calendarSection.style.display = 'none';
+  }
+  if (calendarGridWrapper) {
+    calendarGridWrapper.classList.add('d-none');
   }
 
   if (listSection) {
     listSection.classList.remove('d-none');
+    listSection.classList.remove('hidden');
+    listSection.style.display = '';
   }
 }
 
@@ -509,13 +607,21 @@ function mostrarVisualizacaoCalendario() {
   const listSection = document.getElementById('patients-list');
   const calendarSection = document.getElementById('calendar-view');
   const emptyState = document.getElementById('empty-state');
+  const calendarGridWrapper = document.querySelector('.calendar-grid-wrapper');
 
   if (listSection) {
     listSection.classList.add('d-none');
+    listSection.classList.add('hidden');
+    listSection.style.display = 'none';
   }
 
   if (calendarSection) {
     calendarSection.classList.remove('d-none');
+    calendarSection.classList.remove('hidden');
+    calendarSection.style.display = '';
+  }
+  if (calendarGridWrapper) {
+    calendarGridWrapper.classList.remove('d-none');
   }
 
   if (emptyState) {
@@ -533,6 +639,7 @@ function mostrarVisualizacaoCalendario() {
 
 function atualizarCabecalhoCalendario() {
   const titulo = document.getElementById('calendar-month-label');
+  const seletorMes = document.getElementById('calendar-month-picker');
 
   if (!titulo) {
     return;
@@ -540,10 +647,18 @@ function atualizarCabecalhoCalendario() {
 
   if (calendarioMesAtual === null || calendarioAnoAtual === null) {
     titulo.textContent = '\u00A0';
+    if (seletorMes) {
+      seletorMes.value = '';
+    }
     return;
   }
 
   titulo.textContent = `${MESES_PT_BR[calendarioMesAtual]} de ${calendarioAnoAtual}`;
+
+  if (seletorMes) {
+    const mesFormatado = String(calendarioMesAtual + 1).padStart(2, '0');
+    seletorMes.value = `${calendarioAnoAtual}-${mesFormatado}`;
+  }
 }
 
 async function carregarCalendario(mes = calendarioMesAtual, ano = calendarioAnoAtual) {
@@ -589,7 +704,7 @@ async function carregarCalendario(mes = calendarioMesAtual, ano = calendarioAnoA
   try {
     const pacientesMes = await buscarEventosCalendario(calendarioMesAtual, calendarioAnoAtual);
 
-    if (requisicaoId !== calendarioRequisicaoAtual) {
+    if (requisicaoId !== calendarioRequisicaoAtual || modoVisualizacao !== MODO_CALENDARIO) {
       return;
     }
 
@@ -827,13 +942,13 @@ function renderizarCalendario(eventos = []) {
     cabecalhoDia.className = 'calendar-day-date';
     cabecalhoDia.innerHTML = `<span>${dataAtual.getDate()}</span>`;
 
-    if (pacientesDoDia.length > 0) {
-      celula.classList.add('has-events');
-      const contador = document.createElement('span');
-      contador.className = 'calendar-day-count';
-      contador.textContent = pacientesDoDia.length;
-      cabecalhoDia.appendChild(contador);
-    }
+    // if (pacientesDoDia.length > 0) {
+    //   celula.classList.add('has-events');
+    //   const contador = document.createElement('span');
+    //   contador.className = 'calendar-day-count';
+    //   contador.textContent = pacientesDoDia.length;
+    //   cabecalhoDia.appendChild(contador);
+    // }
 
     celula.appendChild(cabecalhoDia);
 
@@ -951,18 +1066,26 @@ function criarEventoCalendario(paciente) {
   const menuAcoes = criarMenuAcoesCalendario(paciente);
 
   rodape.appendChild(acoesEsquerda);
-  rodape.appendChild(menuAcoes);
+  rodape.appendChild(menuAcoes.dropdownWrapper || menuAcoes);
 
   elemento.appendChild(cabecalho);
   elemento.appendChild(informacoes);
   elemento.appendChild(rodape);
 
+  const abrirAcoesModal = () => abrirModalAcoesCalendario(menuAcoes.actionsForModal || [], paciente);
+
   cabecalho.addEventListener('click', (event) => {
     if (event.target.closest('button, a')) {
       return;
     }
-    const expandido = elemento.classList.toggle('calendar-event--expanded');
-    elemento.classList.toggle('calendar-event--compact', !expandido);
+    abrirAcoesModal();
+  });
+
+  elemento.addEventListener('click', (event) => {
+    if (event.target.closest('.calendar-event-menu') || event.target.closest('a')) {
+      return;
+    }
+    abrirAcoesModal();
   });
 
   return elemento;
@@ -1088,7 +1211,7 @@ function atualizarEstadoDiaCalendario(diaElemento) {
     return;
   }
 
-  let contador = cabecalho.querySelector('.calendar-day-count');
+  // let contador = cabecalho.querySelector('.calendar-day-count');
 
   if (eventos.length > 0) {
     if (!contador) {
@@ -1121,7 +1244,8 @@ function atualizarEstadoCalendarioGlobal() {
 
 function criarMenuAcoesCalendario(paciente) {
   const dropdownWrapper = document.createElement('div');
-  dropdownWrapper.className = 'dropdown calendar-event-actions'; // Use 'dropup' em vez de 'dropdown'
+  dropdownWrapper.className = 'dropdown calendar-event-actions';
+  const actionsForModal = [];
 
   const toggle = document.createElement('button');
   toggle.className = 'btn btn-sm btn-outline-secondary calendar-event-menu';
@@ -1145,6 +1269,7 @@ function criarMenuAcoesCalendario(paciente) {
       handler();
     });
     menu.appendChild(item);
+    actionsForModal.push({ label, icon, handler });
   };
 
   if (paciente.paciente_ativo && paciente.grupo_regra_atual && paciente.lembretes_ativos) {
@@ -1175,11 +1300,11 @@ function criarMenuAcoesCalendario(paciente) {
   registrarAcao('Alterar grupo de regras', 'bi-people', () => openAtribuirGrupoModal(paciente.id));
 
   registrarAcao('Histórico de consultas', 'bi-journal-medical', () => openHistoricoConsultaModal({
-    patient: paciente.id,
+    id: paciente.id,
   }));
 
   registrarAcao('Histórico de contatos', 'bi-chat-dots', () => openHistoricoContatoModal({
-    patient: paciente.id,
+    id: paciente.id,
   }));
 
   registrarAcao('Editar informações', 'bi-pencil', () => openEditarInfoPacientesModal({
@@ -1230,8 +1355,128 @@ function criarMenuAcoesCalendario(paciente) {
   dropdownWrapper.appendChild(toggle);
   dropdownWrapper.appendChild(menu);
 
-  return dropdownWrapper;
+  return { dropdownWrapper, actionsForModal };
 }
+
+const calendarModalReturnState = {
+  context: null,
+  awaitingNextModal: false,
+};
+
+function prepararRetornoParaCalendario(actions = [], paciente = {}) {
+  calendarModalReturnState.context = {
+    actions: [...actions],
+    paciente,
+  };
+  calendarModalReturnState.awaitingNextModal = true;
+}
+
+function marcarProximoModalParaRetorno(modalEl) {
+  if (!calendarModalReturnState.awaitingNextModal || !modalEl) {
+    return;
+  }
+
+  modalEl.dataset.returnToCalendar = 'true';
+  calendarModalReturnState.awaitingNextModal = false;
+}
+
+function reabrirCalendarioSeMarcado(modalEl) {
+  if (!modalEl || modalEl.dataset.returnToCalendar !== 'true') {
+    return;
+  }
+
+  delete modalEl.dataset.returnToCalendar;
+
+  const { context } = calendarModalReturnState;
+  if (context) {
+    abrirModalAcoesCalendario(context.actions || [], context.paciente || {});
+  }
+}
+
+function abrirModalAcoesCalendario(actions = [], paciente = {}) {
+  const modalEl = document.getElementById('calendarEventsModal');
+  const bodyEl = document.getElementById('calendar-modal-body');
+  const titleEl = document.getElementById('calendar-modal-title');
+  const subtitleEl = document.getElementById('calendar-modal-date');
+
+  if (!modalEl || !bodyEl) {
+    return;
+  }
+
+  if (titleEl) {
+    titleEl.textContent = paciente.nome || 'Ações do paciente';
+  }
+
+  if (subtitleEl) {
+    const detalhes = [];
+    if (paciente.nome_lembrete) {
+      detalhes.push(paciente.nome_lembrete);
+    }
+    if (paciente.proxima_data) {
+      detalhes.push(paciente.proxima_data);
+    }
+    subtitleEl.textContent = detalhes.join(' • ');
+    subtitleEl.classList.toggle('hidden', detalhes.length === 0);
+  }
+
+  bodyEl.innerHTML = '';
+
+  if (!actions.length) {
+    const vazio = document.createElement('p');
+    vazio.className = 'text-sm text-slate-500';
+    vazio.textContent = 'Nenhuma ação disponível para este paciente.';
+    bodyEl.appendChild(vazio);
+  } else {
+    actions.forEach(({ label, icon, handler }) => {
+      const botao = document.createElement('button');
+      botao.type = 'button';
+      botao.className = 'flex items-center justify-between w-full rounded-lg border border-slate-200 px-4 py-3 text-sm font-semibold text-[#111518] hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary';
+      botao.innerHTML = `<span class="flex items-center gap-3"><i class="bi ${icon} text-primary"></i>${label}</span><span class="material-symbols-outlined text-base text-slate-400">chevron_right</span>`;
+      botao.addEventListener('click', () => {
+        prepararRetornoParaCalendario(actions, paciente);
+        fecharModalAcoesCalendario();
+        if (typeof handler === 'function') {
+          handler();
+        }
+      });
+      bodyEl.appendChild(botao);
+    });
+  }
+
+  modalEl.classList.remove('hidden');
+}
+
+function fecharModalAcoesCalendario() {
+  const modalEl = document.getElementById('calendarEventsModal');
+  if (modalEl) {
+    modalEl.classList.add('hidden');
+  }
+}
+
+document.addEventListener('shown.bs.modal', (event) => {
+  marcarProximoModalParaRetorno(event.target);
+});
+
+document.addEventListener('hidden.bs.modal', (event) => {
+  reabrirCalendarioSeMarcado(event.target);
+});
+
+// Suporte para modais que usam data-modal-target/data-modal-hide (estilo Flowbite/custom)
+document.addEventListener('click', (event) => {
+  const openTrigger = event.target.closest('[data-modal-target]');
+  if (openTrigger) {
+    const targetId = openTrigger.getAttribute('data-modal-target');
+    const modalEl = document.getElementById(targetId);
+    marcarProximoModalParaRetorno(modalEl);
+  }
+
+  const closeTrigger = event.target.closest('[data-modal-hide]');
+  if (closeTrigger) {
+    const targetId = closeTrigger.getAttribute('data-modal-hide');
+    const modalEl = document.getElementById(targetId);
+    reabrirCalendarioSeMarcado(modalEl);
+  }
+});
 
 function obterInformacoesPaciente(paciente) {
   const consultasOrdenadas = [...(paciente.consultas || [])].sort((a, b) => b.id - a.id);
@@ -1311,248 +1556,247 @@ export function renderizarCardPaciente(paciente) {
     telefoneLimpo,
   } = dados;
 
-  const card = document.createElement('div');
-  card.className = 'card patient-card mb-3' + (atrasado ? ' alert-active' : '');
+  // Map Bootstrap badge classes to Tailwind
+  let tailwindBadgeClass = 'bg-gray-50 text-gray-600 ring-gray-500/10 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/20';
+  if (badgeClass.includes('badge-waiting')) {
+    tailwindBadgeClass = 'bg-green-50 text-green-700 ring-green-600/10 dark:bg-green-400/10 dark:text-green-400 dark:ring-green-400/20';
+  } else if (badgeClass.includes('badge-warning')) {
+    tailwindBadgeClass = 'bg-orange-50 text-orange-700 ring-orange-600/10 dark:bg-orange-400/10 dark:text-orange-400 dark:ring-orange-400/20';
+  } else if (badgeClass.includes('badge-overdue')) {
+    tailwindBadgeClass = 'bg-red-50 text-red-700 ring-red-600/10 dark:bg-red-400/10 dark:text-red-400 dark:ring-red-400/20';
+  }
+
+  // Initials
+  const initials = paciente.nome
+    ? paciente.nome.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase()
+    : '??';
+
+  const card = document.createElement('article');
+  card.className = 'flex flex-col justify-between rounded-xl bg-white dark:bg-[#15202b] p-5 shadow-sm ring-1 ring-slate-900/5 transition-all hover:ring-primary/50 mb-4';
   card.dataset.pacienteId = paciente.id;
 
-  const header = document.createElement('div');
-  header.className = 'card-header pb-3';
+  // Header Section
+  const mb4 = document.createElement('div');
+  mb4.className = 'mb-4';
 
-  const headerRow = document.createElement('div');
-  headerRow.className = 'd-flex justify-content-between align-items-start';
+  const headerFlex = document.createElement('div');
+  headerFlex.className = 'flex items-start justify-between';
 
-  const headerLeft = document.createElement('div');
-  headerLeft.className = 'flex-grow-1';
+  const profileFlex = document.createElement('div');
+  profileFlex.className = 'flex items-center gap-3';
 
-  const title = document.createElement('h5');
-  title.className = 'card-title';
-  title.textContent = paciente.nome;
+  // Initials Circle
+  const initialsDiv = document.createElement('div');
+  // Reduced from h-10 w-10 to h-8 w-8, text-sm to text-xs
+  initialsDiv.className = 'h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 font-bold text-xs';
+  initialsDiv.textContent = initials;
+  profileFlex.appendChild(initialsDiv);
 
-  const infos = document.createElement('div');
-  infos.className = 'd-flex flex-wrap gap-3 mt-2';
+  // Name and ID
+  const nameDiv = document.createElement('div');
+  const h3Name = document.createElement('h3');
+  // Removed font-bold, slightly smaller text
+  h3Name.className = 'text-sm font-semibold text-slate-900 dark:text-white';
+  h3Name.textContent = paciente.nome;
+  const pId = document.createElement('p');
+  pId.className = 'text-xs text-slate-500';
+  pId.textContent = `ID: #${paciente.id} `;
+  nameDiv.appendChild(h3Name);
+  nameDiv.appendChild(pId);
+  profileFlex.appendChild(nameDiv);
 
-  infos.innerHTML = `
-    <div class="patient-info">
-      <i class="bi bi-calendar"></i> 
-      ${textoUltimo} ${tipoConsulta}: ${ultimaStr}
-    </div>
-    <div class="patient-info"><i class="bi bi-clock"></i> ${diasAtrasResumo}</div>
-    <div class="patient-info"><i class="bi bi-calendar text-primary"></i> Próximo contato: ${proximoStr}</div>
-    <button class="btn btn-link p-0" id="btnAlterarGrupo" data-patient-id="${paciente.id}">
-      <div class="patient-info">
-          <i class="bi bi-people text-primary"></i>
-        ${paciente.grupo_regra_atual || 'Atribuir grupo'}
-      </div>
-    </button>
-  `;
+  headerFlex.appendChild(profileFlex);
 
-  infos.addEventListener('click', function(e) {
-    if (e.target.closest('#btnAlterarGrupo')) {
-      openAtribuirGrupoModal(paciente.id);
-    }
-  });
+  // Badge
+  const badgeSpan = document.createElement('span');
+  // Reduced padding (px-2 py-0.5) and text size (text-[10px])
+  badgeSpan.className = `inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${tailwindBadgeClass}`;
+  badgeSpan.textContent = badgeText;
+  headerFlex.appendChild(badgeSpan);
 
-  const badge = document.createElement('span');
-  badge.className = `badge ${badgeClass} ms-2`;
-  badge.textContent = badgeText;
+  mb4.appendChild(headerFlex);
 
-  headerLeft.appendChild(title);
-  headerLeft.appendChild(infos);
-  headerRow.appendChild(headerLeft);
-  headerRow.appendChild(badge);
-  header.appendChild(headerRow);
-  card.appendChild(header);
+  // Info Content Section
+  const infoStack = document.createElement('div');
+  infoStack.className = 'mt-4 flex flex-col gap-2';
 
-  const body = document.createElement('div');
-  body.className = 'card-body';
+  const createInfoRow = (icon, text) => {
+    const row = document.createElement('div');
+    row.className = 'flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400';
+    row.innerHTML = `<span class="material-symbols-outlined text-[18px] text-slate-400">${icon}</span><span>${text}</span>`;
+    return row;
+  };
 
-  const topRow = document.createElement('div');
-  topRow.className = 'd-flex justify-content-between align-items-center mb-3';
+  const lastConsultText = `${textoUltimo} ${tipoConsulta}: <span class="font-medium text-slate-900 dark:text-white">${ultimaStr}</span> (${diasAtrasResumo})`;
+  infoStack.appendChild(createInfoRow('event_available', lastConsultText));
 
-  const contato = document.createElement('div');
-  contato.className = 'd-flex align-items-center gap-3'; // Para alinhar lado a lado
+  const groupName = paciente.grupo_regra_atual || 'Nenhum';
+  const groupTextClass = paciente.grupo_regra_atual ? 'text-slate-900 dark:text-white font-medium' : 'text-slate-400 italic';
+  const groupRow = createInfoRow('folder_special', `Grupo: <span class="${groupTextClass}">${groupName}</span>`);
 
-  // Garante que o telefone esteja em formato apenas números
-  // Bloco WhatsApp
-  let whatsappHtml = '';
+  if (!paciente.grupo_regra_atual) {
+    const assignLink = document.createElement('button');
+    assignLink.className = 'ml-2 text-primary text-xs font-semibold hover:underline';
+    assignLink.textContent = 'Atribuir';
+    assignLink.onclick = (e) => { e.stopPropagation(); openAtribuirGrupoModal(paciente.id); };
+    groupRow.querySelector('span:last-child').appendChild(assignLink);
+  }
+  infoStack.appendChild(groupRow);
+
+  if (proximoStr && proximoStr !== '-') {
+    const nextRow = createInfoRow('calendar_clock', `Próximo contato: <span class="font-medium text-primary">${proximoStr}</span>`);
+    infoStack.appendChild(nextRow);
+  }
+
+  if (paciente.texto_lembrete) {
+    const reminderRow = createInfoRow('notifications_active', paciente.texto_lembrete);
+    infoStack.appendChild(reminderRow);
+  }
+
   if (telefoneLimpo) {
-    whatsappHtml = `
-      <a href="https://wa.me/55${telefoneLimpo}" target="_blank" class="whatsapp-contact d-flex gap-2 align-items-center text-success text-decoration-none">
-        <i class="bi bi-whatsapp" style="font-size: 1.2rem;"></i>
-        <span>${paciente.telefone}</span>
+    const waRow = document.createElement('div');
+    waRow.className = 'flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 mt-1';
+    waRow.innerHTML = `
+      <a href="https://wa.me/55${telefoneLimpo}" target="_blank" class="flex items-center gap-2 text-green-600 hover:text-green-700 transition-colors font-medium">
+        <i class="bi bi-whatsapp text-[18px]" aria-hidden="true"></i>
       </a>
     `;
-  } else {
-    whatsappHtml = `<i class="bi bi-whatsapp"></i> ---`;
+    infoStack.appendChild(waRow);
   }
+  mb4.appendChild(infoStack);
+  card.appendChild(mb4);
 
-  // Bloco texto do lembrete
-  let lembreteHtml = '';
-  if (paciente.texto_lembrete) {
-    lembreteHtml = `
-      <span class="lembrete-text text-secondary" style="font-size: 0.95rem;">
-        <i class="bi bi-chat-left-text me-1"></i>Ação: ${paciente.texto_lembrete}
-      </span>
-    `;
-  }
+  // Footer / Buttons
+  const footer = document.createElement('div');
+  footer.className = 'border-t border-slate-100 dark:border-slate-800 pt-4 mt-auto';
 
-  contato.innerHTML = whatsappHtml + lembreteHtml;
+  const ICON_SYMBOL_MAP = {
+    'check-circle': 'task_alt',
+    'calendar-plus': 'event_available',
+    'bell-slash': 'notifications_off',
+    'bell': 'notifications',
+    'journal-medical': 'medical_information',
+    'chat-dots': 'chat_bubble',
+    'swap-horiz': 'swap_horizontal_circle',
+    'pencil': 'edit',
+    'trash': 'delete',
+    'person-dash': 'person_remove',
+    'person-check': 'person_add',
+  };
 
-  const botoesContainer = document.createElement('div');
-  botoesContainer.className = 'action-buttons'; // container geral
+  const createBtn = (icon, title, classes, onClick) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `btn-icon ${classes}`;
+    btn.setAttribute('data-tooltip', title);
+    const symbol = ICON_SYMBOL_MAP[icon] ?? icon;
+    btn.innerHTML = `<span class="material-symbols-outlined text-[18px]">${symbol}</span>`;
+    if (onClick) btn.onclick = onClick;
+    return btn;
+  };
 
-  // Primary Actions container
+  const actionButtons = document.createElement('div');
+  actionButtons.className = 'action-buttons';
+
   const primaryActions = document.createElement('div');
   primaryActions.className = 'primary-actions d-flex gap-2';
 
-  // Secondary Actions container
   const secondaryActions = document.createElement('div');
   secondaryActions.className = 'secondary-actions d-flex gap-2';
 
-  const togglePatientBtn = document.createElement('button');
-  togglePatientBtn.className = paciente.paciente_ativo
-    ? 'btn-icon btn-secondary'
-    : 'btn-icon btn-success';
-
   if (paciente.paciente_ativo) {
-
     if (paciente.lembretes_ativos && paciente.grupo_regra_atual) {
-      // Registrar Contato
-      const contactBtn = document.createElement('button');
-      contactBtn.className = 'btn-icon btn-success';
-      contactBtn.setAttribute('data-tooltip', 'Registrar Contato');
-      contactBtn.innerHTML = '<i class="bi bi-check-circle"></i>';
-      contactBtn.addEventListener('click', () => openContactModal({
-        id: paciente.id,
-        name: paciente.nome,
-        type: paciente.nome_lembrete
-      }));
-      primaryActions.appendChild(contactBtn);
-
-      // Desativar Lembretes
-      const disableBtn = document.createElement('button');
-      disableBtn.className = 'btn-icon btn-warning';
-      disableBtn.setAttribute('data-tooltip', 'Desativar Lembretes');
-      disableBtn.innerHTML = '<i class="bi bi-bell-slash"></i>';
-      disableBtn.addEventListener('click', () => openDisableLembreteModal({
-        id: paciente.id,
-        name: paciente.nome,
-      }));
-      secondaryActions.appendChild(disableBtn);
-    } else if (paciente.grupo_regra_atual && !paciente.lembretes_ativos) {
-      const enableBtn = document.createElement('button');
-      enableBtn.setAttribute('data-tooltip', 'Reativar Lembretes');
-      enableBtn.className = 'btn-icon btn-info';
-      enableBtn.innerHTML = '<i class="bi bi-bell"></i>';
-      enableBtn.addEventListener('click', () => openEnableLembreteModal({
-        id: paciente.id,
-        name: paciente.nome,
-      }));
-      secondaryActions.appendChild(enableBtn);
+      const btnContact = createBtn('check-circle', 'Registrar Contato', 'btn-success', () =>
+        openContactModal({ id: paciente.id, name: paciente.nome, type: paciente.nome_lembrete })
+      );
+      primaryActions.appendChild(btnContact);
     }
 
-    // Registrar Consulta
-    const registrarConsultaBtn = document.createElement('button');
-    registrarConsultaBtn.className = 'btn-icon btn-primary';
-    registrarConsultaBtn.setAttribute('data-tooltip', 'Registrar Consulta');
-    registrarConsultaBtn.innerHTML = '<i class="bi bi-calendar-plus"></i>';
-    registrarConsultaBtn.addEventListener('click', () => openRegistrarConsultaModal({
-      id: paciente.id,
-      name: paciente.nome,
-    }));
-    primaryActions.appendChild(registrarConsultaBtn);
-
-    togglePatientBtn.setAttribute('data-tooltip', 'Desativar');
-    togglePatientBtn.innerHTML = '<i class="bi bi-person-dash"></i>';
+    const btnConsulta = createBtn('calendar-plus', 'Registrar Consulta', 'btn-primary', () =>
+      openRegistrarConsultaModal({ id: paciente.id, name: paciente.nome })
+    );
+    primaryActions.appendChild(btnConsulta);
   } else {
-    togglePatientBtn.setAttribute('data-tooltip', 'Reativar');
-    togglePatientBtn.innerHTML = '<i class="bi bi-person-check"></i>';
+    const btnReactivate = createBtn('person-check', 'Reativar', 'btn-success', () =>
+      openActivatePatientModal({ id: paciente.id, name: paciente.nome })
+    );
+    primaryActions.appendChild(btnReactivate);
   }
 
-  togglePatientBtn.addEventListener('click', () => {
-    if (paciente.paciente_ativo) {
-      openDeactivatePatientModal({
-        id: paciente.id,
-        name: paciente.nome,
-      });
-    } else {
-      openActivatePatientModal({
-        id: paciente.id,
-        name: paciente.nome,
-      });
-    }
-  });
+  if (paciente.paciente_ativo && paciente.lembretes_ativos && paciente.grupo_regra_atual) {
+    const btnDisableVal = createBtn('bell-slash', 'Desativar Lembretes', 'btn-warning', () =>
+      openDisableLembreteModal({ id: paciente.id, name: paciente.nome })
+    );
+    secondaryActions.appendChild(btnDisableVal);
+  } else if (paciente.paciente_ativo && paciente.grupo_regra_atual && !paciente.lembretes_ativos) {
+    const btnEnableVal = createBtn('bell', 'Habilitar Lembretes', 'btn-outline-primary', () =>
+      openEnableLembreteModal({ id: paciente.id, name: paciente.nome })
+    );
+    secondaryActions.appendChild(btnEnableVal);
+  }
 
-  const historicoConsultaBt = document.createElement('button');
-    historicoConsultaBt.className = 'btn-icon btn-outline-primary';
-    historicoConsultaBt.setAttribute('data-tooltip', 'Histórico de Consultas');
-    historicoConsultaBt.innerHTML = '<i class="bi bi-journal-medical"></i>';
-    historicoConsultaBt.addEventListener('click', () => openHistoricoConsultaModal({
-      patient: paciente.id
-  }));
-  
-  const historicoContatoBt = document.createElement('button');
-    historicoContatoBt.className = 'btn-icon btn-outline-secondary';
-    historicoContatoBt.setAttribute('data-tooltip', 'Histórico de Contatos');
-    historicoContatoBt.innerHTML = '<i class="bi bi-chat-dots"></i>';
-    historicoContatoBt.addEventListener('click', () => openHistoricoContatoModal({
-      patient: paciente.id
+  const btnHistConsult = createBtn('journal-medical', 'Histórico de Consultas', 'btn-outline-primary', () =>
+    openHistoricoConsultaModal({ id: paciente.id })
+  );
+  const btnHistContato = createBtn('chat-dots', 'Histórico de Contatos', 'btn-outline-secondary', () =>
+    openHistoricoContatoModal({ id: paciente.id })
+  );
+  secondaryActions.appendChild(btnHistConsult);
+  secondaryActions.appendChild(btnHistContato);
 
-  }));
+  const btnRule = createBtn('swap-horiz', 'Alterar Regra', 'btn-outline-primary', () =>
+    openAtribuirGrupoModal(paciente.id)
+  );
+  secondaryActions.appendChild(btnRule);
 
-  const EditarPacienteBt = document.createElement('button');
-    EditarPacienteBt.className = 'btn-icon btn-outline-primary';
-    EditarPacienteBt.setAttribute('data-tooltip', 'Editar Paciente');
-    EditarPacienteBt.innerHTML = '<i class="bi bi-pencil"></i>';
-    EditarPacienteBt.addEventListener('click', () => openEditarInfoPacientesModal({
-      patient: paciente
-  }));
+  const btnEdit = createBtn('pencil', 'Editar Paciente', 'btn-outline-primary', () =>
+    openEditarInfoPacientesModal({ patient: paciente })
+  );
+  secondaryActions.appendChild(btnEdit);
 
-  const ExcluirPaciente = document.createElement('button');
-    ExcluirPaciente.className = 'btn-icon btn-outline-danger';
-    ExcluirPaciente.setAttribute('data-tooltip', 'Excluir');
-    ExcluirPaciente.innerHTML = '<i class="bi bi-trash"></i>';
-    ExcluirPaciente.addEventListener('click', () => openExcluirPatientModal({
-      patient: paciente
-  }));
+  const btnDelete = createBtn('trash', 'Excluir', 'btn-outline-danger', () =>
+    openExcluirPatientModal({ patient: paciente })
+  );
+  secondaryActions.appendChild(btnDelete);
 
-  secondaryActions.appendChild(historicoConsultaBt);
-  secondaryActions.appendChild(historicoContatoBt);
-  secondaryActions.appendChild(EditarPacienteBt);
-  secondaryActions.appendChild(ExcluirPaciente);
+  const toggleBtn = paciente.paciente_ativo
+    ? createBtn('person-dash', 'Desativar', 'btn-secondary', () =>
+      openDeactivatePatientModal({ id: paciente.id, name: paciente.nome })
+    )
+    : createBtn('person-check', 'Reativar', 'btn-success', () =>
+      openActivatePatientModal({ id: paciente.id, name: paciente.nome })
+    );
+  secondaryActions.appendChild(toggleBtn);
 
-  // Adiciona togglePaciente ao container de ações secundárias para ficar ao lado dos outros botões secundários
-  secondaryActions.appendChild(togglePatientBtn);
+  actionButtons.appendChild(primaryActions);
+  actionButtons.appendChild(secondaryActions);
+  footer.appendChild(actionButtons);
+  card.appendChild(footer);
 
-  // Junta os dois grupos dentro do container principal
-  botoesContainer.appendChild(primaryActions);
-  botoesContainer.appendChild(secondaryActions);
-
-  // Depois, anexa ao seu elemento pai conforme já faz
-  topRow.appendChild(contato);
-  topRow.appendChild(botoesContainer);
-  body.appendChild(topRow);
-
-  // if (!paciente.grupo_regra_atual) {
-    
-  //   const atribuirGrupo = document.createElement('button');
-  //   atribuirGrupo.className = 'btn btn-sm btn-enable-reminder';
-  //   atribuirGrupo.innerHTML = 'Atribuir grupo';
-  //   atribuirGrupo.addEventListener('click', () => openAtribuirGrupoModal(paciente.id));
-
-  //   botoesContainer.appendChild(atribuirGrupo);
-
-  // }
-
-  card.appendChild(body);
   return card;
 }
 
-const contactModal = new bootstrap.Modal(document.getElementById('contactModal'));
+const contactModalEl = document.getElementById('contactModal');
+const hideContactModal = () => {
+  if (contactModalEl) {
+    contactModalEl.classList.add('hidden');
+    reabrirCalendarioSeMarcado(contactModalEl);
+  }
+};
+const showContactModal = () => {
+  if (contactModalEl) {
+    marcarProximoModalParaRetorno(contactModalEl);
+    contactModalEl.classList.remove('hidden');
+  }
+};
 const contactPatientNameEl = document.getElementById('contact-patient-name');
 const contactPatientIdEl = document.getElementById('contact-patient-id');
 
 function openContactModal(patient) {
+  if (!contactModalEl || !contactPatientNameEl || !contactPatientIdEl) {
+    return;
+  }
+
   contactPatientNameEl.textContent = patient.name;
   contactPatientIdEl.value = patient.id;
 
@@ -1586,8 +1830,8 @@ function openContactModal(patient) {
     .then((data) => {
       const preSelecionados = Array.isArray(data.materiais)
         ? data.materiais
-            .map((material) => (material && material.descricao ? material.descricao.trim() : ''))
-            .filter(Boolean)
+          .map((material) => (material && material.descricao ? material.descricao.trim() : ''))
+          .filter(Boolean)
         : [];
       inicializarSelecaoMateriais(preSelecionados);
     })
@@ -1596,30 +1840,58 @@ function openContactModal(patient) {
       inicializarSelecaoMateriais();
     });
 
-  contactModal.show();
+  if (typeof window.atualizarSugestaoProximoContato === 'function') {
+    window.atualizarSugestaoProximoContato(patient.id);
+  }
+
+  showContactModal();
+}
+
+if (contactModalEl) {
+  document.querySelectorAll('[data-modal-hide="contactModal"]').forEach((btn) => {
+    btn.addEventListener('click', hideContactModal);
+  });
 }
 
 function openDisableLembreteModal(patient) {
 
-  const disableLembreteModal = new bootstrap.Modal(document.getElementById('desabilitarLembrete'));
+  const disableLembreteModalEl = document.getElementById('desabilitarLembrete');
+  const disableLembreteModal = new bootstrap.Modal(disableLembreteModalEl);
   const nomePaciente = document.getElementById('patient-name-disable');
   const idPaciente = document.getElementById('disable-patient-id');
 
   nomePaciente.textContent = patient.name;
   idPaciente.value = patient.id;
 
+  marcarProximoModalParaRetorno(disableLembreteModalEl);
   disableLembreteModal.show();
+}
+
+// Utilidade: fecha modal por id, com suporte a Bootstrap ou fallback ocultando
+function fecharModalPorId(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+    const instance = bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
+    instance.hide();
+  } else {
+    el.classList.add('hidden');
+    reabrirCalendarioSeMarcado(el);
+  }
 }
 
 function openRegistrarConsultaModal(patient) {
 
-  const disableLembreteModal = new bootstrap.Modal(document.getElementById('registrarConsultaModal'));
+  const disableLembreteModalEl = document.getElementById('registrarConsultaModal');
+  const disableLembreteModal = new bootstrap.Modal(disableLembreteModalEl);
   const nomePaciente = document.getElementById('consulta-patient-name');
   const idPaciente = document.getElementById('consulta-patient-id');
 
   nomePaciente.textContent = patient.name;
   idPaciente.value = patient.id;
 
+  marcarProximoModalParaRetorno(disableLembreteModalEl);
   disableLembreteModal.show();
 }
 
@@ -1629,10 +1901,11 @@ async function openHistoricoConsultaModal(patient) {
   const historicoConsultaModal = bootstrap.Modal.getInstance(historicoConsultaModalEl) || new bootstrap.Modal(historicoConsultaModalEl);
   const modalBody = document.getElementById('consultas-historico-body');
   modalBody.innerHTML = '<div class="text-center text-secondary py-3"><div class="spinner-border spinner-border-sm"></div> Carregando...</div>';
+  marcarProximoModalParaRetorno(historicoConsultaModalEl);
   historicoConsultaModal.show();
 
   try {
-    const response = await fetch(`/api/historico-consulta/${patient.patient}/`);
+    const response = await fetch(`/api/historico-consulta/${patient.id}/`);
     if (!response.ok) throw new Error('Erro ao buscar histórico');
     const data = await response.json();
 
@@ -1666,10 +1939,11 @@ async function openHistoricoContatoModal(patient) {
   const historicoContatoModal = bootstrap.Modal.getInstance(historicoContatoModalEl) || new bootstrap.Modal(historicoContatoModalEl);
   const body = document.getElementById('contatosModalBody');
   body.innerHTML = '<div class="text-center text-secondary py-3"><div class="spinner-border spinner-border-sm"></div> Carregando...</div>';
+  marcarProximoModalParaRetorno(historicoContatoModalEl);
   historicoContatoModal.show();
 
   try {
-    const resp = await fetch(`/api/historico-contatos/${patient.patient}/`);
+    const resp = await fetch(`/api/historico-contatos/${patient.id}/`);
     if (!resp.ok) throw new Error('Erro ao buscar histórico');
     const data = await resp.json();
 
@@ -1681,8 +1955,8 @@ async function openHistoricoContatoModal(patient) {
         const dataContato = contato.criado_em ? new Date(contato.criado_em) : null;
         const dataFormatada = dataContato
           ? dataContato.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) +
-            ' - ' +
-            dataContato.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          ' - ' +
+          dataContato.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
           : '';
 
         // Tipo de contato (badge)
@@ -1747,6 +2021,7 @@ function openEditarInfoPacientesModal(patient) {
   document.getElementById('nomeInput').value = patient.patient.nome || '';
   document.getElementById('telefoneInput').value = patient.patient.telefone || '';
   const editarInfoPacienteModal = new bootstrap.Modal(document.getElementById('editarPacienteModal'));
+  marcarProximoModalParaRetorno(document.getElementById('editarPacienteModal'));
   editarInfoPacienteModal.show();
 }
 
@@ -1758,22 +2033,7 @@ function inicializarEdicaoPaciente() {
     btn.dataset.listenerAdded = 'true';
 
     btn.addEventListener('click', async function () {
-      btn.disabled = true;
-
-      // Cria spinner "Salvando..."
-      let spinner = document.createElement('span');
-      spinner.className = 'ms-2 spinner-border spinner-border-sm align-middle';
-      spinner.setAttribute('role', 'status');
-      spinner.setAttribute('aria-hidden', 'true');
-      spinner.id = 'saving-spinner';
-
-      let savingText = document.createElement('span');
-      savingText.className = 'ms-1 align-middle';
-      spinner.appendChild(savingText);
-
-      if (!btn.querySelector('#saving-spinner')) {
-        btn.appendChild(spinner);
-      }
+      const clearLoading = setButtonLoading(btn);
 
       const id = document.getElementById('editarPacienteId').value;
       const nome = document.getElementById('nomeInput').value;
@@ -1798,17 +2058,11 @@ function inicializarEdicaoPaciente() {
           showToast('Paciente atualizado com sucesso!', 'success');
         } else {
           showToast('Erro ao atualizar paciente.', 'error');
-
         }
       } catch (e) {
-        showToast('Erro de conexão ao atualizar paciente.', 'error');
-
+        showToast('Erro de conex?o ao atualizar paciente.', 'error');
       } finally {
-        btn.disabled = false;
-        const existingSpinner = btn.querySelector('#saving-spinner');
-        if (existingSpinner) {
-          btn.removeChild(existingSpinner);
-        }
+        clearLoading();
       }
     });
   }
@@ -1823,6 +2077,7 @@ function openEnableLembreteModal(patient) {
   nomePaciente.textContent = patient.name;
   idPaciente.value = patient.id;
 
+  marcarProximoModalParaRetorno(document.getElementById('habilitarLembrete'));
   enableLembreteModal.show();
 }
 
@@ -1832,7 +2087,8 @@ function openAtribuirGrupoModal(patient) {
 
   const modalAtribuirGrupoEl = document.getElementById('atribuirGrupoModal');
   const modalAtribuirGrupo = bootstrap.Modal.getInstance(modalAtribuirGrupoEl) || new bootstrap.Modal(modalAtribuirGrupoEl);
-  
+
+  marcarProximoModalParaRetorno(modalAtribuirGrupoEl);
   modalAtribuirGrupo.show();
 
   carregarGrupoRegras();
@@ -1841,51 +2097,57 @@ function openAtribuirGrupoModal(patient) {
 
 function openDeactivatePatientModal(patient) {
 
-  const deactivatePatientModal = new bootstrap.Modal(document.getElementById('desativarPacienteModal'));
+  const deactivatePatientModalEl = document.getElementById('desativarPacienteModal');
+  const deactivatePatientModal = new bootstrap.Modal(deactivatePatientModalEl);
   const nomePaciente = document.getElementById('patient-name-deactivate');
   const idPaciente = document.getElementById('deactivate-patient-id');
 
   nomePaciente.textContent = patient.name;
   idPaciente.value = patient.id;
 
+  marcarProximoModalParaRetorno(deactivatePatientModalEl);
   deactivatePatientModal.show();
 }
 
 function openExcluirPatientModal(patient) {
 
-  const excluirPatientModal = new bootstrap.Modal(document.getElementById('excluirPacienteModal'));
+  const excluirPatientModalEl = document.getElementById('excluirPacienteModal');
+  const excluirPatientModal = new bootstrap.Modal(excluirPatientModalEl);
   const nomePaciente = document.getElementById('patient-name-excluir');
   const idPaciente = document.getElementById('excluir-patient-id');
 
   nomePaciente.textContent = patient.patient.nome;
   idPaciente.value = patient.patient.id;
 
+  marcarProximoModalParaRetorno(excluirPatientModalEl);
   excluirPatientModal.show();
 }
 
 function openActivatePatientModal(patient) {
 
-  const reativarPatientModal = new bootstrap.Modal(document.getElementById('reativarPacienteModal'));
+  const reativarPatientModalEl = document.getElementById('reativarPacienteModal');
+  const reativarPatientModal = new bootstrap.Modal(reativarPatientModalEl);
   const nomePaciente = document.getElementById('patient-name-reactivate');
   const idPaciente = document.getElementById('reactivate-patient-id');
 
   nomePaciente.textContent = patient.name;
   idPaciente.value = patient.id;
 
+  marcarProximoModalParaRetorno(reativarPatientModalEl);
   reativarPatientModal.show();
 }
 
 // Função para abrir o modal de exclusão e esconder o de edição
 function openModalExcluirGrupo() {
-    // Esconde o modal de editar grupo
-    const editarGrupoModalEl = document.getElementById('editarGrupo');
-    const editarGrupoModal = bootstrap.Modal.getInstance(editarGrupoModalEl) || new bootstrap.Modal(editarGrupoModalEl);
-    editarGrupoModal.hide();
+  // Esconde o modal de editar grupo
+  const editarGrupoModalEl = document.getElementById('editarGrupo');
+  const editarGrupoModal = bootstrap.Modal.getInstance(editarGrupoModalEl) || new bootstrap.Modal(editarGrupoModalEl);
+  editarGrupoModal.hide();
 
-    // Abre o modal de confirmação de exclusão
-    const modalEl = document.getElementById('confirmarExclusaoGrupoModal');
-    const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-    modal.show();
+  // Abre o modal de confirmação de exclusão
+  const modalEl = document.getElementById('confirmarExclusaoGrupoModal');
+  const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+  modal.show();
 }
 
 // Botão "Excluir" no modal de editar grupo
@@ -1941,9 +2203,9 @@ function inicializarRegistroConsulta() {
       const tipoConsulta = document.getElementById('consulta-tipo').value;
       const dataConsulta = document.getElementById('consulta-data').value;
       const submitBtn = btn;
-      
+
       // RETIRANDO A VERIFICAÇÃO DE DATA FUTURA AO REGISTRAR CONSULTA
-      
+
       // const hoje = new Date();
       // const dataSelecionada = new Date(dataConsulta);
       // if (dataSelecionada > hoje) {
@@ -1951,7 +2213,7 @@ function inicializarRegistroConsulta() {
       //   return;
       // }
 
-      submitBtn.disabled = true;
+      const clearLoading = setButtonLoading(submitBtn);
 
       try {
         const response = await fetch(`/api/registrar-consulta-retorno/${idPaciente}/`, {
@@ -1980,7 +2242,7 @@ function inicializarRegistroConsulta() {
       } catch (err) {
         showToast('Erro inesperado ao registrar consulta.', 'error');
       } finally {
-        submitBtn.disabled = false;
+        clearLoading();
       }
     });
   }
@@ -1996,7 +2258,7 @@ function inicializarReativarPaciente() {
     btn.addEventListener('click', async () => {
       const idPaciente = document.getElementById('reactivate-patient-id').value;
       const submitBtn = btn;
-      submitBtn.disabled = true;
+      const clearLoading = setButtonLoading(submitBtn);
 
       try {
         const response = await fetch(`/api/status-paciente/${idPaciente}/`, {
@@ -2020,8 +2282,8 @@ function inicializarReativarPaciente() {
           showToast(result.erro || 'Erro ao desativar paciente.', 'error');
 
           // Fechar modal atual
-          const modalInstance = bootstrap.Modal.getInstance(document.getElementById('reativarPacienteModal')) 
-                            || new bootstrap.Modal(document.getElementById('reativarPacienteModal'));
+          const modalInstance = bootstrap.Modal.getInstance(document.getElementById('reativarPacienteModal'))
+            || new bootstrap.Modal(document.getElementById('reativarPacienteModal'));
           modalInstance.hide();
 
           // Abrir modal de atribuição de grupo
@@ -2030,7 +2292,7 @@ function inicializarReativarPaciente() {
       } catch (err) {
         showToast('Erro inesperado ao desativar paciente.', 'error');
       } finally {
-        submitBtn.disabled = false;
+        clearLoading();
       }
     });
   }
@@ -2046,7 +2308,7 @@ function inicializarDesativarPaciente() {
     btn.addEventListener('click', async () => {
       const idPaciente = document.getElementById('deactivate-patient-id').value;
       const submitBtn = btn;
-      submitBtn.disabled = true;
+      const clearLoading = setButtonLoading(submitBtn);
 
       try {
         const response = await fetch(`/api/status-paciente/${idPaciente}/`, {
@@ -2072,7 +2334,7 @@ function inicializarDesativarPaciente() {
       } catch (err) {
         showToast('Erro inesperado ao desativar paciente.', 'error');
       } finally {
-        submitBtn.disabled = false;
+        clearLoading();
       }
     });
   }
@@ -2088,7 +2350,7 @@ function inicializarExcluirPaciente() {
     btn.addEventListener('click', async () => {
       const idPaciente = document.getElementById('excluir-patient-id').value;
       const submitBtn = btn;
-      submitBtn.disabled = true;
+      const clearLoading = setButtonLoading(submitBtn);
 
       try {
         const response = await fetch(`/api/status-paciente/${idPaciente}/`, {
@@ -2115,7 +2377,7 @@ function inicializarExcluirPaciente() {
       } catch (err) {
         showToast('Erro inesperado ao excluir paciente.', 'error');
       } finally {
-        submitBtn.disabled = false;
+        clearLoading();
       }
     });
   }
@@ -2132,6 +2394,8 @@ function inicializarDesativarLembrete() {
       const idPaciente = document.getElementById('disable-patient-id').value;
       const submitBtn = btn;
       submitBtn.disabled = true;
+      submitBtn.classList.add('loading');
+      submitBtn.dataset.loadingAdded = 'true';
 
       try {
         const response = await fetch(`/api/status-lembrete/${idPaciente}/`, {
@@ -2158,6 +2422,7 @@ function inicializarDesativarLembrete() {
         showToast('Erro inesperado ao desabilitar lembrete.', 'error');
       } finally {
         submitBtn.disabled = false;
+        submitBtn.classList.remove('loading');
       }
     });
   }
@@ -2206,6 +2471,10 @@ function inicializarHabilitarLembrete() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  if (!paginaHomeDisponivel()) {
+    return;
+  }
+
   const form = document.getElementById('patient-form');
   if (!form.dataset.listenerAdded) {
     form.dataset.listenerAdded = 'true';
@@ -2213,31 +2482,15 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const submitBtn = form.querySelector('button[type="submit"]');
-      submitBtn.disabled = true;
-
-      // Cria o spinner "Salvando..."
-      let spinner = document.createElement('span');
-      spinner.className = 'ms-2 spinner-border spinner-border-sm align-middle';
-      spinner.setAttribute('role', 'status');
-      spinner.setAttribute('aria-hidden', 'true');
-      spinner.id = 'saving-spinner';
-      let savingText = document.createElement('span');
-      savingText.className = 'ms-1 align-middle';
-      // savingText.textContent = 'Salvando...';
-      spinner.appendChild(savingText);
-
-      // Adiciona o spinner ao botão se ainda não existe
-      if (!submitBtn.querySelector('#saving-spinner')) {
-        submitBtn.appendChild(spinner);
-      }
+      const clearLoading = setButtonLoading(submitBtn);
 
       const nome = document.getElementById('name').value.trim();
       const telefone = document.getElementById('phone').value.trim();
       const dataConsulta = document.getElementById('lastConsultation').value;
       const tipoConsulta = document.getElementById('tipoConsulta').value;
-      
+
       // ========= DESABILITANDO A VERIFICAÇÃO DE DATA MAIOR QUE HOJE PARA CONSULTA
-      
+
       // const hoje = new Date();
       // if (new Date(dataConsulta) > hoje) {
       //   showToast('A data da última consulta não pode ser no futuro.', 'error');
@@ -2269,39 +2522,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (response.ok) {
           // Fecha modal, limpa formulário e recarrega lista
-          const modalInstance = bootstrap.Modal.getInstance(document.getElementById('newPatientModal')) 
-                              || new bootstrap.Modal(document.getElementById('newPatientModal'));
+          const modalInstance = bootstrap.Modal.getInstance(document.getElementById('newPatientModal'))
+            || new bootstrap.Modal(document.getElementById('newPatientModal'));
           modalInstance.hide();
           form.reset();
-          
+
           showToast(result.mensagem, 'success');
-          
+
           const modalAtribuirGrupoEl = document.getElementById('atribuirGrupoModal');
           const modalAtribuirGrupo = bootstrap.Modal.getInstance(modalAtribuirGrupoEl) || new bootstrap.Modal(modalAtribuirGrupoEl);
-          
+
           carregarGrupoRegras();
-          
+
           document.getElementById('paciente-id').value = result.id_paciente;
-          
+
           modalAtribuirGrupo.show();
 
           listarPacientes();
           atualizarCardPaciente(result.id_paciente);
-          
+
         } else {
           showToast(result.erro, 'error');
         }
       } catch (err) {
         showToast('Erro inesperado ao cadastrar paciente.', 'error');
       } finally {
-        submitBtn.disabled = false;
-        // Remove o spinner
-        if (submitBtn.querySelector('#saving-spinner')) {
-          submitBtn.removeChild(submitBtn.querySelector('#saving-spinner'));
-        }
+        clearLoading();
       }
 
-  
+
     });
   }
 });
@@ -2319,25 +2568,11 @@ function inicializarFormularioAtribuirGrupo() {
       const pacienteId = document.getElementById('paciente-id').value;
 
       const modalAtribuirGrupoModalEl = document.getElementById('atribuirGrupoModal');
-      const modalAtribuirGrupoModal = bootstrap.Modal.getInstance(modalAtribuirGrupoModalEl) 
+      const modalAtribuirGrupoModal = bootstrap.Modal.getInstance(modalAtribuirGrupoModalEl)
         || new bootstrap.Modal(modalAtribuirGrupoModalEl);
 
       const submitBtn = form.querySelector('button[type="submit"]');
-      submitBtn.disabled = true;
-
-      // Cria spinner "Salvando..."
-      let spinner = document.createElement('span');
-      spinner.className = 'ms-2 spinner-border spinner-border-sm align-middle';
-      spinner.setAttribute('role', 'status');
-      spinner.setAttribute('aria-hidden', 'true');
-      spinner.id = 'saving-spinner';
-      let savingText = document.createElement('span');
-      savingText.className = 'ms-1 align-middle';
-      spinner.appendChild(savingText);
-
-      if (!submitBtn.querySelector('#saving-spinner')) {
-        submitBtn.appendChild(spinner);
-      }
+      const clearLoading = setButtonLoading(submitBtn);
 
       fetch(`/api/atribuir-grupo/${grupoId}/${pacienteId}/`, {
         method: 'POST',
@@ -2371,11 +2606,7 @@ function inicializarFormularioAtribuirGrupo() {
           showToast('Erro ao atribuir grupo.', 'error');
         })
         .finally(() => {
-          submitBtn.disabled = false;
-          const existingSpinner = submitBtn.querySelector('#saving-spinner');
-          if (existingSpinner) {
-            submitBtn.removeChild(existingSpinner);
-          }
+          clearLoading();
         });
     });
   }
@@ -2394,12 +2625,12 @@ function carregarGrupoRegras() {
     selectGrupo.appendChild(loadingOption);
   }
 
-  fetch('/api/grupo-regras/')
+  fetch('/api/grupo-regras/?com_regras=true')
     .then(res => res.json())
     .then(data => {
-      
+
       const selectGrupo = document.getElementById('grupo-select');
-        
+
       if (!data.grupos || data.grupos.length === 0) {
         selectGrupo.innerHTML = '';
         const option = document.createElement('option');
@@ -2441,6 +2672,31 @@ function getCookie(name) {
     }
   }
   return cookieValue;
+}
+
+// Coloca o botÇœo em estado de loading e devolve uma funÇõÇœo para limpar
+function setButtonLoading(button) {
+  if (!button) return () => {};
+  button.disabled = true;
+  button.classList.add('loading');
+
+  let spinner = button.querySelector('.btn-spinner');
+  if (!spinner) {
+    spinner = document.createElement('span');
+    spinner.className = 'btn-spinner ml-2 inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin';
+    spinner.setAttribute('role', 'status');
+    spinner.setAttribute('aria-hidden', 'true');
+    button.appendChild(spinner);
+  }
+
+  return () => {
+    button.disabled = false;
+    button.classList.remove('loading');
+    const existing = button.querySelector('.btn-spinner');
+    if (existing) {
+      existing.remove();
+    }
+  };
 }
 
 export function inicializarSelecaoMateriais(preSelecionados = []) {
@@ -2538,6 +2794,10 @@ function atualizarCards() {
   const cardTotalLembretes = document.getElementById('active-alerts');
   const cardLembreteAtrasado = document.getElementById('lembrete-atrasado');
   const cardSemRegra = document.getElementById('patients-no-rule');
+
+  if (!cardTotalPatientes || !cardTotalLembretes || !cardLembreteAtrasado) {
+    return;
+  }
 
   // Mostra spinner de loading em cada card
   cardTotalPatientes.innerHTML = `<span class="spinner-border text-primary" role="status"></span>`;

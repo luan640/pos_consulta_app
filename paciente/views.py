@@ -45,6 +45,10 @@ def materiais_page(request):
     return render(request, 'materiais.html')
 
 @login_required
+def historico_page(request):
+    return render(request, 'historico.html')
+
+@login_required
 def pacientes_page(request):
     return render(request, 'pacientes.html')
 
@@ -557,7 +561,7 @@ def regras_list_create(request, pk):
         if not isinstance(materiais_ids, list):
             return JsonResponse({'erro': 'Formato de materiais inválido'}, status=400)
 
-        materiais_queryset = Material.objects.filter(dono=request.user, id__in=materiais_ids)
+        materiais_queryset = Material.objects.filter(dono=request.user, id__in=materiais_ids, ativo=True)
         if len(set(materiais_ids)) != materiais_queryset.count():
             return JsonResponse({'erro': 'Material selecionado inválido'}, status=400)
 
@@ -616,7 +620,7 @@ def regras_detail_update(request, pk_regra, pk_grupo):
             if not isinstance(materiais_ids, list):
                 return JsonResponse({'erro': 'Formato de materiais invǭlido'}, status=400)
 
-            materiais_queryset = Material.objects.filter(dono=request.user, id__in=materiais_ids)
+            materiais_queryset = Material.objects.filter(dono=request.user, id__in=materiais_ids, ativo=True)
             if len(set(materiais_ids)) != materiais_queryset.count():
                 return JsonResponse({'erro': 'Material selecionado invǭlido'}, status=400)
 
@@ -1067,10 +1071,7 @@ def materiais(request, pk):
 @require_http_methods(["GET", "POST"])
 @csrf_exempt
 def buscar_materiais(request):
-    try:
-        material = Material.objects.filter(dono=request.user)
-    except Material.DoesNotExist:
-        return JsonResponse({'erro': 'Material não encontrado'}, status=404)
+    materiais_qs = Material.objects.filter(dono=request.user, ativo=True)
 
     if request.method == 'GET':
         data = [
@@ -1091,7 +1092,7 @@ def buscar_materiais(request):
                 'foto_url': m.arquivo_foto.url if m.arquivo_foto else None,
                 'youtube_url': m.youtube_url,
             }
-            for m in material
+            for m in materiais_qs
         ]
         return JsonResponse({'materiais': data})
 
@@ -1136,7 +1137,7 @@ def buscar_materiais(request):
             tipo_arquivo = tipo_detectado
         
         # Verifica se já existe outro material com a mesma descrição para o usuário
-        if Material.objects.filter(dono=request.user, descricao=descricao).exists():
+        if Material.objects.filter(dono=request.user, descricao=descricao, ativo=True).exists():
             return JsonResponse({'erro': 'Já existe um material com essa descrição.'}, status=400)
         else:
             Material.objects.create(
@@ -1168,6 +1169,7 @@ def historico_consulta(request, pk):
             'id': consulta.id,
             'data_consulta': consulta.data_consulta.strftime('%d/%m/%Y') if consulta.data_consulta else None,
             'tipo_consulta': consulta.tipo_consulta,
+            'criado_em': consulta.created_at.isoformat() if consulta.created_at else None,
         }
         for consulta in consultas
     ]
@@ -1192,13 +1194,13 @@ def historico_contatos(request, pk):
                 'id': anotacao.id,
                 'texto': anotacao.texto,
                 'materiais_enviados': materiais,
-                'criado_em': anotacao.criado_em,
+                'criado_em': anotacao.criado_em.isoformat() if anotacao.criado_em else None,
             })
         contatos_list.append({
             'id': contato.id,
             'data_contato': contato.data_contato,
             'tipo': contato.tipo,
-            'criado_em': contato.criado_em,
+            'criado_em': contato.criado_em.isoformat() if contato.criado_em else None,
             'anotacoes': anotacoes,
         })
 
@@ -1325,3 +1327,29 @@ def verificar_e_disparar_mensagem(request):
         return HttpResponse(resp)
     else:
         return HttpResponse("Sem lembretes")
+
+
+@login_required
+@require_http_methods(['GET'])
+def proximo_contato(request, pk):
+    try:
+        paciente = Paciente.objects.get(pk=pk, dono=request.user)
+    except Paciente.DoesNotExist:
+        return JsonResponse({'erro': 'Paciente n?o encontrado'}, status=404)
+
+    contato_recente = ContatoNutricionista.objects.filter(paciente=paciente, data_contato__isnull=False).order_by('-data_contato').first()
+    proximo_data = contato_recente.data_contato if contato_recente else None
+
+    if not proximo_data:
+        lembrete_recente = Lembrete.objects.filter(paciente=paciente, data_lembrete__isnull=False).order_by('-data_lembrete').first()
+        proximo_data = lembrete_recente.data_lembrete if lembrete_recente else None
+
+    contatos_no_dia = 0
+    if proximo_data:
+        contatos_no_dia = ContatoNutricionista.objects.filter(paciente=paciente, data_contato=proximo_data).count()
+
+    return JsonResponse({
+        'proximo_contato': proximo_data.isoformat() if proximo_data else None,
+        'contatos_no_dia': contatos_no_dia,
+    })
+

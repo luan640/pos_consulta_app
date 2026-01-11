@@ -5,7 +5,7 @@ import os
 
 def gerar_nome_arquivo(prefixo, filename):
     _, ext = os.path.splitext(filename)
-    return f"{prefixo}/{uuid.uuid4().hex}{ext}"
+    return f"{prefixo}/{uuid.uuid4().hex[:12]}{ext}"
 
 
 def gerar_nome_arquivo_perfil(instance, filename):

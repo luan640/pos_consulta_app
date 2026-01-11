@@ -1,0 +1,354 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Histórico | LembraPro{% endblock %}
+
+{% block content %}
+<main class="flex-1 overflow-y-auto bg-slate-50 px-4 sm:px-6 lg:px-8 py-6">
+  <div class="flex flex-col gap-6 h-full">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div>
+        <h1 class="text-3xl font-black tracking-tight text-[#111518]">Histórico</h1>
+        <p class="text-[#64748b] text-sm">Consulte interações e consultas por paciente e período.</p>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-4">
+      <section class="bg-white rounded-xl border border-[#e5e7eb] shadow-sm p-4 md:p-6 flex flex-col gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="relative" id="historico-paciente-wrapper">
+            <label class="block text-sm font-medium text-slate-600 mb-1" for="historico-paciente-busca">Paciente</label>
+            <input id="historico-paciente-busca" type="text" autocomplete="off"
+              class="w-full rounded-lg border border-[#e5e7eb] bg-white p-2.5 text-sm text-[#111518] focus:border-primary focus:ring-1 focus:ring-primary"
+              placeholder="Buscar paciente..." />
+            <select id="historico-paciente" class="hidden">
+              <option value="">Selecione...</option>
+            </select>
+            <div id="historico-paciente-opcoes"
+              class="absolute z-10 mt-1 w-full max-h-56 overflow-auto rounded-lg border border-[#e5e7eb] bg-white shadow-lg hidden">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 mb-1" for="historico-tipo">Tipo</label>
+            <select id="historico-tipo" class="w-full rounded-lg border border-[#e5e7eb] bg-white p-2.5 text-sm text-[#111518] focus:border-primary focus:ring-1 focus:ring-primary">
+              <option value="all">Todos</option>
+              <option value="contato">Contato</option>
+              <option value="consulta">Consulta</option>
+              <option value="retorno">Retorno</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 mb-1" for="historico-data-inicio">Data inicial</label>
+            <input type="date" id="historico-data-inicio" class="w-full rounded-lg border border-[#e5e7eb] bg-white p-2.5 text-sm text-[#111518] focus:border-primary focus:ring-1 focus:ring-primary" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 mb-1" for="historico-data-fim">Data final</label>
+            <input type="date" id="historico-data-fim" class="w-full rounded-lg border border-[#e5e7eb] bg-white p-2.5 text-sm text-[#111518] focus:border-primary focus:ring-1 focus:ring-primary" />
+          </div>
+        </div>
+        <div class="flex justify-end">
+          <button id="historico-filtrar" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-white text-sm font-semibold shadow-sm hover:bg-primary/90 transition-colors">
+            <span class="material-symbols-outlined text-[18px]">search</span>
+            Buscar
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <section class="bg-white rounded-xl border border-[#e5e7eb] shadow-sm p-4 md:p-6 flex-1">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-[#111518]">Resultados</h2>
+        <span id="historico-status" class="text-xs text-slate-500"></span>
+      </div>
+      <div id="historico-lista" class="flex flex-col divide-y divide-slate-200"></div>
+      <div id="historico-vazio" class="hidden text-center text-slate-500 text-sm py-6">Selecione um paciente e intervalo para ver o histórico.</div>
+      <div id="historico-paginacao" class="px-4 py-3 border-t border-[#e5e7eb] flex items-center justify-between bg-white hidden">
+        <span id="historico-paginacao-status" class="text-sm text-[#64748b]">Mostrando resultados</span>
+        <div class="flex gap-2">
+          <button id="historico-prev" class="px-3 py-1 text-sm border border-[#e5e7eb] rounded bg-white text-[#64748b] hover:bg-gray-50 disabled:opacity-50">Anterior</button>
+          <button id="historico-next" class="px-3 py-1 text-sm border border-[#e5e7eb] rounded bg-white text-[#64748b] hover:bg-gray-50 disabled:opacity-50">Próximo</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script type="module">
+const PAGE_SIZE = 15;
+  let historicoItens = [];
+  let paginaAtual = 1;
+  let hasMaisPaginas = false;
+  let totalRegistros = null;
+
+  const pacienteSelect = document.getElementById('historico-paciente');
+  const pacienteBuscaInput = document.getElementById('historico-paciente-busca');
+  const pacienteOpcoes = document.getElementById('historico-paciente-opcoes');
+  const pacienteWrapper = document.getElementById('historico-paciente-wrapper');
+  let pacientesLista = [];
+
+  const tipoSelect = document.getElementById('historico-tipo');
+  const dataInicio = document.getElementById('historico-data-inicio');
+  const dataFim = document.getElementById('historico-data-fim');
+  const btnFiltrar = document.getElementById('historico-filtrar');
+  const lista = document.getElementById('historico-lista');
+  const vazio = document.getElementById('historico-vazio');
+  const statusEl = document.getElementById('historico-status');
+  const paginacaoEl = document.getElementById('historico-paginacao');
+  const paginacaoStatus = document.getElementById('historico-paginacao-status');
+  const paginacaoPrev = document.getElementById('historico-prev');
+  const paginacaoNext = document.getElementById('historico-next');
+
+  const parseData = (valor) => {
+    if (!valor) return null;
+    // Suporta dd/mm/aaaa ou ISO
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(valor)) {
+      const [dia, mes, ano] = valor.split('/').map(Number);
+      return new Date(ano, mes - 1, dia);
+    }
+    const d = new Date(valor);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  function formatarData(valor) {
+    const d = parseData(valor);
+    if (!d) return 'Data não informada';
+    return d.toLocaleDateString('pt-BR');
+  }
+
+  function atualizarStatus(texto) {
+    if (statusEl) statusEl.textContent = texto || '';
+  }
+
+  function renderLista(items, { page = 1, hasMore = false, total = null } = {}) {
+    lista.innerHTML = '';
+    if (!items.length) {
+      vazio.classList.remove('hidden');
+      if (paginacaoEl) paginacaoEl.classList.add('hidden');
+      return;
+    }
+    vazio.classList.add('hidden');
+    paginaAtual = Math.max(1, page);
+
+    items.forEach((item) => {
+      const li = document.createElement('div');
+      li.className = 'py-3 flex items-start gap-3';
+      li.innerHTML = `
+        <div class="rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold">${item.tipo}</div>
+        <div class="flex-1">
+          <div class="flex justify-between text-sm text-slate-500">
+            <span>${formatarData(item.data)}</span>
+            <span class="font-semibold text-[#111518]">${item.titulo}</span>
+          </div>
+          <div class="text-xs text-slate-400 mt-0.5">Criado em: ${formatarData(item.criadoEm) || '-'} </div>
+          <div class="text-sm text-slate-600 mt-1">${item.descricao || ''}</div>
+          ${item.materiais?.length ? `
+            <div class="mt-2 flex flex-wrap gap-2">
+              ${item.materiais.map((m) => `<span class="inline-flex items-center rounded-full bg-slate-100 text-slate-700 text-xs px-3 py-1">${m}</span>`).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+      lista.appendChild(li);
+    });
+
+    if (paginacaoEl && paginacaoStatus && paginacaoPrev && paginacaoNext) {
+      paginacaoEl.classList.remove('hidden');
+      const exibindoInicio = items.length === 0 ? 0 : ((paginaAtual - 1) * PAGE_SIZE) + 1;
+      const exibindoFim = ((paginaAtual - 1) * PAGE_SIZE) + items.length;
+      const totalTexto = total ? ` de ${total} resultados` : hasMore ? ' de mais resultados' : ` de ${exibindoFim} resultados`;
+      paginacaoStatus.textContent = `Mostrando ${exibindoInicio}-${exibindoFim}${totalTexto}`;
+      paginacaoPrev.disabled = paginaAtual <= 1;
+      paginacaoNext.disabled = !hasMore;
+    }
+  }
+
+  
+function aplicarFiltroPeriodo(items) {
+    const ini = parseData(dataInicio.value);
+    const fim = parseData(dataFim.value);
+    const tipoFiltro = (tipoSelect?.value || 'all').toLowerCase();
+
+    return items.filter((item) => {
+      const d = parseData(item.dataRaw || item.data);
+      if (ini && (!d || d < ini)) return false;
+      if (fim) {
+        const fimAjustado = new Date(fim);
+        fimAjustado.setHours(23, 59, 59, 999);
+        if (!d || d > fimAjustado) return false;
+      }
+      if (tipoFiltro !== 'all' && item.tipoNormalized !== tipoFiltro) return false;
+      return true;
+    });
+  }
+
+  function renderizarOpcoesPacientes(filtro = '') {
+    if (!pacienteOpcoes) return;
+    const termo = (filtro || '').trim().toLowerCase();
+    const filtrados = pacientesLista.filter((p) =>
+      (p.nome || '').toLowerCase().includes(termo)
+    );
+
+    pacienteOpcoes.innerHTML = '';
+    if (!filtrados.length) {
+      const vazioItem = document.createElement('div');
+      vazioItem.className = 'px-3 py-2 text-sm text-slate-500';
+      vazioItem.textContent = 'Nenhum paciente encontrado.';
+      pacienteOpcoes.appendChild(vazioItem);
+      return;
+    }
+
+    filtrados.forEach((p) => {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'w-full text-left px-3 py-2 text-sm text-[#111518] hover:bg-slate-50';
+      item.textContent = p.nome || '-';
+      item.dataset.pacienteId = p.id;
+      item.addEventListener('click', () => {
+        if (pacienteSelect) pacienteSelect.value = p.id;
+        if (pacienteBuscaInput) pacienteBuscaInput.value = p.nome || '';
+        pacienteOpcoes.classList.add('hidden');
+      });
+      pacienteOpcoes.appendChild(item);
+    });
+  }
+
+  function abrirListaPacientes() {
+    if (!pacienteOpcoes) return;
+    pacienteOpcoes.classList.remove('hidden');
+  }
+
+  function fecharListaPacientes() {
+    if (!pacienteOpcoes) return;
+    pacienteOpcoes.classList.add('hidden');
+  }
+
+  async function carregarPacientes() {
+    const res = await fetch('/api/pacientes/?page=1&page_size=500');
+    const data = await res.json();
+    pacientesLista = data.pacientes || [];
+    pacienteSelect.innerHTML = '<option value="">Selecione...</option>';
+    pacientesLista.forEach((p) => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.nome;
+      pacienteSelect.appendChild(opt);
+    });
+    renderizarOpcoesPacientes();
+    if (pacientesLista.length > 0) {
+      pacienteSelect.value = pacientesLista[0].id;
+      if (pacienteBuscaInput) pacienteBuscaInput.value = pacientesLista[0].nome || '';
+      return pacientesLista[0].id;
+    }
+    return null;
+  }
+
+  async function buscarHistorico() {
+    const pacienteId = pacienteSelect.value;
+    if (!pacienteId) {
+      renderLista([]);
+      atualizarStatus('Selecione um paciente.');
+      return;
+    }
+    atualizarStatus('Carregando...');
+
+    const params = new URLSearchParams();
+    params.set('page', String(paginaAtual));
+    params.set('page_size', String(PAGE_SIZE));
+
+    const [consultasRes, contatosRes] = await Promise.all([
+      fetch(`/api/historico-consulta/${pacienteId}/?${params.toString()}`),
+      fetch(`/api/historico-contatos/${pacienteId}/?${params.toString()}`)
+    ]);
+
+    const consultasData = await consultasRes.json();
+    const contatosData = await contatosRes.json();
+
+    const consultas = (consultasData.consultas || []).map((c) => {
+      const tipoNorm = (c.tipo_consulta || '').toLowerCase().includes('retorno') ? 'retorno' : 'consulta';
+      return {
+        tipo: 'Consulta',
+        tipoNormalized: tipoNorm,
+        data: c.data_consulta,
+        dataRaw: c.data_consulta,
+        titulo: c.tipo_consulta || 'Consulta',
+        descricao: '',
+        criadoEm: c.criado_em,
+      };
+    });
+
+    const contatos = (contatosData.contatos || []).map((c) => {
+      const anotacoes = c.anotacoes || [];
+      const textos = anotacoes.map((a) => a.texto).filter(Boolean).join(' | ');
+      const materiaisEntregues = anotacoes
+        .flatMap((a) => a.materiais_enviados || [])
+        .map((m) => m.descricao)
+        .filter(Boolean);
+
+      return {
+        tipo: 'Contato',
+      tipoNormalized: 'contato',
+      data: c.data_contato,
+      dataRaw: c.data_contato || c.criado_em,
+      titulo: c.tipo || 'Contato',
+      descricao: textos,
+      criadoEm: c.criado_em,
+      materiais: materiaisEntregues,
+    };
+  });
+
+    historicoItens = aplicarFiltroPeriodo([...consultas, ...contatos]).sort((a, b) => {
+      const da = parseData(a.dataRaw || a.data) || new Date(0);
+      const db = parseData(b.dataRaw || b.data) || new Date(0);
+      return db - da;
+    });
+
+    paginaAtual = 1;
+    renderLista(historicoItens, paginaAtual);
+    atualizarStatus(`${historicoItens.length} registros`);
+  }
+
+  btnFiltrar?.addEventListener('click', () => {
+    paginaAtual = 1;
+    buscarHistorico();
+  });
+  paginacaoPrev?.addEventListener('click', () => {
+    if (paginaAtual > 1) {
+      paginaAtual -= 1;
+      buscarHistorico();
+    }
+  });
+  paginacaoNext?.addEventListener('click', () => {
+    if (hasMaisPaginas) {
+      paginaAtual += 1;
+      buscarHistorico();
+    }
+  });
+  window.addEventListener('DOMContentLoaded', () => {
+    carregarPacientes().then((primeiroId) => {
+      if (primeiroId) {
+        buscarHistorico(); // carrega inicialmente, ordenado do mais recente para o mais antigo
+      }
+    });
+  });
+
+  if (pacienteBuscaInput) {
+    pacienteBuscaInput.addEventListener('focus', () => {
+      renderizarOpcoesPacientes(pacienteBuscaInput.value);
+      abrirListaPacientes();
+    });
+    pacienteBuscaInput.addEventListener('input', () => {
+      renderizarOpcoesPacientes(pacienteBuscaInput.value);
+      abrirListaPacientes();
+    });
+  }
+
+  document.addEventListener('click', (event) => {
+    if (!pacienteWrapper) return;
+    if (!pacienteWrapper.contains(event.target)) {
+      fecharListaPacientes();
+    }
+  });
+</script>
+{% endblock %}

@@ -18,8 +18,10 @@ from datetime import timedelta
 from typing import Optional, Any
 import environ
 import requests
+import logging
 
 env = environ.Env()
+logger = logging.getLogger(__name__)
 
 def registrar_contato_service(
     usuario,
@@ -226,6 +228,12 @@ def _send_whatsapp_template(
 
     try:
         resp = requests.post(url, headers=headers, json=payload, timeout=15)
+        if resp.status_code >= 400:
+            logger.error(
+                "WhatsApp API error (template): status=%s body=%s",
+                resp.status_code,
+                resp.text,
+            )
         resp.raise_for_status()
         data = resp.json()
 
@@ -323,6 +331,12 @@ def _send_whatsapp_message(
 
     try:
         resp = requests.post(url, headers=headers, json=payload, timeout=15)
+        if resp.status_code >= 400:
+            logger.error(
+                "WhatsApp API error (interactive): status=%s body=%s",
+                resp.status_code,
+                resp.text,
+            )
         resp.raise_for_status()
         data = resp.json()
 

@@ -1,17 +1,24 @@
 import { showToast } from './message.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-  const regraModal = new bootstrap.Modal(document.getElementById('regraModal'));
+  const regraModalEl = document.getElementById('regraModal');
+  const regraModal = regraModalEl ? new bootstrap.Modal(regraModalEl) : null;
   const tbody = document.getElementById('regras-tbody');
 
   const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
   const novaRegraModalEl = document.getElementById('novaRegraModal');
   const novaRegraModal = novaRegraModalEl ? new bootstrap.Modal(novaRegraModalEl) : null;
   const materiaisContainer = document.getElementById('nova-regra-materiais');
+  const gruposListaEl = document.getElementById("grupos-lista");
 
   let materiaisCache = [];
   let materiaisCacheCarregado = false;
   let materiaisCachePromise = null;
+
+  // Se nÇœo estiver na pÇ­gina de cadastro de regra, sai cedo para evitar erros
+  if (!tbody) {
+    return;
+  }
 
   function atualizarMateriaisCache(force = false) {
     if (materiaisCacheCarregado && !force) {
@@ -447,71 +454,72 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Submissão do formulário
-  document.getElementById('nova-regra-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    const grupoId = document.getElementById('regra-grupo-id').value;
-    const materiaisSelecionados = obterMateriaisSelecionados(materiaisContainer);
+  const novaRegraFormEl = document.getElementById('nova-regra-form');
+  if (novaRegraFormEl) {
+    novaRegraFormEl.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const grupoId = document.getElementById('regra-grupo-id').value;
+      const materiaisSelecionados = obterMateriaisSelecionados(materiaisContainer);
 
-    const submitBtn = document.getElementById('salvarRegraBtn');
-    const originalBtnHtml = submitBtn.innerHTML;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...`;
+      const submitBtn = document.getElementById('salvarRegraBtn');
+      const originalBtnHtml = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...`;
 
-    const payload = {
-      nome: document.getElementById('nova-regra-nome').value,
-      dias_apos: document.getElementById('nova-regra-dias').value,
-      descricao: document.getElementById('nova-regra-descricao').value,
-      grupo: grupoId,
-      materiais: materiaisSelecionados,
-    };
+      const payload = {
+        nome: document.getElementById('nova-regra-nome').value,
+        dias_apos: document.getElementById('nova-regra-dias').value,
+        descricao: document.getElementById('nova-regra-descricao').value,
+        grupo: grupoId,
+        materiais: materiaisSelecionados,
+      };
 
-    fetch(`/api/regras/${grupoId}/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken')
-      },
-      body: JSON.stringify(payload)
-    })
-      .then(res => res.json())
-      .then(() => {
-        document.getElementById('nova-regra-form').reset();
-        if (materiaisContainer) {
-          limparSelecaoMateriais(materiaisContainer);
-          materiaisContainer.scrollTop = 0;
-        }
-        if (novaRegraModal) {
-          novaRegraModal.hide(); // Ao esconder, o evento 'hidden.bs.modal' reabrirá regraModal
-        }
-        showToast('Regra criada com sucesso!', 'success');
-        carregarRegras(grupoId); // Atualiza tabela
-        carregarGrupoRegras();
+      fetch(`/api/regras/${grupoId}/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(payload)
       })
-      .finally(() => {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnHtml;
-      });
-  });
+        .then(res => res.json())
+        .then(() => {
+          novaRegraFormEl.reset();
+          if (materiaisContainer) {
+            limparSelecaoMateriais(materiaisContainer);
+            materiaisContainer.scrollTop = 0;
+          }
+          if (novaRegraModal) {
+            novaRegraModal.hide(); // Ao esconder, o evento 'hidden.bs.modal' reabrirá regraModal
+          }
+          showToast('Regra criada com sucesso!', 'success');
+          carregarRegras(grupoId); // Atualiza tabela
+          carregarGrupoRegras();
+        })
+        .finally(() => {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnHtml;
+        });
+    });
+  }
 
-  document.getElementById('grupos-lista').addEventListener('click', function (e) {
-    const link = e.target.closest('a[data-grupo-id]');
-    if (!link) return;
+  if (gruposListaEl) {
+    gruposListaEl.addEventListener("click", function (e) {
+      const link = e.target.closest("a[data-grupo-id]");
+      if (!link) return;
 
-    // Remove .active de todos os itens e aplica ao clicado
-    document.querySelectorAll('#grupos-lista .list-group-item').forEach(el => el.classList.remove('active'));
-    link.classList.add('active');
+      gruposListaEl.querySelectorAll(".list-group-item").forEach(el => el.classList.remove("active"));
+      link.classList.add("active");
 
-    const grupoId = link.dataset.grupoId;
-    const nomeGrupo = link.dataset.nomeGrupo;
-    const descricaoGrupo = link.dataset.descricaoGrupo;
+      const grupoId = link.dataset.grupoId;
+      const nomeGrupo = link.dataset.nomeGrupo;
+      const descricaoGrupo = link.dataset.descricaoGrupo;
 
-    // Salva o ID no input escondido do modal
-    document.getElementById('regra-grupo-id').value = grupoId;
-    document.getElementById('grupo-selecionado-titulo').innerHTML = nomeGrupo;
-    document.getElementById('grupo-descricao').innerHTML = descricaoGrupo || 'Sem descrição';
-
-    // carregarRegras(grupoId);
-  });
+      document.getElementById("regra-grupo-id").value = grupoId;
+      document.getElementById("grupo-selecionado-titulo").innerHTML = nomeGrupo;
+      document.getElementById("grupo-descricao").innerHTML = descricaoGrupo || "Sem descricao";
+    });
+  }
 
   // Função para pegar o CSRF token do cookie
   function getCookie(name) {
@@ -530,12 +538,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // abre modal para criar nome para novo grupo
-  document.getElementById('novoGrupoBtn').addEventListener('click', function () {
-    const regraModalEl = document.getElementById('regraModal');
-    const novoGrupoModalEl = document.getElementById('novoGrupoModal');
+  const novoGrupoBtn = document.getElementById('novoGrupoBtn');
+  if (novoGrupoBtn) {
+    novoGrupoBtn.addEventListener('click', function () {
+      const regraModalEl = document.getElementById('regraModal');
+      const novoGrupoModalEl = document.getElementById('novoGrupoModal');
+      if (!regraModalEl || !novoGrupoModalEl) return;
 
-    const regraModal = bootstrap.Modal.getInstance(regraModalEl) || new bootstrap.Modal(regraModalEl);
-    const novoGrupoModal = new bootstrap.Modal(novoGrupoModalEl);
+      const regraModal = bootstrap.Modal.getInstance(regraModalEl) || new bootstrap.Modal(regraModalEl);
+      const novoGrupoModal = new bootstrap.Modal(novoGrupoModalEl);
 
     // Oculta o modal antigo
     regraModal.hide();
@@ -551,53 +562,57 @@ document.addEventListener('DOMContentLoaded', () => {
       // Remove o listener para evitar múltiplos disparos
       novoGrupoModalEl.removeEventListener('hidden.bs.modal', handler);
     });
-  });
+    });
+  }
 
   // botão para salvar grupo salvarGrupoBtn
-  document.getElementById('grupoForm').addEventListener('submit', function (e) {
-    e.preventDefault();
+  const grupoFormEl = document.getElementById('grupoForm');
+  if (grupoFormEl) {
+    grupoFormEl.addEventListener('submit', function (e) {
+      e.preventDefault();
 
-    const novoGrupoModalEl = document.getElementById('novoGrupoModal');
-    const novoGrupoModal = bootstrap.Modal.getInstance(novoGrupoModalEl);
+      const novoGrupoModalEl = document.getElementById('novoGrupoModal');
+      const novoGrupoModal = bootstrap.Modal.getInstance(novoGrupoModalEl);
 
-    const regraModalEl = document.getElementById('regraModal');
-    const regraModal = bootstrap.Modal.getInstance(regraModalEl) || new bootstrap.Modal(regraModalEl);
+      const regraModalEl = document.getElementById('regraModal');
+      const regraModal = bootstrap.Modal.getInstance(regraModalEl) || new bootstrap.Modal(regraModalEl);
 
-    const submitBtn = document.getElementById('salvarGrupoBtn');
-    const originalBtnHtml = submitBtn.innerHTML;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...`;
+      const submitBtn = document.getElementById('salvarGrupoBtn');
+      const originalBtnHtml = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...`;
 
-    const payload = {
-      nome: document.getElementById('grupoNome').value,
-      descricao: document.getElementById('grupoDescricao').value
-    };
+      const payload = {
+        nome: document.getElementById('grupoNome').value,
+        descricao: document.getElementById('grupoDescricao').value
+      };
 
-    fetch(`/api/grupo-regras/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken')
-      },
-      body: JSON.stringify(payload)
-    })
-      .then(res => res.json())
-      .then(() => {
-        document.getElementById('grupoForm').reset();
-
-        novoGrupoModalEl.addEventListener('hidden.bs.modal', function handler() {
-          regraModal.show();
-          novoGrupoModalEl.removeEventListener('hidden.bs.modal', handler);
-        });
-        carregarGrupoRegras();
-        novoGrupoModal.hide();
-        showToast('Grupo de regra criado com sucesso!', 'success');
+      fetch(`/api/grupo-regras/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(payload)
       })
-      .finally(() => {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnHtml;
-      });
-  });
+        .then(res => res.json())
+        .then(() => {
+          grupoFormEl.reset();
+
+          novoGrupoModalEl.addEventListener('hidden.bs.modal', function handler() {
+            regraModal.show();
+            novoGrupoModalEl.removeEventListener('hidden.bs.modal', handler);
+          });
+          carregarGrupoRegras();
+          novoGrupoModal.hide();
+          showToast('Grupo de regra criado com sucesso!', 'success');
+        })
+        .finally(() => {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnHtml;
+        });
+    });
+  }
 
   // botao para editar grupo (nome e descrição)
   function inicializarBotaoEditarGrupoModal() {
@@ -641,8 +656,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // botão para salvar grupo salvarGrupoBtn
-  document.getElementById('editarGrupoForm').addEventListener('submit', function (e) {
-    e.preventDefault();
+  const editarGrupoFormEl = document.getElementById('editarGrupoForm');
+  if (editarGrupoFormEl) {
+    editarGrupoFormEl.addEventListener('submit', function (e) {
+      e.preventDefault();
 
     const novoGrupoModalEl = document.getElementById('editarGrupo');
     const novoGrupoModal = bootstrap.Modal.getInstance(novoGrupoModalEl);
@@ -687,62 +704,68 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnHtml;
       });
-  });
+    });
+  }
 
-  document.getElementById('btnNovaRegra').addEventListener('click', function () {
+  const btnNovaRegraEl = document.getElementById('btnNovaRegra');
+  if (btnNovaRegraEl) {
+      btnNovaRegraEl.addEventListener('click', function () {
 
-    const grupoId = document.getElementById('regra-grupo-id').value;
+      const grupoId = document.getElementById('regra-grupo-id').value;
 
-    if(!grupoId){
-      return showToast('Crie um grupo de regras','error');
-    } else {
-      const novaRegraModalEl = document.getElementById('novaRegraModal');
-      const novaRegraModal = bootstrap.Modal.getInstance(novaRegraModalEl) || new bootstrap.Modal(novaRegraModalEl);
+      if(!grupoId){
+        return showToast('Crie um grupo de regras','error');
+      } else {
+        const novaRegraModalEl = document.getElementById('novaRegraModal');
+        const novaRegraModal = bootstrap.Modal.getInstance(novaRegraModalEl) || new bootstrap.Modal(novaRegraModalEl);
 
-      const regraModalEl = document.getElementById('regraModal');
-      const regraModal = bootstrap.Modal.getInstance(regraModalEl) || new bootstrap.Modal(regraModalEl);
+        const regraModalEl = document.getElementById('regraModal');
+        const regraModal = bootstrap.Modal.getInstance(regraModalEl) || new bootstrap.Modal(regraModalEl);
 
-      regraModal.hide();
-      novaRegraModal.show();
+        regraModal.hide();
+        novaRegraModal.show();
 
-    }
+      }
+    });
+  }
+  const confirmarExclusaoGrupoBtn = document.getElementById('confirmar-exclusao-grupo-btn');
+  if (confirmarExclusaoGrupoBtn) {
+    confirmarExclusaoGrupoBtn.addEventListener('click', function () {
+      const grupoId = document.getElementById('regra-grupo-id').value;
+      const excluirGrupoModalEl = document.getElementById('confirmarExclusaoGrupoModal');
+      if (!excluirGrupoModalEl) return;
+      const excluirGrupoModal = bootstrap.Modal.getInstance(excluirGrupoModalEl);
 
-  });
+      const btn = this;
+      const originalBtnHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Excluindo...`;
 
-  document.getElementById('confirmar-exclusao-grupo-btn').addEventListener('click', function () {
-    const grupoId = document.getElementById('regra-grupo-id').value;
-    const excluirGrupoModalEl = document.getElementById('confirmarExclusaoGrupoModal');
-    const excluirGrupoModal = bootstrap.Modal.getInstance(excluirGrupoModalEl);
-
-    const btn = this;
-    const originalBtnHtml = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Excluindo...`;
-
-    fetch(`/api/excluir-grupo-regra/${grupoId}/`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken')
-      },
-      body: JSON.stringify({ id: grupoId })
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('Erro ao excluir grupo');
-        return res.json();
+      fetch(`/api/excluir-grupo-regra/${grupoId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ id: grupoId })
       })
-      .then(() => {
-        excluirGrupoModal.hide();
-        showToast('Grupo excluído com sucesso!', 'success');
-        carregarGrupoRegras();
-      })
-      .catch(() => {
-        showToast('Erro ao excluir grupo', 'error');
-      })
-      .finally(() => {
-        btn.disabled = false;
-        btn.innerHTML = originalBtnHtml;
-      });
-  });
+        .then(res => {
+          if (!res.ok) throw new Error('Erro ao excluir grupo');
+          return res.json();
+        })
+        .then(() => {
+          excluirGrupoModal.hide();
+          showToast('Grupo excluido com sucesso!', 'success');
+          carregarGrupoRegras();
+        })
+        .catch(() => {
+          showToast('Erro ao excluir grupo', 'error');
+        })
+        .finally(() => {
+          btn.disabled = false;
+          btn.innerHTML = originalBtnHtml;
+        });
+    });
+  }
 
 });

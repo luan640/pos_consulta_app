@@ -6,6 +6,7 @@ urlpatterns = [
     path('home/', views.home, name='home'),
     path('regras/', views.regras, name='regras'),
     path('materiais/', views.materiais_page, name='materiais'),
+    path('historico/', views.historico_page, name='historico'),
     path('perfil/', views.perfil, name='perfil'),
     path('pacientes/', views.pacientes_page, name='pacientes'),
     path('politica-de-privacidade/', views.politica_privacidade, name='politica_privacidade'),
@@ -41,6 +42,7 @@ urlpatterns += [
 
     path('api/historico-consulta/<int:pk>/', views.historico_consulta, name='historico_consulta'),
     path('api/historico-contatos/<int:pk>/', views.historico_contatos, name='historico_contatos'),
+    path('api/proximo_contato/<int:pk>/', views.proximo_contato, name='proximo_contato'),
     path('api/editar-paciente/<int:pk>/', views.atualizar_paciente, name='atualizar_paciente'),
 
     path('api/verificar-cadastro/', views.verifica_se_tem_cadastrado, name='verifica_se_tem_cadastrado'),

@@ -34,7 +34,7 @@ class Consulta(models.Model):
 
 def gerar_nome_arquivo(prefixo, filename):
     _, ext = os.path.splitext(filename)
-    return f"{prefixo}/{uuid.uuid4().hex}{ext}"
+    return f"{prefixo}/{uuid.uuid4().hex[:12]}{ext}"
 
 
 def gerar_nome_arquivo_materiais(instance, filename):
@@ -58,6 +58,17 @@ class Material(models.Model):
     youtube_url = models.URLField(null=True, blank=True)
     dono = models.ForeignKey(User, on_delete=models.CASCADE, related_name='materiais_criados')
     criado_em = models.DateTimeField(auto_now_add=True)
+    ativo = models.BooleanField(default=True)
+
+    def _delete_file_field(self, field_name: str) -> None:
+        arquivo = getattr(self, field_name)
+        if arquivo and arquivo.name:
+            arquivo.delete(save=False)
+
+    def delete(self, using=None, keep_parents=False):
+        for field_name in ("arquivo_pdf", "arquivo_video", "arquivo_imagem", "arquivo_foto"):
+            self._delete_file_field(field_name)
+        super().delete(using=using, keep_parents=keep_parents)
 
     def __str__(self):
         return f"{self.descricao or 'Sem descrição'}"

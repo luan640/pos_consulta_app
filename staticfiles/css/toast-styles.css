@@ -1,22 +1,26 @@
 /* Toast Notifications - Estilos essenciais para as mensagens de sucesso e erro */
 .custom-toast {
   position: fixed;
-  top: 20px;
-  right: 20px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-width: 300px;
-  max-width: 500px;
-  z-index: 9999;
-  transform: translateX(100%);
+  top: 1.25rem;
+  right: 1.25rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.75rem;
+  padding: 1rem 1.2rem;
+  min-width: 320px;
+  max-width: 420px;
+  background: radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0)),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.88), rgba(15, 23, 42, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 25px 70px -40px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(18px);
+  border-radius: 14px;
+  color: #e2e8f0;
+  transform: translateX(120%);
   opacity: 0;
-  transition: all 0.3s ease;
-  border-left: 4px solid;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+  overflow: hidden;
+  z-index: 9999;
 }
 
 .custom-toast.show {
@@ -24,49 +28,111 @@
   opacity: 1;
 }
 
-.custom-toast.toast-success {
-  border-left-color: var(--green-600);
-  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+.custom-toast .toast-sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+  pointer-events: none;
 }
 
-.custom-toast.toast-error {
-  border-left-color: var(--red-600);
-  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+.custom-toast.toast-success .toast-icon {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+.custom-toast.toast-error .toast-icon {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.custom-toast.toast-info .toast-icon {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.35);
 }
 
 .toast-content {
   display: flex;
-  align-items: center;
-  flex-grow: 1;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-weight: 600;
+  position: relative;
+  z-index: 1;
+}
+
+.toast-content small {
+  font-size: 0.78rem;
   font-weight: 500;
-  color: var(--gray-800);
+  color: #cbd5f5;
+}
+
+.toast-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+.toast-message {
+  font-size: 0.98rem;
+  color: #e2e8f0;
 }
 
 .toast-close {
-  background: none;
-  border: none;
-  color: var(--gray-500);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cbd5f5;
   cursor: pointer;
-  padding: 4px;
-  margin-left: 12px;
-  border-radius: 4px;
+  padding: 0.35rem;
+  border-radius: 10px;
   transition: all 0.2s ease;
+  align-self: flex-start;
 }
 
 .toast-close:hover {
-  background-color: var(--gray-100);
-  color: var(--gray-700);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px -18px rgba(0, 0, 0, 0.9);
 }
 
-.toast-close i {
-  font-size: 16px;
+.toast-icon {
+  position: relative;
+  z-index: 1;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.toast-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0));
+  animation: toast-progress 4.8s linear forwards;
+}
+
+@keyframes toast-progress {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
 }
 
 /* Mobile responsiveness for toasts */
 @media (max-width: 768px) {
   .custom-toast {
-    right: 10px;
-    left: 10px;
+    right: 0.75rem;
+    left: 0.75rem;
     min-width: auto;
     max-width: none;
     transform: translateY(-100%);

@@ -1,261 +1,408 @@
-{% extends 'navbar.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Regras | LembraPro{% endblock %}
-{% block nav_regras_active %}active{% endblock %}
+{% block title %}Regras | Health SaaS{% endblock %}
+{% block nav_regras_active %}bg-primary/10 text-primary{% endblock %}
 {% block nav_regras_aria %}aria-current="page"{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/home.css' %}">
-<link rel="stylesheet" href="{% static 'css/toast-styles.css' %}">
-{% endblock %}
-
 {% block content %}
-<div class="container py-4">
-            <div class="regra-page py-4">
-                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-                    <div>
-                        <h1 class="h3 mb-1">Fluxo de regras</h1>
-                        <p class="text-muted mb-0">
-                            Crie grupos de regras e organize o fluxo de contatos dos pacientes.
+<div class="flex h-full w-full overflow-hidden bg-white rounded-xl shadow-sm border border-[#e5e7eb]">
+    <!-- Inner Sidebar: Rule Groups List -->
+    <aside class="w-80 bg-surface-light border-r border-[#e5e7eb] flex flex-col flex-shrink-0 z-10 h-full">
+        <div class="px-5 pt-6 pb-2">
+            <h2 class="text-lg font-bold text-[#111518]">Grupos de Regras</h2>
+            <p class="text-xs text-[#64748b] mt-1">Gerencie seus fluxos de automação.</p>
+        </div>
+        <div class="px-4 py-3">
+            <div class="relative">
+                <span
+                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8] text-[20px]">search</span>
+                <input
+                    class="w-full bg-[#f8fafc] border-none rounded-lg py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/50 text-[#111518] placeholder:text-[#94a3b8]"
+                    placeholder="Buscar grupo..." type="text" />
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-2" id="regra-grupos-list">
+            <!-- Grupos carregados via JS -->
+            <div id="regra-grupos-empty" class="text-center p-4 text-[#94a3b8] text-sm hidden">
+                Nenhum grupo encontrado.
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-[#e5e7eb]">
+            <button id="btn-novo-grupo-lateral"
+                class="w-full flex items-center justify-center gap-2 bg-primary hover:bg-blue-600 text-white py-2.5 rounded-lg font-medium text-sm transition-colors shadow-sm">
+                <span class="material-symbols-outlined text-[20px]">add</span>
+                Novo Grupo
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content: Workflow Editor -->
+    <main class="flex-1 flex flex-col h-full bg-[#f8fafc] relative overflow-hidden">
+        <!-- Header -->
+        <header class="h-20 bg-white border-b border-[#e5e7eb] px-8 flex items-center justify-between shrink-0 z-10">
+            <div class="flex flex-col">
+                <div class="flex items-center gap-3">
+                    <h1 class="text-xl font-bold text-[#111518]" id="regra-grupo-nome">Selecione um grupo</h1>
+                    <span
+                        class="px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold border border-green-200 hidden">Ativo</span>
+                </div>
+                <p class="text-sm text-[#64748b] mt-1" id="regra-grupo-descricao">Escolha um grupo para visualizar e
+                    editar as regras.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button id="btn-excluir-grupo" disabled
+                    class="p-2 text-[#94a3b8] hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
+                    title="Excluir Grupo">
+                    <span class="material-symbols-outlined">delete</span>
+                </button>
+                <div class="h-8 w-px bg-[#e5e7eb] mx-1"></div>
+                <button id="btn-editar-grupo" disabled
+                    class="flex items-center gap-2 px-4 py-2 border border-[#e5e7eb] rounded-lg text-[#64748b] text-sm font-medium hover:bg-gray-50 bg-white transition-colors shadow-sm">
+                    <span class="material-symbols-outlined text-[18px]">settings</span>
+                    Configurar Grupo
+                </button>
+            </div>
+        </header>
+
+        <!-- Workflow Canvas -->
+        <div class="flex-1 overflow-y-auto p-10 scroll-smooth">
+            <div class="max-w-3xl mx-auto pb-20">
+                <!-- Start Node (Static) -->
+                <div class="flex gap-6 mb-2">
+                    <div class="flex flex-col items-center w-12 shrink-0">
+                        <div
+                            class="size-12 rounded-full bg-[#111518] text-white flex items-center justify-center shadow-md z-10 border-4 border-white">
+                            <span class="material-symbols-outlined icon-filled">flag</span>
+                        </div>
+                        <div class="w-0.5 bg-[#e5e7eb] h-full -mt-2"></div>
+                    </div>
+                    <div class="pt-2 pb-10">
+                        <span class="text-xs font-bold uppercase tracking-wider text-[#64748b]">Início do fluxo</span>
+                        <!-- <div class="mt-1 text-[#111518] font-medium">Gatilho: Consulta marcada como <span
+                                class="font-bold text-primary">Finalizada</span></div> -->
+                    </div>
+                </div>
+
+                <div id="regra-flow-empty" class="text-center py-10 text-[#64748b]">
+                    Selecione um grupo para visualizar o fluxo.
+                </div>
+
+                <div id="regra-flow-list">
+                    <!-- Regras renderizadas via JS -->
+                </div>
+
+                <!-- Add Button -->
+                <div class="flex gap-6 group/step mt-4">
+                    <div class="flex flex-col items-center w-12 shrink-0">
+                        <div class="size-3 rounded-full bg-[#cbd5e1]"></div>
+                    </div>
+                    <div class="flex-1">
+                        <button id="btn-nova-regra" disabled
+                            class="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-[#cbd5e1] rounded-xl text-[#64748b] hover:text-primary hover:border-primary hover:bg-primary/5 transition-all group">
+                            <span
+                                class="material-symbols-outlined group-hover:scale-110 transition-transform">add_circle</span>
+                            <span class="font-medium">Adicionar nova regra ao fluxo</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- End Node (Static) -->
+                <div class="flex gap-6 mt-6">
+                    <div class="flex flex-col items-center w-12 shrink-0">
+                        <div class="w-0.5 bg-[#e5e7eb] h-6 -mb-1"></div>
+                        <div
+                            class="size-10 rounded-full bg-[#111518] text-white flex items-center justify-center shadow-md z-10 border-4 border-white">
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <path d="M5 3a2 2 0 0 0-2 2v16h2v-6h5.5a3.5 3.5 0 1 0 0-7H5V5a2 2 0 0 0-2-2zm0 7h5.5a1.5 1.5 0 1 1 0 3H5v-3zm9.5-5H13v3h1.5a1.5 1.5 0 1 1 0 3H13v3h1.5a1.5 1.5 0 1 1 0 3H13v3h1.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0-7z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="pt-1 pb-6">
+                        <span class="text-xs font-bold uppercase tracking-wider text-[#64748b]">Linha de chegada</span>
+                        <div class="mt-1 text-sm text-[#94a3b8]">Final do fluxo</div>
+                    </div>
+                </div>
+
+                <!-- Hidden counters acting as placeholders if needed by JS -->
+                <span id="regra-contador" class="hidden"></span>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Preserved Bootstrap Modals (IDs must match JS) -->
+<!-- Modal: Novo Grupo -->
+<div id="modalGrupoNovo" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <form id="form-grupo-novo">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h5 class="text-base font-semibold leading-6 text-gray-900" id="modal-title">Novo grupo de regras</h5>
+                            <button type="button" class="text-gray-400 hover:text-gray-500" data-modal-hide="modalGrupoNovo">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="grupo-nome" class="block text-sm font-medium leading-6 text-gray-900">Nome do grupo</label>
+                                <input type="text" id="grupo-nome" class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6" required>
+                            </div>
+                            <div>
+                                <label for="grupo-descricao" class="block text-sm font-medium leading-6 text-gray-900">Descrição</label>
+                                <textarea id="grupo-descricao" rows="3" class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="submit" class="inline-flex w-full justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 sm:ml-3 sm:w-auto">Salvar grupo</button>
+                        <button type="button" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto" data-modal-hide="modalGrupoNovo">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Editar Grupo -->
+<div id="modalGrupoEditar" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <form id="form-grupo-editar">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h5 class="text-base font-semibold leading-6 text-gray-900" id="modal-title">Editar grupo</h5>
+                            <button type="button" class="text-gray-400 hover:text-gray-500" data-modal-hide="modalGrupoEditar">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="grupo-editar-nome" class="block text-sm font-medium leading-6 text-gray-900">Nome do grupo</label>
+                                <input type="text" id="grupo-editar-nome" class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6" required>
+                            </div>
+                            <div>
+                                <label for="grupo-editar-descricao" class="block text-sm font-medium leading-6 text-gray-900">Descrição</label>
+                                <textarea id="grupo-editar-descricao" rows="3" class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="submit" class="inline-flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto">Salvar alterações</button>
+                        <button type="button" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto" data-modal-hide="modalGrupoEditar">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Excluir Grupo -->
+<div id="modalGrupoExcluir" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-sm">
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="flex flex-col items-center justify-center text-center">
+                        <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 mb-4">
+                            <span class="material-symbols-outlined text-2xl text-red-600">delete</span>
+                        </div>
+                        <h3 class="text-base font-semibold leading-6 text-gray-900 mb-2">Excluir grupo</h3>
+                        <p class="text-sm text-gray-500">
+                            Deseja realmente excluir este grupo?
                         </p>
                     </div>
-                    <button class="btn btn-primary d-flex align-items-center gap-2" id="btn-novo-grupo">
-                        <i class="bi bi-plus-circle"></i>
-                        Novo grupo
-                    </button>
                 </div>
-
-                <div class="row g-3">
-                    <div class="col-lg-4">
-                        <div class="card regra-card h-100">
-                            <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-                                <span class="fw-semibold text-secondary">Grupos de regras</span>
-                                <button class="btn btn-sm btn-primary" id="btn-novo-grupo-lateral">
-                                    <i class="bi bi-plus"></i>
-                                    Criar
-                                </button>
-                            </div>
-                            <div id="regra-grupos-list" class="list-group list-group-flush regra-grupos-list"></div>
-                            <div id="regra-grupos-empty" class="regra-empty d-none">
-                                Nenhum grupo cadastrado ainda.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-lg-8">
-                        <div class="card regra-card h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
-                                    <div>
-                                        <h2 class="h5 mb-1" id="regra-grupo-nome">Selecione um grupo</h2>
-                                        <p class="text-muted mb-0" id="regra-grupo-descricao">
-                                            Escolha um grupo para visualizar e editar as regras.
-                                        </p>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button class="btn btn-sm btn-secondary" id="btn-editar-grupo" disabled>
-                                            <i class="bi bi-pencil"></i>
-                                            Editar
-                                        </button>
-                                        <button class="btn btn-sm btn-danger" id="btn-excluir-grupo" disabled>
-                                            <i class="bi bi-trash"></i>
-                                            Excluir
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                                    <span class="text-muted small" id="regra-contador">0 regras</span>
-                                    <button class="btn btn-sm btn-success" id="btn-nova-regra" disabled>
-                                        <i class="bi bi-plus-circle"></i>
-                                        Adicionar regra
-                                    </button>
-                                </div>
-
-                                <div id="regra-flow-empty" class="regra-empty">
-                                    Selecione um grupo para visualizar o fluxo de regras.
-                                </div>
-
-                                <div id="regra-flow-list" class="regra-flow-list"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal fade" id="modalGrupoNovo" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <form id="form-grupo-novo">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Novo grupo de regras</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="mb-3">
-                                    <label class="form-label" for="grupo-nome">Nome do grupo</label>
-                                    <input type="text" class="form-control" id="grupo-nome" required>
-                                </div>
-                                <div>
-                                    <label class="form-label" for="grupo-descricao">Descricao</label>
-                                    <textarea class="form-control" id="grupo-descricao" rows="3"></textarea>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="submit" class="btn btn-primary">Salvar grupo</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal fade" id="modalGrupoEditar" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <form id="form-grupo-editar">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Editar grupo</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="mb-3">
-                                    <label class="form-label" for="grupo-editar-nome">Nome do grupo</label>
-                                    <input type="text" class="form-control" id="grupo-editar-nome" required>
-                                </div>
-                                <div>
-                                    <label class="form-label" for="grupo-editar-descricao">Descricao</label>
-                                    <textarea class="form-control" id="grupo-editar-descricao" rows="3"></textarea>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="submit" class="btn btn-success">Salvar alteracoes</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal fade" id="modalGrupoExcluir" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-sm">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Excluir grupo</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p class="mb-0">Deseja realmente excluir este grupo de regras?</p>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="button" class="btn btn-danger" id="btn-confirmar-exclusao-grupo">Excluir</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal fade" id="modalRegraNova" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <form id="form-regra-nova">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Nova regra</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="mb-3">
-                                    <label class="form-label" for="regra-nome">Titulo da regra</label>
-                                    <input type="text" class="form-control" id="regra-nome" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label" for="regra-dias">Dias apos o ultimo contato</label>
-                                    <input type="number" class="form-control" id="regra-dias" min="0" required>
-                                </div>
-                                <div>
-                                    <label class="form-label" for="regra-descricao">Descricao</label>
-                                    <textarea class="form-control" id="regra-descricao" rows="3" required></textarea>
-                                </div>
-                                <div class="mt-3">
-                                    <label class="form-label">Materiais a enviar</label>
-                                    <div class="regra-materiais-section">
-                                        <div id="regra-materiais-disponiveis" class="regra-materiais-list text-muted small">
-                                            Carregando materiais...
-                                        </div>
-                                        <div class="regra-materiais-title mt-2">Selecionados</div>
-                                        <div id="regra-materiais-selecionados" class="regra-materiais-list regra-materiais-selected"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="submit" class="btn btn-success">Salvar regra</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal fade" id="modalRegraEditar" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <form id="form-regra-editar">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Editar regra</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="mb-3">
-                                    <label class="form-label" for="regra-editar-nome">Titulo da regra</label>
-                                    <input type="text" class="form-control" id="regra-editar-nome" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label" for="regra-editar-dias">Dias apos o ultimo contato</label>
-                                    <input type="number" class="form-control" id="regra-editar-dias" min="0" required>
-                                </div>
-                                <div>
-                                    <label class="form-label" for="regra-editar-descricao">Descricao</label>
-                                    <textarea class="form-control" id="regra-editar-descricao" rows="3" required></textarea>
-                                </div>
-                                <div class="mt-3">
-                                    <label class="form-label">Materiais a enviar</label>
-                                    <div class="regra-materiais-section">
-                                        <div id="regra-editar-materiais-disponiveis" class="regra-materiais-list text-muted small">
-                                            Carregando materiais...
-                                        </div>
-                                        <div class="regra-materiais-title mt-2">Selecionados</div>
-                                        <div id="regra-editar-materiais-selecionados" class="regra-materiais-list regra-materiais-selected"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="submit" class="btn btn-success">Salvar alteracoes</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal fade" id="modalRegraExcluir" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-sm">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Excluir regra</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p class="mb-0">Deseja realmente excluir esta regra?</p>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="button" class="btn btn-danger" id="btn-confirmar-exclusao-regra">Excluir</button>
-                        </div>
-                    </div>
+                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 justify-center">
+                    <button type="button" id="btn-confirmar-exclusao-grupo" class="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto">Excluir</button>
+                    <button type="button" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto" data-modal-hide="modalGrupoExcluir">Cancelar</button>
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Modal: Nova Regra -->
+<div id="modalRegraNova" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div
+                class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <form id="form-regra-nova">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h5 class="text-base font-semibold leading-6 text-gray-900" id="modal-title">Nova regra</h5>
+                            <button type="button" class="text-gray-400 hover:text-gray-500"
+                                data-modal-hide="modalRegraNova">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="regra-nome" class="block text-sm font-medium leading-6 text-gray-900">Titulo
+                                    da regra</label>
+                                <input type="text" id="regra-nome"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                    required>
+                            </div>
+                            <div>
+                                <label for="regra-dias" class="block text-sm font-medium leading-6 text-gray-900">Dias
+                                    após o ultimo contato</label>
+                                <input type="number" id="regra-dias" min="0"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                    required>
+                            </div>
+                            <div>
+                                <label for="regra-descricao"
+                                    class="block text-sm font-medium leading-6 text-gray-900">Descricao</label>
+                                <textarea id="regra-descricao" rows="3"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                    required></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium leading-6 text-gray-900 mb-2">Materiais a
+                                    enviar</label>
+                                <div class="regra-materiais-section p-3 border border-gray-200 rounded-md bg-gray-50">
+                                    <div id="regra-materiais-disponiveis"
+                                        class="regra-materiais-list text-gray-500 text-xs flex flex-wrap gap-2 mb-2">
+                                        Carregando materiais...
+                                    </div>
+                                    <div class="text-xs font-semibold text-gray-700 mb-2 border-t pt-2 mt-2">
+                                        Selecionados</div>
+                                    <div id="regra-materiais-selecionados"
+                                        class="regra-materiais-list regra-materiais-selected flex flex-wrap gap-2 text-xs">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="submit"
+                            class="inline-flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto">Salvar
+                            regra</button>
+                        <button type="button"
+                            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                            data-modal-hide="modalRegraNova">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Editar Regra -->
+<div id="modalRegraEditar" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div
+                class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <form id="form-regra-editar">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h5 class="text-base font-semibold leading-6 text-gray-900" id="modal-title">Editar regra
+                            </h5>
+                            <button type="button" class="text-gray-400 hover:text-gray-500"
+                                data-modal-hide="modalRegraEditar">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="regra-editar-nome"
+                                    class="block text-sm font-medium leading-6 text-gray-900">Titulo da regra</label>
+                                <input type="text" id="regra-editar-nome"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                    required>
+                            </div>
+                            <div>
+                                <label for="regra-editar-dias"
+                                    class="block text-sm font-medium leading-6 text-gray-900">Dias apos o ultimo
+                                    contato</label>
+                                <input type="number" id="regra-editar-dias" min="0"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                    required>
+                            </div>
+                            <div>
+                                <label for="regra-editar-descricao"
+                                    class="block text-sm font-medium leading-6 text-gray-900">Descricao</label>
+                                <textarea id="regra-editar-descricao" rows="3"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                    required></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium leading-6 text-gray-900 mb-2">Materiais a
+                                    enviar</label>
+                                <div class="regra-materiais-section p-3 border border-gray-200 rounded-md bg-gray-50">
+                                    <div id="regra-editar-materiais-disponiveis"
+                                        class="regra-materiais-list text-gray-500 text-xs flex flex-wrap gap-2 mb-2">
+                                        Carregando materiais...
+                                    </div>
+                                    <div class="text-xs font-semibold text-gray-700 mb-2 border-t pt-2 mt-2">
+                                        Selecionados</div>
+                                    <div id="regra-editar-materiais-selecionados"
+                                        class="regra-materiais-list regra-materiais-selected flex flex-wrap gap-2 text-xs">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="submit"
+                            class="inline-flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto">Salvar
+                            alteracoes</button>
+                        <button type="button"
+                            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                            data-modal-hide="modalRegraEditar">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Excluir Regra -->
+<div id="modalRegraExcluir" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" data-modal-backdrop></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div
+                class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-sm">
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="flex flex-col items-center justify-center text-center">
+                        <div
+                            class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 mb-4">
+                            <span class="material-symbols-outlined text-2xl text-red-600">delete</span>
+                        </div>
+                        <h3 class="text-base font-semibold leading-6 text-gray-900 mb-2">Excluir regra</h3>
+                        <p class="text-sm text-gray-500">
+                            Deseja realmente excluir esta regra?
+                        </p>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 justify-center">
+                    <button type="button" id="btn-confirmar-exclusao-regra"
+                        class="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto">Excluir</button>
+                    <button type="button"
+                        class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                        data-modal-hide="modalRegraExcluir">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
