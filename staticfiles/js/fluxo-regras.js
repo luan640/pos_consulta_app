@@ -610,6 +610,26 @@ function carregarGrupos() {
     });
 }
 
+function atualizarSelectRedirecionamento(selectEl, { excluirId = null, selecionadoId = null } = {}) {
+  if (!selectEl) return;
+  selectEl.innerHTML = '';
+  const optionPadrao = document.createElement('option');
+  optionPadrao.value = '';
+  optionPadrao.textContent = 'Nao redirecionar';
+  selectEl.appendChild(optionPadrao);
+
+  gruposCache.forEach((grupo) => {
+    if (excluirId && Number(grupo.id) === Number(excluirId)) return;
+    const option = document.createElement('option');
+    option.value = grupo.id;
+    option.textContent = grupo.nome || 'Grupo sem nome';
+    if (selecionadoId && Number(grupo.id) === Number(selecionadoId)) {
+      option.selected = true;
+    }
+    selectEl.appendChild(option);
+  });
+}
+
 function carregarRegras(grupoId, options = {}) {
   if (!grupoId) return;
 
@@ -651,6 +671,10 @@ function carregarRegras(grupoId, options = {}) {
 function abrirModalGrupoNovo() {
   const form = document.getElementById('form-grupo-novo');
   if (form) form.reset();
+  atualizarSelectRedirecionamento(
+    document.getElementById('grupo-redirecionar'),
+    {}
+  );
   modalGrupoNovo?.show();
 }
 
@@ -660,6 +684,10 @@ function abrirModalGrupoEditar() {
 
   document.getElementById('grupo-editar-nome').value = grupo.nome || '';
   document.getElementById('grupo-editar-descricao').value = grupo.descricao || '';
+  atualizarSelectRedirecionamento(
+    document.getElementById('grupo-editar-redirecionar'),
+    { excluirId: grupo.id, selecionadoId: grupo.redirecionar_para_id }
+  );
   modalGrupoEditar?.show();
 }
 
@@ -741,6 +769,7 @@ document.addEventListener('DOMContentLoaded', () => {
     event.preventDefault();
     const nome = document.getElementById('grupo-nome').value.trim();
     const descricao = document.getElementById('grupo-descricao').value.trim();
+    const redirecionarPara = document.getElementById('grupo-redirecionar')?.value || '';
     const submitBtn = event.target.querySelector('button[type="submit"]');
 
     definirLoadingBotao(submitBtn, true);
@@ -750,7 +779,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'Content-Type': 'application/json',
         'X-CSRFToken': getCookie('csrftoken'),
       },
-      body: JSON.stringify({ nome, descricao }),
+      body: JSON.stringify({ nome, descricao, redirecionar_para: redirecionarPara || null }),
     })
       .then((res) => res.json())
       .then((data) => {
@@ -774,6 +803,7 @@ document.addEventListener('DOMContentLoaded', () => {
     event.preventDefault();
     const nome = document.getElementById('grupo-editar-nome').value.trim();
     const descricao = document.getElementById('grupo-editar-descricao').value.trim();
+    const redirecionarPara = document.getElementById('grupo-editar-redirecionar')?.value || '';
     const submitBtn = event.target.querySelector('button[type="submit"]');
 
     definirLoadingBotao(submitBtn, true);
@@ -783,7 +813,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'Content-Type': 'application/json',
         'X-CSRFToken': getCookie('csrftoken'),
       },
-      body: JSON.stringify({ nome, descricao }),
+      body: JSON.stringify({ nome, descricao, redirecionar_para: redirecionarPara || null }),
     })
       .then((res) => res.json())
       .then(() => {

@@ -473,7 +473,9 @@ def grupo_regras_list_create(request):
             'id': r.id,
             'nome': r.nome,
             'descricao': r.descricao,
-            'tamanho_grupo': r.regras.count()
+            'tamanho_grupo': r.regras.count(),
+            'redirecionar_para_id': r.redirecionar_para_id,
+            'redirecionar_para_nome': r.redirecionar_para.nome if r.redirecionar_para else None,
         } for r in grupo_regras]
         return JsonResponse({'grupos': data })
     
@@ -485,10 +487,21 @@ def grupo_regras_list_create(request):
             return JsonResponse({'erro': 'Nome do grupo é obrigatório'}, status=400)
         
         descricao = data.get('descricao', '')
+        redirecionar_para_id = data.get('redirecionar_para')
+        redirecionar_para = None
+        if redirecionar_para_id:
+            try:
+                redirecionar_para = GrupoLembrete.objects.get(
+                    pk=redirecionar_para_id,
+                    dono=request.user
+                )
+            except GrupoLembrete.DoesNotExist:
+                return JsonResponse({'erro': 'Grupo de redirecionamento não encontrado'}, status=400)
         grupo = GrupoLembrete.objects.create(
             dono=request.user,
             nome=nome,
-            descricao=descricao
+            descricao=descricao,
+            redirecionar_para=redirecionar_para,
         )
 
         return JsonResponse({'id': grupo.id, 'mensagem': 'Grupo de regras criada com sucesso'})
@@ -509,6 +522,17 @@ def grupo_regras_update(request, pk):
         data = json.loads(request.body)
         grupo.nome = data.get('nome', grupo.nome)
         grupo.descricao = data.get('descricao', grupo.descricao)
+        redirecionar_para_id = data.get('redirecionar_para', None)
+        if redirecionar_para_id:
+            try:
+                grupo.redirecionar_para = GrupoLembrete.objects.get(
+                    pk=redirecionar_para_id,
+                    dono=request.user
+                )
+            except GrupoLembrete.DoesNotExist:
+                return JsonResponse({'erro': 'Grupo de redirecionamento não encontrado'}, status=400)
+        else:
+            grupo.redirecionar_para = None
         grupo.save()
         return JsonResponse({'mensagem': 'Grupo atualizado'})
 
@@ -763,11 +787,42 @@ def atualizar_cards(request):
         grupo_lembrete__isnull=True
     ).count()
 
+    hoje = timezone.localdate()
+    agendados_hoje = Consulta.objects.filter(
+        paciente__dono=request.user,
+        data_consulta=hoje
+    ).count()
+
+    agora = timezone.now()
+    inicio_mes_atual = agora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if inicio_mes_atual.month == 12:
+        inicio_mes_seguinte = inicio_mes_atual.replace(year=inicio_mes_atual.year + 1, month=1)
+    else:
+        inicio_mes_seguinte = inicio_mes_atual.replace(month=inicio_mes_atual.month + 1)
+
+    fim_mes_anterior = inicio_mes_atual - timedelta(days=1)
+    inicio_mes_anterior = fim_mes_anterior.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    novos_pacientes_mes = Paciente.objects.filter(
+        dono=request.user,
+        created_at__gte=inicio_mes_atual,
+        created_at__lt=inicio_mes_seguinte
+    ).count()
+
+    novos_pacientes_mes_passado = Paciente.objects.filter(
+        dono=request.user,
+        created_at__gte=inicio_mes_anterior,
+        created_at__lt=inicio_mes_atual
+    ).count()
+
     return JsonResponse({
         'total_pacientes': total_pacientes,
         'alertas_ativos': alertas_ativos,
+        'agendados_hoje': agendados_hoje,
         'lembretes_atrasados': lembretes_atrasados,
-        'pacientes_sem_regra': sem_regra
+        'pacientes_sem_regra': sem_regra,
+        'novos_pacientes_mes': novos_pacientes_mes,
+        'novos_pacientes_mes_passado': novos_pacientes_mes_passado,
     })
 
 @login_required

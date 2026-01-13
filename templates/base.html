@@ -31,6 +31,26 @@
             },
         }
     </script>
+    <style>
+        #sidebar {
+            transition: width 200ms ease, min-width 200ms ease, max-width 200ms ease, flex-basis 200ms ease, transform 200ms ease;
+        }
+        .sidebar-collapsed {
+            width: 4.5rem !important;
+        }
+        .sidebar-collapsed .sidebar-text {
+            display: none;
+        }
+        .sidebar-collapsed .sidebar-link {
+            gap: 0;
+            justify-content: center;
+        }
+        .sidebar-collapsed .sidebar-logo {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+        }
+    </style>
     {% block extra_css %}{% endblock %}
     {% block extra_head %}{% endblock %}
 </head>
@@ -38,46 +58,47 @@
 <body class="bg-background-light dark:bg-background-dark text-[#111518] dark:text-white font-display">
     <div class="flex h-screen w-full overflow-hidden gap-x-2">
         <!-- Sidebar -->
-        <aside
-            class="flex w-64 flex-col justify-between border-r border-[#e5e7eb] dark:border-gray-800 bg-white dark:bg-[#101a22] hidden md:flex z-20">
+        <div id="sidebar-backdrop" class="fixed inset-0 bg-black/40 z-10 hidden md:hidden"></div>
+        <aside id="sidebar"
+            class="fixed inset-y-0 left-0 flex w-64 flex-col justify-between border-r border-[#e5e7eb] dark:border-gray-800 bg-white dark:bg-[#101a22] z-20 transform -translate-x-full md:translate-x-0 md:static md:flex">
             <div class="flex flex-col">
-                <div class="flex items-center gap-3 px-6 py-6">
+                <div class="sidebar-logo flex items-center gap-3 px-6 py-6">
                     <img src="{% static 'img/logo.png' %}" alt="LembraPro" class="h-10 w-auto rounded-md">
                     <div>
-                        <h1 class="text-base font-bold leading-none text-slate-900 dark:text-white">LembraPro</h1>
+                        <h1 class="sidebar-text text-base font-bold leading-none text-slate-900 dark:text-white">LembraPro</h1>
                         <!-- <p class="text-xs text-slate-500 dark:text-slate-400">Gestão Pro</p> -->
                     </div>
                 </div>
                 <nav class="flex flex-col gap-1 px-4 mt-4">
-                    <a class="flex items-center gap-3 rounded-lg {% if request.resolver_match.url_name == 'home' %}bg-primary/10 text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white{% endif %} px-3 py-2 transition-colors"
+                    <a class="sidebar-link flex items-center gap-3 rounded-lg {% if request.resolver_match.url_name == 'home' %}bg-primary/10 text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white{% endif %} px-3 py-2 transition-colors"
                         href="{% url 'home' %}">
                         <span class="material-symbols-outlined">dashboard</span>
-                        <span class="text-sm font-medium">Início</span>
+                        <span class="sidebar-text text-sm font-medium">Início</span>
                     </a>
-                    <a class="flex items-center gap-3 rounded-lg {% if request.resolver_match.url_name == 'pacientes' %}bg-primary/10 text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white{% endif %} px-3 py-2 transition-colors"
+                    <a class="sidebar-link flex items-center gap-3 rounded-lg {% if request.resolver_match.url_name == 'pacientes' %}bg-primary/10 text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white{% endif %} px-3 py-2 transition-colors"
                         href="{% url 'pacientes' %}">
                         <span class="material-symbols-outlined">group</span>
-                        <span class="text-sm font-medium">Pacientes</span>
+                        <span class="sidebar-text text-sm font-medium">Pacientes</span>
                     </a>
-                    <a class="flex items-center gap-3 rounded-lg {% if request.resolver_match.url_name == 'regras' %}bg-primary/10 text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white{% endif %} px-3 py-2 transition-colors"
+                    <a class="sidebar-link flex items-center gap-3 rounded-lg {% if request.resolver_match.url_name == 'regras' %}bg-primary/10 text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white{% endif %} px-3 py-2 transition-colors"
                         href="{% url 'regras' %}">
                         <span class="material-symbols-outlined">rule_settings</span>
-                        <span class="text-sm font-medium">Regras de Lembrete</span>
+                        <span class="sidebar-text text-sm font-medium">Regras de Lembrete</span>
                     </a>
-                    <a class="flex items-center gap-3 rounded-lg {% if request.resolver_match.url_name == 'historico' %}bg-primary/10 text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white{% endif %} px-3 py-2 transition-colors"
+                    <a class="sidebar-link flex items-center gap-3 rounded-lg {% if request.resolver_match.url_name == 'historico' %}bg-primary/10 text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white{% endif %} px-3 py-2 transition-colors"
                         href="{% url 'historico' %}">
                         <span class="material-symbols-outlined">history</span>
-                        <span class="text-sm font-medium">Histórico</span>
+                        <span class="sidebar-text text-sm font-medium">Histórico</span>
                     </a>
-                    <a class="flex items-center gap-3 rounded-lg {% if request.resolver_match.url_name == 'materiais' %}bg-primary/10 text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white{% endif %} px-3 py-2 transition-colors"
+                    <a class="sidebar-link flex items-center gap-3 rounded-lg {% if request.resolver_match.url_name == 'materiais' %}bg-primary/10 text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white{% endif %} px-3 py-2 transition-colors"
                         href="{% url 'materiais' %}">
                         <span class="material-symbols-outlined">inventory_2</span>
-                        <span class="text-sm font-medium">Materiais</span>
+                        <span class="sidebar-text text-sm font-medium">Materiais</span>
                     </a>
-                    <a class="flex items-center gap-3 rounded-lg {% if request.resolver_match.url_name == 'perfil' %}bg-primary/10 text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white{% endif %} px-3 py-2 transition-colors"
+                    <a class="sidebar-link flex items-center gap-3 rounded-lg {% if request.resolver_match.url_name == 'perfil' %}bg-primary/10 text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white{% endif %} px-3 py-2 transition-colors"
                         href="{% url 'perfil' %}">
                         <span class="material-symbols-outlined">settings</span>
-                        <span class="text-sm font-medium">Configurações</span>
+                        <span class="sidebar-text text-sm font-medium">Configurações</span>
                     </a>
                 </nav>
             </div>
@@ -85,9 +106,9 @@
                 <form method="post" action="{% url 'logout' %}">
                     {% csrf_token %}
                     <button type="submit"
-                        class="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors">
+                        class="sidebar-link flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors">
                         <span class="material-symbols-outlined text-[20px]">logout</span>
-                        <span>Sair</span>
+                        <span class="sidebar-text">Sair</span>
                     </button>
                 </form>
             </div>
@@ -98,7 +119,7 @@
             <header
                 class="flex h-16 w-full items-center justify-between border-b border-[#e5e7eb] dark:border-gray-800 bg-white dark:bg-[#101a22] px-4 sm:px-6 lg:px-8 shrink-0">
                 <div class="flex items-center gap-4">
-                    <button class="md:hidden text-slate-500">
+                    <button id="sidebar-toggle" class="text-slate-500" type="button" aria-label="Alternar sidebar">
                         <span class="material-symbols-outlined">menu</span>
                     </button>
                     <h2 class="text-lg font-bold text-slate-900 dark:text-white hidden sm:block">
@@ -111,7 +132,7 @@
                         <div class="flex items-center gap-3 pl-2">
                             <div class="text-right hidden sm:block">
                                 <p class="text-sm font-medium text-slate-900 dark:text-white">
-                                    {% firstof user.get_full_name user.username 'Usuário' %}</p>
+                                    {% firstof request.user.get_full_name request.user.get_username 'Usuário' %}</p>
                                 <!-- <p class="text-xs text-slate-500">Cardiologista</p> -->
                             </div>
                             <div class="h-9 w-9 rounded-full bg-slate-200 dark:bg-slate-700 ring-2 ring-white dark:ring-slate-800 shadow-sm flex items-center justify-center">
@@ -131,6 +152,39 @@
     {% block extra_js %}{% endblock %}
     <!-- Modal Polyfill & Logic -->
     <script src="{% static 'js/modal.js' %}"></script>
+    <script>
+        (function () {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.getElementById('sidebar-toggle');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            if (!sidebar || !toggle) {
+                return;
+            }
+            const collapsedClass = 'sidebar-collapsed';
+            const mobileOpenClass = 'translate-x-0';
+            const stored = localStorage.getItem('sidebar-collapsed');
+            if (stored === 'true') {
+                sidebar.classList.add(collapsedClass);
+            }
+            toggle.addEventListener('click', () => {
+                if (window.innerWidth < 768) {
+                    sidebar.classList.toggle(mobileOpenClass);
+                    if (backdrop) {
+                        backdrop.classList.toggle('hidden');
+                    }
+                    return;
+                }
+                sidebar.classList.toggle(collapsedClass);
+                localStorage.setItem('sidebar-collapsed', sidebar.classList.contains(collapsedClass));
+            });
+            if (backdrop) {
+                backdrop.addEventListener('click', () => {
+                    sidebar.classList.remove(mobileOpenClass);
+                    backdrop.classList.add('hidden');
+                });
+            }
+        })();
+    </script>
 </body>
 
 </html>

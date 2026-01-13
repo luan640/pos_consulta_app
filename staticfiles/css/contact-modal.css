@@ -26,6 +26,18 @@
   font-size: 0.9rem;
 }
 
+.material-pill-type {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background-color: #e2e8f0;
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
 .material-pill i {
   margin-left: 0.5rem;
   cursor: pointer;

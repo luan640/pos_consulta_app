@@ -225,6 +225,17 @@ function aplicarFiltroPeriodo(items) {
   }
 
   async function carregarPacientes() {
+    if (pacienteBuscaInput) {
+      pacienteBuscaInput.value = '';
+      pacienteBuscaInput.placeholder = 'Carregando...';
+      pacienteBuscaInput.disabled = true;
+    }
+    if (pacienteSelect) {
+      pacienteSelect.innerHTML = '<option value="">Carregando...</option>';
+    }
+    if (pacienteOpcoes) {
+      pacienteOpcoes.innerHTML = '<div class="px-3 py-2 text-sm text-slate-500">Carregando...</div>';
+    }
     const res = await fetch('/api/pacientes/?page=1&page_size=500');
     const data = await res.json();
     pacientesLista = data.pacientes || [];
@@ -239,7 +250,15 @@ function aplicarFiltroPeriodo(items) {
     if (pacientesLista.length > 0) {
       pacienteSelect.value = pacientesLista[0].id;
       if (pacienteBuscaInput) pacienteBuscaInput.value = pacientesLista[0].nome || '';
+      if (pacienteBuscaInput) {
+        pacienteBuscaInput.placeholder = 'Buscar paciente...';
+        pacienteBuscaInput.disabled = false;
+      }
       return pacientesLista[0].id;
+    }
+    if (pacienteBuscaInput) {
+      pacienteBuscaInput.placeholder = 'Buscar paciente...';
+      pacienteBuscaInput.disabled = false;
     }
     return null;
   }

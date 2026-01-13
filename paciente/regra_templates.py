@@ -33,4 +33,12 @@ DEFAULT_GROUP_TEMPLATES = [
             ("Encerramento e proxima etapa", 14, "Resumo do retorno e convite para nova consulta."),
         ],
     },
+    {
+        "nome": "Acompanhamento mensal - 7 dias",
+        "descricao": "Apenas entrar em contato com o paciente para manter contato",
+        "regras": [
+            ("Contato", 7, "Manter contato."),
+        ],
+    },
+
 ]

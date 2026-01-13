@@ -6,7 +6,7 @@ from django.contrib.auth import views as auth_views
 
 # login e logout
 urlpatterns = [
-    path('', landing_page, name='landing'),
+    path('', CustomLoginView.as_view(), name='landing'),
     path('login/', CustomLoginView.as_view(), name='login'),
     path(
         'logout/',

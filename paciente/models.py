@@ -78,6 +78,14 @@ class GrupoLembrete(models.Model):
     dono = models.ForeignKey(User, on_delete=models.CASCADE, related_name='grupos_lembrete')
     nome = models.CharField(max_length=100)
     descricao = models.TextField(blank=True, null=True)
+    redirecionar_para = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='grupos_origem',
+        help_text="Ao finalizar o fluxo, redirecionar para este grupo (opcional).",
+    )
     created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
 
     def __str__(self):

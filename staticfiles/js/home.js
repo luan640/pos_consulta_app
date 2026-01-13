@@ -2707,7 +2707,20 @@ export function inicializarSelecaoMateriais(preSelecionados = []) {
   }
 
   const normalizar = (nome) => (nome || '').trim();
-  const selectedMaterials = new Set();
+  const selectedMaterials = new Map();
+
+  const formatarTipo = (tipo) => {
+    const valor = (tipo || '').trim().toLowerCase();
+    if (!valor) return '';
+    const labels = {
+      pdf: 'PDF',
+      video: 'Video',
+      imagem: 'Imagem',
+      foto: 'Foto',
+      youtube: 'YouTube'
+    };
+    return labels[valor] || valor;
+  };
 
   function renderSelected() {
     selectedContainer.innerHTML = '';
@@ -2720,11 +2733,13 @@ export function inicializarSelecaoMateriais(preSelecionados = []) {
       return;
     }
 
-    selectedMaterials.forEach((nome) => {
+    selectedMaterials.forEach((tipo, nome) => {
       const pill = document.createElement('div');
       pill.className = 'material-pill';
       pill.dataset.materialName = nome;
-      pill.innerHTML = `${nome} <i class="bi bi-x-circle-fill" title="Remover"></i>`;
+      const tipoLabel = formatarTipo(tipo);
+      const tipoSpan = tipoLabel ? `<span class="material-pill-type">${tipoLabel}</span>` : '';
+      pill.innerHTML = `${nome}${tipoSpan} <i class="bi bi-x-circle-fill" title="Remover"></i>`;
 
       const removerBtn = pill.querySelector('i');
       if (removerBtn) {
@@ -2738,12 +2753,12 @@ export function inicializarSelecaoMateriais(preSelecionados = []) {
     });
   }
 
-  function addMaterial(nome) {
+  function addMaterial(nome, tipo) {
     const valor = normalizar(nome);
     if (!valor || selectedMaterials.has(valor)) {
       return;
     }
-    selectedMaterials.add(valor);
+    selectedMaterials.set(valor, tipo || '');
     renderSelected();
   }
 
@@ -2753,7 +2768,7 @@ export function inicializarSelecaoMateriais(preSelecionados = []) {
   preSelecionados
     .map(normalizar)
     .filter(Boolean)
-    .forEach((nome) => selectedMaterials.add(nome));
+    .forEach((nome) => selectedMaterials.set(nome, ''));
 
   renderSelected();
 
@@ -2775,11 +2790,13 @@ export function inicializarSelecaoMateriais(preSelecionados = []) {
           return;
         }
 
+        const tipoLabel = formatarTipo(material.tipo_arquivo);
         const chip = document.createElement('div');
         chip.className = 'material-chip';
-        chip.textContent = descricao;
+        chip.textContent = tipoLabel ? `${descricao} (${tipoLabel})` : descricao;
         chip.dataset.materialId = material.id;
-        chip.addEventListener('click', () => addMaterial(descricao));
+        chip.dataset.materialType = material.tipo_arquivo || '';
+        chip.addEventListener('click', () => addMaterial(descricao, material.tipo_arquivo));
         suggestionsContainer.appendChild(chip);
       });
     })
@@ -2791,7 +2808,10 @@ export function inicializarSelecaoMateriais(preSelecionados = []) {
 
 function atualizarCards() {
   const cardTotalPatientes = document.getElementById('total-patients');
+  const cardNovosPacientes = document.getElementById('new-patients-vs-last-month');
+  const cardTendenciaPacientes = document.getElementById('patients-trend');
   const cardTotalLembretes = document.getElementById('active-alerts');
+  const cardAgendadosHoje = document.getElementById('scheduled-today');
   const cardLembreteAtrasado = document.getElementById('lembrete-atrasado');
   const cardSemRegra = document.getElementById('patients-no-rule');
 
@@ -2801,7 +2821,17 @@ function atualizarCards() {
 
   // Mostra spinner de loading em cada card
   cardTotalPatientes.innerHTML = `<span class="spinner-border text-primary" role="status"></span>`;
+  if (cardNovosPacientes) {
+    cardNovosPacientes.textContent = 'Carregando...';
+  }
+  if (cardTendenciaPacientes) {
+    cardTendenciaPacientes.className = 'inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold text-slate-400';
+    cardTendenciaPacientes.textContent = '';
+  }
   cardTotalLembretes.innerHTML = `<span class="spinner-border text-primary" role="status"></span>`;
+  if (cardAgendadosHoje) {
+    cardAgendadosHoje.textContent = 'Carregando...';
+  }
   cardLembreteAtrasado.innerHTML = `<span class="spinner-border text-primary" role="status"></span>`;
   if (cardSemRegra) {
     cardSemRegra.innerHTML = `<span class="spinner-border text-primary" role="status"></span>`;
@@ -2811,16 +2841,56 @@ function atualizarCards() {
     .then(response => response.json())
     .then(data => {
       cardTotalPatientes.textContent = data.total_pacientes;
+      if (cardTendenciaPacientes) {
+        const novosMes = Number(data.novos_pacientes_mes ?? 0);
+        const novosMesPassado = Number(data.novos_pacientes_mes_passado ?? 0);
+        let variacao = 0;
+        if (novosMesPassado > 0) {
+          variacao = Math.round(((novosMes - novosMesPassado) / novosMesPassado) * 100);
+        } else if (novosMes > 0) {
+          variacao = 100;
+        }
+
+        const sinal = variacao > 0 ? '+' : '';
+        if (variacao > 0) {
+          cardTendenciaPacientes.className = 'inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold bg-green-100 text-green-700';
+          cardTendenciaPacientes.innerHTML = `<span class="material-symbols-outlined text-[14px]">arrow_upward</span>${sinal}${variacao}%`;
+        } else if (variacao < 0) {
+          cardTendenciaPacientes.className = 'inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold bg-red-100 text-red-700';
+          cardTendenciaPacientes.innerHTML = `<span class="material-symbols-outlined text-[14px]">arrow_downward</span>${variacao}%`;
+        } else {
+          cardTendenciaPacientes.className = 'inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold bg-slate-100 text-slate-500';
+          cardTendenciaPacientes.innerHTML = `<span class="material-symbols-outlined text-[14px]">arrow_forward</span>0%`;
+        }
+
+        if (cardNovosPacientes) {
+          cardNovosPacientes.textContent = 'vs mês passado';
+        }
+      } else if (cardNovosPacientes) {
+        cardNovosPacientes.textContent = 'vs mês passado';
+      }
       cardTotalLembretes.textContent = data.alertas_ativos;
+      if (cardAgendadosHoje) {
+        cardAgendadosHoje.textContent = `Agendados hoje: ${data.agendados_hoje ?? '-'}`;
+      }
       cardLembreteAtrasado.textContent = data.lembretes_atrasados;
       if (cardSemRegra) {
         cardSemRegra.textContent = data.pacientes_sem_regra ?? '-';
       }
     })
     .catch(err => {
-      showToast('Erro ao carregar estatísticas', 'error');
+      showToast('Erro ao carregar estatisticas', 'error');
       cardTotalPatientes.textContent = '--';
+      if (cardNovosPacientes) {
+        cardNovosPacientes.textContent = '--';
+      }
+      if (cardTendenciaPacientes) {
+        cardTendenciaPacientes.textContent = '';
+      }
       cardTotalLembretes.textContent = '--';
+      if (cardAgendadosHoje) {
+        cardAgendadosHoje.textContent = '--';
+      }
       cardLembreteAtrasado.textContent = '--';
       if (cardSemRegra) {
         cardSemRegra.textContent = '--';
