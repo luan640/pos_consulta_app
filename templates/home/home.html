@@ -135,6 +135,12 @@
                 <option value="emdia">Em dia</option>
             </select>
 
+            <select id="filter-group"
+                class="h-10 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#15202b] px-3 text-sm text-slate-600 dark:text-slate-300 focus:border-primary focus:ring-1 focus:ring-primary w-full lg:w-56">
+                <option value="">Grupo de lembrete</option>
+                <option value="none">Sem grupo</option>
+            </select>
+
             <select id="filter-sort"
                 class="h-10 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#15202b] px-3 text-sm text-slate-600 dark:text-slate-300 focus:border-primary focus:ring-1 focus:ring-primary w-full lg:w-48">
                 <option value="">Ordenar Por</option>
@@ -675,6 +681,14 @@
                                     required>
                                     <option value="" disabled selected>Escolha um grupo</option>
                                 </select>
+                            </div>
+                            <div>
+                                <label for="atribuir-data-inicio"
+                                    class="block text-sm font-medium leading-6 text-gray-900">Começar a contagem a partir de qual dia?</label>
+                                <input type="date" id="atribuir-data-inicio"
+                                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                    required>
+                                <p id="atribuir-ultima-consulta" class="mt-1 text-xs text-slate-500"></p>
                             </div>
                             <div
                                 class="flex items-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-md text-sm border border-blue-100">

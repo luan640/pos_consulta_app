@@ -141,6 +141,7 @@ const PAGE_SIZE = 15;
             <span>${formatarData(item.data)}</span>
             <span class="font-semibold text-[#111518]">${item.titulo}</span>
           </div>
+          ${item.grupo ? `<div class="text-xs text-slate-500 mt-0.5">Grupo: <span class="font-semibold text-slate-700">${item.grupo}</span></div>` : ''}
           <div class="text-xs text-slate-400 mt-0.5">Criado em: ${formatarData(item.criadoEm) || '-'} </div>
           <div class="text-sm text-slate-600 mt-1">${item.descricao || ''}</div>
           ${item.materiais?.length ? `
@@ -294,6 +295,7 @@ function aplicarFiltroPeriodo(items) {
         titulo: c.tipo_consulta || 'Consulta',
         descricao: '',
         criadoEm: c.criado_em,
+        grupo: c.grupo_lembrete_nome || '',
       };
     });
 
@@ -314,6 +316,7 @@ function aplicarFiltroPeriodo(items) {
       descricao: textos,
       criadoEm: c.criado_em,
       materiais: materiaisEntregues,
+      grupo: c.grupo_lembrete_nome || '',
     };
   });
 

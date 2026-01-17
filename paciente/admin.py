@@ -39,7 +39,7 @@ class PacienteAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
         data_consulta = form.cleaned_data['data_primeira_consulta']
-        consulta = Consulta.objects.create(paciente=obj, data_consulta=data_consulta)
+        Consulta.objects.create(paciente=obj, data_consulta=data_consulta)
 
         regras = RegraLembrete.objects.filter(nutricionista=obj.dono, ordem=0)
         for regra in regras:

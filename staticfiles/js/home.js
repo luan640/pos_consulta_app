@@ -14,6 +14,8 @@ let modoVisualizacao = obterModoVisualizacaoInicial();
 let calendarioMesAtual = null;
 let calendarioAnoAtual = null;
 let bloqueiosBotoesVisualizacao = 0;
+let ultimaChaveListaCarregada = null;
+let ultimaChaveCalendarioCarregada = null;
 
 function paginaHomeDisponivel() {
   return Boolean(document.getElementById('patients-container'));
@@ -126,6 +128,48 @@ function executarAcaoVisualizacao(acao) {
 document.addEventListener('DOMContentLoaded', () => {
   if (!paginaHomeDisponivel()) {
     return;
+  }
+
+  const filtroGrupoEl = document.getElementById('filter-group');
+  if (filtroGrupoEl) {
+    const placeholderOption = filtroGrupoEl.querySelector('option[value=""]');
+    const placeholder = placeholderOption?.textContent || 'Grupo de lembrete';
+
+    filtroGrupoEl.disabled = true;
+    if (placeholderOption) {
+      placeholderOption.textContent = 'Carregando grupos...';
+      placeholderOption.setAttribute('data-placeholder', placeholder);
+    }
+
+    fetch('/api/grupo-regras/')
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error('Erro ao buscar grupos');
+        }
+        return res.json();
+      })
+      .then((data) => {
+        const grupos = Array.isArray(data && data.grupos) ? data.grupos : [];
+        const existentes = new Set(Array.from(filtroGrupoEl.options).map((opt) => opt.value));
+        grupos.forEach((g) => {
+          if (!g || !g.id || !g.nome) return;
+          const value = String(g.id);
+          if (existentes.has(value)) return;
+          const opt = document.createElement('option');
+          opt.value = value;
+          opt.textContent = g.nome;
+          filtroGrupoEl.appendChild(opt);
+        });
+      })
+      .catch((err) => {
+        console.error(err);
+      })
+      .finally(() => {
+        if (placeholderOption) {
+          placeholderOption.textContent = placeholderOption.getAttribute('data-placeholder') || 'Grupo de lembrete';
+        }
+        filtroGrupoEl.disabled = false;
+      });
   }
 
   // Fechar modal desabilitar lembrete via botÇœes com data-modal-hide
@@ -308,14 +352,30 @@ function obterFiltrosPacientes() {
   const nome = document.getElementById('filter-name')?.value?.trim() || '';
   const status = document.getElementById('filter-reminder')?.value?.trim() || '';
   const statusPrazo = document.getElementById('filter-reminder-due')?.value?.trim() || '';
+  const grupo = document.getElementById('filter-group')?.value?.trim() || '';
   const sort = document.getElementById('filter-sort')?.value?.trim() || '';
 
   return {
     nome,
     status,
     statusPrazo,
+    grupo,
     sort,
   };
+}
+
+function criarChaveLista(filtros) {
+  const nome = filtros?.nome || '';
+  const status = filtros?.status || '';
+  const statusPrazo = filtros?.statusPrazo || '';
+  const grupo = filtros?.grupo || '';
+  const sort = filtros?.sort || '';
+  return JSON.stringify({ nome, status, statusPrazo, grupo, sort });
+}
+
+function criarChaveCalendario(filtros, mes, ano) {
+  const chaveLista = JSON.parse(criarChaveLista(filtros));
+  return JSON.stringify({ ...chaveLista, mes, ano });
 }
 
 function obterStatusPrazoLembrete(paciente) {
@@ -367,7 +427,8 @@ export function listarPacientes(reset = true) {
     listaCompletaCarregada = false;
   }
 
-  const { nome: filtroNome, status: filtroStatus, statusPrazo: filtroStatusPrazo, sort: filtroSort } = obterFiltrosPacientes();
+  const { nome: filtroNome, status: filtroStatus, statusPrazo: filtroStatusPrazo, grupo: filtroGrupo, sort: filtroSort } = obterFiltrosPacientes();
+  const chaveLista = criarChaveLista({ nome: filtroNome, status: filtroStatus, statusPrazo: filtroStatusPrazo, grupo: filtroGrupo, sort: filtroSort });
 
   const params = new URLSearchParams();
 
@@ -381,6 +442,10 @@ export function listarPacientes(reset = true) {
 
   if (filtroSort !== '') {
     params.append('sort', filtroSort);
+  }
+
+  if (filtroGrupo !== '') {
+    params.append('grupo', filtroGrupo);
   }
 
   const proximaPagina = reset ? 1 : paginaAtual + 1;
@@ -418,6 +483,8 @@ export function listarPacientes(reset = true) {
       const possuiMais = Boolean(data?.has_more);
 
       if (reset) {
+        container.dataset.loadedKey = chaveLista;
+        ultimaChaveListaCarregada = chaveLista;
         container.innerHTML = '';
       }
 
@@ -506,6 +573,15 @@ function inicializarControleVisualizacao() {
       salvarModoVisualizacao(modoVisualizacao);
       atualizarEstadoBotoesVisualizacao(botaoLista, botaoCalendario);
       mostrarVisualizacaoLista();
+
+      const filtros = obterFiltrosPacientes();
+      const chaveAtual = criarChaveLista(filtros);
+      const container = document.getElementById('patients-container');
+      if (container && container.dataset.loadedKey === chaveAtual) {
+        ultimaChaveListaCarregada = chaveAtual;
+        return;
+      }
+
       executarAcaoVisualizacao(() => listarPacientes());
     });
 
@@ -516,6 +592,17 @@ function inicializarControleVisualizacao() {
       modoVisualizacao = MODO_CALENDARIO;
       salvarModoVisualizacao(modoVisualizacao);
       atualizarEstadoBotoesVisualizacao(botaoLista, botaoCalendario);
+
+      const filtros = obterFiltrosPacientes();
+      const chaveAtual = criarChaveCalendario(filtros, calendarioMesAtual, calendarioAnoAtual);
+      const grid = document.getElementById('calendar-grid');
+      if (grid && grid.dataset.loadedKey === chaveAtual && !carregandoCalendario) {
+        ultimaChaveCalendarioCarregada = chaveAtual;
+        mostrarVisualizacaoCalendario();
+        atualizarCabecalhoCalendario();
+        return;
+      }
+
       executarAcaoVisualizacao(() => carregarCalendario());
     });
   }
@@ -684,6 +771,13 @@ async function carregarCalendario(mes = calendarioMesAtual, ano = calendarioAnoA
 
   atualizarCabecalhoCalendario();
 
+  const filtros = obterFiltrosPacientes();
+  const chaveCalendario = criarChaveCalendario(filtros, calendarioMesAtual, calendarioAnoAtual);
+  if (!carregandoCalendario && grid && grid.dataset.loadedKey === chaveCalendario) {
+    ultimaChaveCalendarioCarregada = chaveCalendario;
+    return;
+  }
+
   if (emptyState) {
     emptyState.classList.add('d-none');
   }
@@ -721,6 +815,10 @@ async function carregarCalendario(mes = calendarioMesAtual, ano = calendarioAnoA
     }
 
     renderizarCalendario(eventos);
+    if (grid) {
+      grid.dataset.loadedKey = chaveCalendario;
+      ultimaChaveCalendarioCarregada = chaveCalendario;
+    }
   } catch (error) {
     console.error(error);
 
@@ -781,7 +879,7 @@ async function buscarEventosCalendario(mes, ano) {
     ano = hoje.getFullYear();
   }
 
-  const { nome, status, statusPrazo, sort } = obterFiltrosPacientes();
+  const { nome, status, statusPrazo, grupo, sort } = obterFiltrosPacientes();
   const pacientesMes = [];
   let pagina = 1;
   let possuiMais = true;
@@ -799,6 +897,10 @@ async function buscarEventosCalendario(mes, ano) {
 
     if (sort) {
       params.append('sort', sort);
+    }
+
+    if (grupo) {
+      params.append('grupo', grupo);
     }
 
     params.append('page', pagina.toString());
@@ -1792,6 +1894,110 @@ const showContactModal = () => {
 const contactPatientNameEl = document.getElementById('contact-patient-name');
 const contactPatientIdEl = document.getElementById('contact-patient-id');
 
+// Cache simples para evitar refetch ao abrir o modal de contato repetidas vezes.
+const MATERIAIS_CACHE_VERSION_KEY = 'pos_consulta:materiais_version';
+const MATERIAIS_CACHE_TTL_MS = 60 * 60 * 1000; // 1h
+const MATERIAIS_REGRA_CACHE_TTL_MS = 10 * 60 * 1000; // 10min
+
+const getMateriaisCacheVersion = () => {
+  try {
+    return localStorage.getItem(MATERIAIS_CACHE_VERSION_KEY) || '0';
+  } catch (e) {
+    return '0';
+  }
+};
+
+let materiaisCache = null;
+let materiaisCacheFetchedAt = 0;
+let materiaisCachePromise = null;
+let materiaisCacheVersion = null;
+
+function getMateriaisCached({ force = false } = {}) {
+  const now = Date.now();
+  const version = getMateriaisCacheVersion();
+  const expired = now - materiaisCacheFetchedAt > MATERIAIS_CACHE_TTL_MS;
+  const versionChanged = materiaisCacheVersion !== null && version !== materiaisCacheVersion;
+
+  if (!force && materiaisCache && !expired && !versionChanged) {
+    return Promise.resolve(materiaisCache);
+  }
+  if (!force && materiaisCachePromise) {
+    return materiaisCachePromise;
+  }
+
+  materiaisCachePromise = fetch('/api/materiais/')
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error('Erro ao buscar materiais');
+      }
+      return res.json();
+    })
+    .then((data) => {
+      materiaisCache = Array.isArray(data && data.materiais) ? data.materiais : [];
+      materiaisCacheFetchedAt = Date.now();
+      materiaisCacheVersion = version;
+      materiaisCachePromise = null;
+      return materiaisCache;
+    })
+    .catch((err) => {
+      materiaisCachePromise = null;
+      throw err;
+    });
+
+  return materiaisCachePromise;
+}
+
+const materiaisRegraCache = new Map(); // pacienteId -> { fetchedAt, materiais: string[] }
+const materiaisRegraPromiseCache = new Map(); // pacienteId -> Promise<string[]>
+
+function getMateriaisRegraCached(pacienteId, { force = false } = {}) {
+  const key = String(pacienteId);
+  const now = Date.now();
+  const cached = materiaisRegraCache.get(key);
+  const expired = cached ? (now - cached.fetchedAt > MATERIAIS_REGRA_CACHE_TTL_MS) : true;
+
+  if (!force && cached && !expired) {
+    return Promise.resolve(cached.materiais);
+  }
+  if (!force && materiaisRegraPromiseCache.has(key)) {
+    return materiaisRegraPromiseCache.get(key);
+  }
+
+  const promise = fetch(`/api/pacientes/${pacienteId}/materiais-regra/`)
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error('Erro ao buscar materiais da regra');
+      }
+      return res.json();
+    })
+    .then((data) => {
+      const preSelecionados = Array.isArray(data && data.materiais)
+        ? data.materiais
+          .map((material) => (material && material.descricao ? material.descricao.trim() : ''))
+          .filter(Boolean)
+        : [];
+      materiaisRegraCache.set(key, { fetchedAt: Date.now(), materiais: preSelecionados });
+      materiaisRegraPromiseCache.delete(key);
+      return preSelecionados;
+    })
+    .catch((err) => {
+      materiaisRegraPromiseCache.delete(key);
+      throw err;
+    });
+
+  materiaisRegraPromiseCache.set(key, promise);
+  return promise;
+}
+
+// Preload do catálogo de materiais no carregamento da página.
+try {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => getMateriaisCached().catch(() => { }));
+  } else {
+    getMateriaisCached().catch(() => { });
+  }
+} catch (e) { }
+
 function openContactModal(patient) {
   if (!contactModalEl || !contactPatientNameEl || !contactPatientIdEl) {
     return;
@@ -1820,21 +2026,8 @@ function openContactModal(patient) {
     suggestionsContainer.innerHTML = '<span class="text-muted small">Carregando sugestões...</span>';
   }
 
-  fetch(`/api/pacientes/${patient.id}/materiais-regra/`)
-    .then((res) => {
-      if (!res.ok) {
-        throw new Error('Erro ao buscar materiais da regra');
-      }
-      return res.json();
-    })
-    .then((data) => {
-      const preSelecionados = Array.isArray(data.materiais)
-        ? data.materiais
-          .map((material) => (material && material.descricao ? material.descricao.trim() : ''))
-          .filter(Boolean)
-        : [];
-      inicializarSelecaoMateriais(preSelecionados);
-    })
+  getMateriaisRegraCached(patient.id)
+    .then((preSelecionados) => inicializarSelecaoMateriais(preSelecionados))
     .catch((error) => {
       console.error('Erro ao carregar materiais da regra:', error);
       inicializarSelecaoMateriais();
@@ -2085,6 +2278,15 @@ function openAtribuirGrupoModal(patient) {
 
   document.getElementById('paciente-id').value = patient;
 
+  const ultimaConsultaEl = document.getElementById('atribuir-ultima-consulta');
+  const dataInicioEl = document.getElementById('atribuir-data-inicio');
+  if (ultimaConsultaEl) {
+    ultimaConsultaEl.textContent = 'Última consulta: carregando...';
+  }
+  if (dataInicioEl) {
+    dataInicioEl.value = '';
+  }
+
   const modalAtribuirGrupoEl = document.getElementById('atribuirGrupoModal');
   const modalAtribuirGrupo = bootstrap.Modal.getInstance(modalAtribuirGrupoEl) || new bootstrap.Modal(modalAtribuirGrupoEl);
 
@@ -2092,6 +2294,38 @@ function openAtribuirGrupoModal(patient) {
   modalAtribuirGrupo.show();
 
   carregarGrupoRegras();
+
+  fetch(`/api/paciente/${patient}/`)
+    .then((res) => res.json())
+    .then((data) => {
+      const ultima = data?.ultima_consulta || null;
+      if (ultimaConsultaEl) {
+        const formatarPtBr = (valor) => {
+          if (!valor) return null;
+          // Evita bug de fuso (YYYY-MM-DD vira UTC e pode voltar 1 dia no pt-BR)
+          if (typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}/.test(valor)) {
+            const [y, m, d] = valor.slice(0, 10).split('-').map(Number);
+            if ([y, m, d].some((n) => Number.isNaN(n))) return null;
+            return new Date(y, m - 1, d).toLocaleDateString('pt-BR');
+          }
+          const d = new Date(valor);
+          if (Number.isNaN(d.getTime())) return null;
+          return d.toLocaleDateString('pt-BR');
+        };
+        const ultimaFmt = formatarPtBr(ultima);
+        ultimaConsultaEl.textContent = ultimaFmt ? `Última consulta foi dia ${ultimaFmt}` : 'Última consulta não informada.';
+      }
+      if (dataInicioEl) {
+        const hoje = new Date();
+        const hojeIso = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+        dataInicioEl.value = (typeof ultima === 'string' && ultima.length >= 10) ? ultima.slice(0, 10) : hojeIso;
+      }
+    })
+    .catch(() => {
+      if (ultimaConsultaEl) {
+        ultimaConsultaEl.textContent = 'Última consulta não informada.';
+      }
+    });
 
 }
 
@@ -2393,9 +2627,7 @@ function inicializarDesativarLembrete() {
     btn.addEventListener('click', async () => {
       const idPaciente = document.getElementById('disable-patient-id').value;
       const submitBtn = btn;
-      submitBtn.disabled = true;
-      submitBtn.classList.add('loading');
-      submitBtn.dataset.loadingAdded = 'true';
+      const clearLoading = setButtonLoading(submitBtn);
 
       try {
         const response = await fetch(`/api/status-lembrete/${idPaciente}/`, {
@@ -2421,8 +2653,7 @@ function inicializarDesativarLembrete() {
       } catch (err) {
         showToast('Erro inesperado ao desabilitar lembrete.', 'error');
       } finally {
-        submitBtn.disabled = false;
-        submitBtn.classList.remove('loading');
+        clearLoading();
       }
     });
   }
@@ -2438,7 +2669,7 @@ function inicializarHabilitarLembrete() {
     btn.addEventListener('click', async () => {
       const idPaciente = document.getElementById('enable-patient-id').value;
       const submitBtn = btn;
-      submitBtn.disabled = true;
+      const clearLoading = setButtonLoading(submitBtn);
 
       try {
         const response = await fetch(`/api/status-lembrete/${idPaciente}/`, {
@@ -2464,7 +2695,7 @@ function inicializarHabilitarLembrete() {
       } catch (err) {
         showToast('Erro inesperado ao habilitar lembrete.', 'error');
       } finally {
-        submitBtn.disabled = false;
+        clearLoading();
       }
     });
   }
@@ -2566,6 +2797,12 @@ function inicializarFormularioAtribuirGrupo() {
 
       const grupoId = document.getElementById('grupo-select').value;
       const pacienteId = document.getElementById('paciente-id').value;
+      const dataInicio = document.getElementById('atribuir-data-inicio')?.value;
+
+      if (!dataInicio) {
+        showToast('Informe a data de início da contagem.', 'error');
+        return;
+      }
 
       const modalAtribuirGrupoModalEl = document.getElementById('atribuirGrupoModal');
       const modalAtribuirGrupoModal = bootstrap.Modal.getInstance(modalAtribuirGrupoModalEl)
@@ -2580,10 +2817,13 @@ function inicializarFormularioAtribuirGrupo() {
           'Content-Type': 'application/json',
           'X-CSRFToken': getCookie('csrftoken')
         },
-        body: {}  // corpo vazio, como no original
+        body: JSON.stringify({ data_inicio: dataInicio })
       })
         .then(res => res.json())
-        .then(() => {
+        .then((data) => {
+          if (data && data.erro) {
+            throw new Error(data.erro);
+          }
           form.reset();
           modalAtribuirGrupoModal.hide(); // Fecha modal
 
@@ -2602,8 +2842,8 @@ function inicializarFormularioAtribuirGrupo() {
 
           showToast('Sucesso!', 'success');
         })
-        .catch(() => {
-          showToast('Erro ao atribuir grupo.', 'error');
+        .catch((err) => {
+          showToast(err?.message || 'Erro ao atribuir grupo.', 'error');
         })
         .finally(() => {
           clearLoading();
@@ -2774,17 +3014,16 @@ export function inicializarSelecaoMateriais(preSelecionados = []) {
 
   suggestionsContainer.innerHTML = '<span class="text-muted small">Carregando sugestões...</span>';
 
-  fetch('/api/materiais/')
-    .then((res) => res.json())
-    .then((data) => {
+  getMateriaisCached()
+    .then((materiais) => {
       suggestionsContainer.innerHTML = '';
 
-      if (!data.materiais || !data.materiais.length) {
+      if (!materiais || !materiais.length) {
         suggestionsContainer.innerHTML = '<span class="text-muted small">Voce ainda nao cadastrou nenhum material. <a class="btn btn-outline-primary btn-sm ms-2" target="_blank" rel="noopener noreferrer" href="/materiais/">Clique aqui para adicionar materiais</a></span>';
         return;
       }
 
-      data.materiais.forEach((material) => {
+      materiais.forEach((material) => {
         const descricao = normalizar(material.descricao);
         if (!descricao) {
           return;

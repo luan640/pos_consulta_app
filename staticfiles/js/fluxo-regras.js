@@ -1,7 +1,67 @@
 import { showToast } from './message.js';
 
+const regrasSidebarEl = document.getElementById('regras-sidebar');
+const regrasSidebarBackdropEl = document.getElementById('regras-sidebar-backdrop');
+const regrasSidebarToggleEl = document.getElementById('regras-sidebar-toggle');
+const regrasSidebarCloseEl = document.getElementById('regras-sidebar-close');
+const regrasSidebarFabEl = document.getElementById('regras-sidebar-fab');
+
+function regrasSidebarIsMobile() {
+  if (typeof window === 'undefined' || !window.matchMedia) return false;
+  return window.matchMedia('(max-width: 767px)').matches;
+}
+
+function abrirRegrasSidebar() {
+  if (!regrasSidebarEl || !regrasSidebarIsMobile()) return;
+  regrasSidebarEl.classList.remove('-translate-x-full');
+  regrasSidebarEl.classList.add('translate-x-0');
+  if (regrasSidebarBackdropEl) regrasSidebarBackdropEl.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function fecharRegrasSidebar() {
+  if (!regrasSidebarEl) return;
+  regrasSidebarEl.classList.add('-translate-x-full');
+  regrasSidebarEl.classList.remove('translate-x-0');
+  if (regrasSidebarBackdropEl) regrasSidebarBackdropEl.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+function inicializarSidebarRegras() {
+  if (!regrasSidebarEl) return;
+
+  regrasSidebarToggleEl?.addEventListener('click', () => abrirRegrasSidebar());
+  regrasSidebarFabEl?.addEventListener('click', () => abrirRegrasSidebar());
+  regrasSidebarCloseEl?.addEventListener('click', () => fecharRegrasSidebar());
+  regrasSidebarBackdropEl?.addEventListener('click', () => fecharRegrasSidebar());
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      fecharRegrasSidebar();
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    if (!regrasSidebarIsMobile()) {
+      // Garante estado "aberto" no desktop sem overlay
+      if (regrasSidebarEl) {
+        regrasSidebarEl.classList.remove('-translate-x-full');
+        regrasSidebarEl.classList.remove('translate-x-0');
+      }
+      if (regrasSidebarBackdropEl) regrasSidebarBackdropEl.classList.add('hidden');
+      document.body.style.overflow = '';
+    } else {
+      // No mobile, começa fechado por padrão
+      if (regrasSidebarEl && !regrasSidebarEl.classList.contains('-translate-x-full')) {
+        fecharRegrasSidebar();
+      }
+    }
+  });
+}
+
 const gruposListEl = document.getElementById('regra-grupos-list');
 const gruposEmptyEl = document.getElementById('regra-grupos-empty');
+const gruposSearchEl = document.getElementById('regra-grupos-search');
 const grupoNomeEl = document.getElementById('regra-grupo-nome');
 const grupoDescricaoEl = document.getElementById('regra-grupo-descricao');
 const regraListEl = document.getElementById('regra-flow-list');
@@ -11,6 +71,28 @@ const regraMateriaisDisponiveisEl = document.getElementById('regra-materiais-dis
 const regraMateriaisSelecionadosEl = document.getElementById('regra-materiais-selecionados');
 const regraEditarMateriaisDisponiveisEl = document.getElementById('regra-editar-materiais-disponiveis');
 const regraEditarMateriaisSelecionadosEl = document.getElementById('regra-editar-materiais-selecionados');
+const grupoRedirecionarWrapper = document.getElementById('grupo-redirecionar-wrapper');
+const grupoEditarRedirecionarWrapper = document.getElementById('grupo-editar-redirecionar-wrapper');
+const grupoDiasCiclicosWrapper = document.getElementById('grupo-dias-ciclicos-wrapper');
+const grupoEditarDiasCiclicosWrapper = document.getElementById('grupo-editar-dias-ciclicos-wrapper');
+const grupoDiasCiclicosInput = document.getElementById('grupo-dias-ciclicos');
+const grupoEditarDiasCiclicosInput = document.getElementById('grupo-editar-dias-ciclicos');
+const grupoRedirecionarSelect = document.getElementById('grupo-redirecionar');
+const grupoEditarRedirecionarSelect = document.getElementById('grupo-editar-redirecionar');
+
+const acaoFinalConfigNovo = {
+  wrapperRedirecionar: grupoRedirecionarWrapper,
+  selectEl: grupoRedirecionarSelect,
+  wrapperDias: grupoDiasCiclicosWrapper,
+  diasInput: grupoDiasCiclicosInput,
+};
+
+const acaoFinalConfigEditar = {
+  wrapperRedirecionar: grupoEditarRedirecionarWrapper,
+  selectEl: grupoEditarRedirecionarSelect,
+  wrapperDias: grupoEditarDiasCiclicosWrapper,
+  diasInput: grupoEditarDiasCiclicosInput,
+};
 
 const btnNovoGrupo = document.getElementById('btn-novo-grupo');
 const btnNovoGrupoLateral = document.getElementById('btn-novo-grupo-lateral');
@@ -86,6 +168,15 @@ function renderizarLoading(container, mensagem) {
   container.appendChild(criarSpinnerSuave(mensagem));
 }
 
+function normalizarTexto(valor) {
+  return (valor || '')
+    .toString()
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
 function ativarLoadingSuave(container) {
   if (!container) return;
   container.classList.add('regra-flow-list--loading');
@@ -156,6 +247,69 @@ function getCookie(name) {
 function setBotaoEstado(botao, habilitado) {
   if (!botao) return;
   botao.disabled = !habilitado;
+}
+
+function atualizarUIAcaoFinal(acao, config) {
+  if (!config) return;
+  const { wrapperRedirecionar, selectEl, wrapperDias, diasInput } = config;
+  const mostrarRedirecionar = acao === 'redirect';
+  const mostrarDias = acao === 'loop';
+
+  if (wrapperRedirecionar) {
+    wrapperRedirecionar.classList.toggle('hidden', !mostrarRedirecionar);
+  }
+  if (selectEl) {
+    selectEl.disabled = !mostrarRedirecionar;
+    if (!mostrarRedirecionar) {
+      selectEl.value = '';
+    }
+  }
+  if (wrapperDias) {
+    wrapperDias.classList.toggle('hidden', !mostrarDias);
+  }
+  if (diasInput) {
+    diasInput.disabled = !mostrarDias;
+    if (mostrarDias && !diasInput.value) {
+      diasInput.value = 15;
+    }
+    if (!mostrarDias) {
+      diasInput.value = '';
+    }
+  }
+}
+
+function definirAcaoFinal(nomeCampo, config, acao) {
+  const radios = document.querySelectorAll(`input[name="${nomeCampo}"]`);
+  radios.forEach((radio) => {
+    radio.checked = radio.value === acao;
+  });
+  atualizarUIAcaoFinal(acao, config);
+}
+
+function inicializarAcaoFinal(nomeCampo, config) {
+  const radios = document.querySelectorAll(`input[name="${nomeCampo}"]`);
+  if (!radios.length) return;
+  const handler = () => {
+    const acaoSelecionada = document.querySelector(`input[name="${nomeCampo}"]:checked`)?.value || 'none';
+    atualizarUIAcaoFinal(acaoSelecionada, config);
+  };
+  radios.forEach((radio) => {
+    radio.addEventListener('change', handler);
+  });
+  handler();
+}
+
+function obterDadosAcaoFinal(nomeCampo, config) {
+  const acao = document.querySelector(`input[name="${nomeCampo}"]:checked`)?.value || 'none';
+  const redirecionarPara = acao === 'redirect' ? config?.selectEl?.value || '' : '';
+  const diasCiclicos =
+    acao === 'loop' && config?.diasInput?.value !== '' ? Number(config.diasInput.value) : null;
+
+  return {
+    acao,
+    redirecionarPara,
+    diasCiclicos: Number.isNaN(diasCiclicos) ? null : diasCiclicos,
+  };
 }
 
 function carregarMateriais(force = false) {
@@ -442,12 +596,14 @@ function atualizarEstadoGrupoSelecionado(grupo) {
   setBotaoEstado(btnNovaRegra, true);
 }
 
-function renderizarGrupos(grupos) {
+function renderizarGrupos(grupos, { preservarSelecao = false } = {}) {
   gruposListEl.innerHTML = '';
 
   if (!grupos.length) {
     gruposEmptyEl.classList.remove('hidden');
-    atualizarEstadoGrupoSelecionado(null);
+    if (!preservarSelecao) {
+      atualizarEstadoGrupoSelecionado(null);
+    }
     return;
   }
 
@@ -475,6 +631,9 @@ function renderizarGrupos(grupos) {
 
     item.addEventListener('click', () => {
       selecionarGrupo(grupo.id, { suave: true });
+      if (regrasSidebarIsMobile()) {
+        fecharRegrasSidebar();
+      }
     });
 
     fragment.appendChild(item);
@@ -485,6 +644,16 @@ function renderizarGrupos(grupos) {
   if (!grupoSelecionadoId && grupos.length) {
     selecionarGrupo(grupos[0].id);
   }
+}
+
+function aplicarFiltroGrupos() {
+  const termo = normalizarTexto(gruposSearchEl?.value || '');
+  if (!termo) {
+    renderizarGrupos(gruposCache, { preservarSelecao: true });
+    return;
+  }
+  const filtrados = gruposCache.filter((grupo) => normalizarTexto(grupo?.nome).includes(termo));
+  renderizarGrupos(filtrados, { preservarSelecao: true });
 }
 
 function renderizarRegras(regras) {
@@ -604,6 +773,7 @@ function carregarGrupos() {
     .then((data) => {
       gruposCache = data?.grupos || [];
       renderizarGrupos(gruposCache);
+      aplicarFiltroGrupos();
     })
     .catch(() => {
       showToast('Erro ao carregar grupos de regras', 'error');
@@ -671,6 +841,10 @@ function carregarRegras(grupoId, options = {}) {
 function abrirModalGrupoNovo() {
   const form = document.getElementById('form-grupo-novo');
   if (form) form.reset();
+  if (grupoDiasCiclicosInput) {
+    grupoDiasCiclicosInput.value = 15;
+  }
+  definirAcaoFinal('grupo-acao-final', acaoFinalConfigNovo, 'loop');
   atualizarSelectRedirecionamento(
     document.getElementById('grupo-redirecionar'),
     {}
@@ -684,10 +858,15 @@ function abrirModalGrupoEditar() {
 
   document.getElementById('grupo-editar-nome').value = grupo.nome || '';
   document.getElementById('grupo-editar-descricao').value = grupo.descricao || '';
+  if (grupoEditarDiasCiclicosInput) {
+    grupoEditarDiasCiclicosInput.value = grupo.dias_recorrentes || 15;
+  }
   atualizarSelectRedirecionamento(
     document.getElementById('grupo-editar-redirecionar'),
     { excluirId: grupo.id, selecionadoId: grupo.redirecionar_para_id }
   );
+  const acaoFinal = grupo.acao_final || (grupo.redirecionar_para_id ? 'redirect' : 'loop');
+  definirAcaoFinal('grupo-editar-acao-final', acaoFinalConfigEditar, acaoFinal);
   modalGrupoEditar?.show();
 }
 
@@ -757,7 +936,12 @@ function abrirModalRegraExcluir(regraId) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  inicializarSidebarRegras();
   carregarGrupos();
+  inicializarAcaoFinal('grupo-acao-final', acaoFinalConfigNovo);
+  inicializarAcaoFinal('grupo-editar-acao-final', acaoFinalConfigEditar);
+
+  gruposSearchEl?.addEventListener('input', () => aplicarFiltroGrupos());
 
   btnNovoGrupo?.addEventListener('click', abrirModalGrupoNovo);
   btnNovoGrupoLateral?.addEventListener('click', abrirModalGrupoNovo);
@@ -769,7 +953,10 @@ document.addEventListener('DOMContentLoaded', () => {
     event.preventDefault();
     const nome = document.getElementById('grupo-nome').value.trim();
     const descricao = document.getElementById('grupo-descricao').value.trim();
-    const redirecionarPara = document.getElementById('grupo-redirecionar')?.value || '';
+    const { acao, redirecionarPara, diasCiclicos } = obterDadosAcaoFinal(
+      'grupo-acao-final',
+      acaoFinalConfigNovo
+    );
     const submitBtn = event.target.querySelector('button[type="submit"]');
 
     definirLoadingBotao(submitBtn, true);
@@ -779,7 +966,13 @@ document.addEventListener('DOMContentLoaded', () => {
         'Content-Type': 'application/json',
         'X-CSRFToken': getCookie('csrftoken'),
       },
-      body: JSON.stringify({ nome, descricao, redirecionar_para: redirecionarPara || null }),
+      body: JSON.stringify({
+        nome,
+        descricao,
+        redirecionar_para: acao === 'redirect' ? redirecionarPara || null : null,
+        acao_final: acao,
+        dias_recorrentes: acao === 'loop' ? diasCiclicos : null,
+      }),
     })
       .then((res) => res.json())
       .then((data) => {
@@ -803,7 +996,10 @@ document.addEventListener('DOMContentLoaded', () => {
     event.preventDefault();
     const nome = document.getElementById('grupo-editar-nome').value.trim();
     const descricao = document.getElementById('grupo-editar-descricao').value.trim();
-    const redirecionarPara = document.getElementById('grupo-editar-redirecionar')?.value || '';
+    const { acao, redirecionarPara, diasCiclicos } = obterDadosAcaoFinal(
+      'grupo-editar-acao-final',
+      acaoFinalConfigEditar
+    );
     const submitBtn = event.target.querySelector('button[type="submit"]');
 
     definirLoadingBotao(submitBtn, true);
@@ -813,7 +1009,13 @@ document.addEventListener('DOMContentLoaded', () => {
         'Content-Type': 'application/json',
         'X-CSRFToken': getCookie('csrftoken'),
       },
-      body: JSON.stringify({ nome, descricao, redirecionar_para: redirecionarPara || null }),
+      body: JSON.stringify({
+        nome,
+        descricao,
+        redirecionar_para: acao === 'redirect' ? redirecionarPara || null : null,
+        acao_final: acao,
+        dias_recorrentes: acao === 'loop' ? diasCiclicos : null,
+      }),
     })
       .then((res) => res.json())
       .then(() => {

@@ -52,6 +52,13 @@ const visualizarMaterialTitle = document.getElementById('visualizar-material-tit
 const visualizarMaterialBody = document.getElementById('visualizar-material-body');
 let materialExclusaoAtual = null;
 
+const MATERIAIS_CACHE_VERSION_KEY = 'pos_consulta:materiais_version';
+function bumpMateriaisCacheVersion() {
+    try {
+        localStorage.setItem(MATERIAIS_CACHE_VERSION_KEY, String(Date.now()));
+    } catch (e) { }
+}
+
 function criarModalController(el) {
     if (!el) return null;
     if (typeof bootstrap !== 'undefined' && bootstrap?.Modal) {
@@ -96,6 +103,7 @@ function executarExclusaoMaterial(item) {
                 return;
             }
             showToast(data.mensagem || 'Material deletado com sucesso!', 'success');
+            bumpMateriaisCacheVersion();
             carregarMateriais();
             tentarAtualizarSelecaoMateriais();
         })
@@ -636,6 +644,7 @@ function carregarMateriais() {
                                     return;
                                 }
                                 showToast(data.mensagem || 'Material atualizado com sucesso!', 'success');
+                                bumpMateriaisCacheVersion();
                                 carregarMateriais();
                                 tentarAtualizarSelecaoMateriais();
                             })
@@ -710,6 +719,7 @@ if (novoMaterialForm) {
                     return;
                 }
                 showToast(data.mensagem || 'Material adicionado com sucesso!', 'success');
+                bumpMateriaisCacheVersion();
                 descricaoInput.value = '';
                 tentarAtualizarSelecaoMateriais();
                 carregarMateriais();
@@ -775,6 +785,7 @@ if (materialEditarForm) {
                     return;
                 }
                 showToast(data.mensagem || 'Material atualizado com sucesso!', 'success');
+                bumpMateriaisCacheVersion();
                 editarMaterialModal?.hide();
                 carregarMateriais();
                 tentarAtualizarSelecaoMateriais();

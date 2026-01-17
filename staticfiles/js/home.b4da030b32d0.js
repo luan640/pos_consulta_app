@@ -130,48 +130,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  const filtroGrupoEl = document.getElementById('filter-group');
-  if (filtroGrupoEl) {
-    const placeholderOption = filtroGrupoEl.querySelector('option[value=""]');
-    const placeholder = placeholderOption?.textContent || 'Grupo de lembrete';
-
-    filtroGrupoEl.disabled = true;
-    if (placeholderOption) {
-      placeholderOption.textContent = 'Carregando grupos...';
-      placeholderOption.setAttribute('data-placeholder', placeholder);
-    }
-
-    fetch('/api/grupo-regras/')
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error('Erro ao buscar grupos');
-        }
-        return res.json();
-      })
-      .then((data) => {
-        const grupos = Array.isArray(data && data.grupos) ? data.grupos : [];
-        const existentes = new Set(Array.from(filtroGrupoEl.options).map((opt) => opt.value));
-        grupos.forEach((g) => {
-          if (!g || !g.id || !g.nome) return;
-          const value = String(g.id);
-          if (existentes.has(value)) return;
-          const opt = document.createElement('option');
-          opt.value = value;
-          opt.textContent = g.nome;
-          filtroGrupoEl.appendChild(opt);
-        });
-      })
-      .catch((err) => {
-        console.error(err);
-      })
-      .finally(() => {
-        if (placeholderOption) {
-          placeholderOption.textContent = placeholderOption.getAttribute('data-placeholder') || 'Grupo de lembrete';
-        }
-        filtroGrupoEl.disabled = false;
-      });
-  }
-
   // Fechar modal desabilitar lembrete via botÇœes com data-modal-hide
   document.querySelectorAll('[data-modal-hide="desabilitarLembrete"]').forEach((btn) => {
     if (btn.dataset.listenerAdded) return;
@@ -352,14 +310,12 @@ function obterFiltrosPacientes() {
   const nome = document.getElementById('filter-name')?.value?.trim() || '';
   const status = document.getElementById('filter-reminder')?.value?.trim() || '';
   const statusPrazo = document.getElementById('filter-reminder-due')?.value?.trim() || '';
-  const grupo = document.getElementById('filter-group')?.value?.trim() || '';
   const sort = document.getElementById('filter-sort')?.value?.trim() || '';
 
   return {
     nome,
     status,
     statusPrazo,
-    grupo,
     sort,
   };
 }
@@ -368,9 +324,8 @@ function criarChaveLista(filtros) {
   const nome = filtros?.nome || '';
   const status = filtros?.status || '';
   const statusPrazo = filtros?.statusPrazo || '';
-  const grupo = filtros?.grupo || '';
   const sort = filtros?.sort || '';
-  return JSON.stringify({ nome, status, statusPrazo, grupo, sort });
+  return JSON.stringify({ nome, status, statusPrazo, sort });
 }
 
 function criarChaveCalendario(filtros, mes, ano) {
@@ -427,8 +382,8 @@ export function listarPacientes(reset = true) {
     listaCompletaCarregada = false;
   }
 
-  const { nome: filtroNome, status: filtroStatus, statusPrazo: filtroStatusPrazo, grupo: filtroGrupo, sort: filtroSort } = obterFiltrosPacientes();
-  const chaveLista = criarChaveLista({ nome: filtroNome, status: filtroStatus, statusPrazo: filtroStatusPrazo, grupo: filtroGrupo, sort: filtroSort });
+  const { nome: filtroNome, status: filtroStatus, statusPrazo: filtroStatusPrazo, sort: filtroSort } = obterFiltrosPacientes();
+  const chaveLista = criarChaveLista({ nome: filtroNome, status: filtroStatus, statusPrazo: filtroStatusPrazo, sort: filtroSort });
 
   const params = new URLSearchParams();
 
@@ -442,10 +397,6 @@ export function listarPacientes(reset = true) {
 
   if (filtroSort !== '') {
     params.append('sort', filtroSort);
-  }
-
-  if (filtroGrupo !== '') {
-    params.append('grupo', filtroGrupo);
   }
 
   const proximaPagina = reset ? 1 : paginaAtual + 1;
@@ -879,7 +830,7 @@ async function buscarEventosCalendario(mes, ano) {
     ano = hoje.getFullYear();
   }
 
-  const { nome, status, statusPrazo, grupo, sort } = obterFiltrosPacientes();
+  const { nome, status, statusPrazo, sort } = obterFiltrosPacientes();
   const pacientesMes = [];
   let pagina = 1;
   let possuiMais = true;
@@ -897,10 +848,6 @@ async function buscarEventosCalendario(mes, ano) {
 
     if (sort) {
       params.append('sort', sort);
-    }
-
-    if (grupo) {
-      params.append('grupo', grupo);
     }
 
     params.append('page', pagina.toString());
@@ -2278,15 +2225,6 @@ function openAtribuirGrupoModal(patient) {
 
   document.getElementById('paciente-id').value = patient;
 
-  const ultimaConsultaEl = document.getElementById('atribuir-ultima-consulta');
-  const dataInicioEl = document.getElementById('atribuir-data-inicio');
-  if (ultimaConsultaEl) {
-    ultimaConsultaEl.textContent = 'Última consulta: carregando...';
-  }
-  if (dataInicioEl) {
-    dataInicioEl.value = '';
-  }
-
   const modalAtribuirGrupoEl = document.getElementById('atribuirGrupoModal');
   const modalAtribuirGrupo = bootstrap.Modal.getInstance(modalAtribuirGrupoEl) || new bootstrap.Modal(modalAtribuirGrupoEl);
 
@@ -2294,38 +2232,6 @@ function openAtribuirGrupoModal(patient) {
   modalAtribuirGrupo.show();
 
   carregarGrupoRegras();
-
-  fetch(`/api/paciente/${patient}/`)
-    .then((res) => res.json())
-    .then((data) => {
-      const ultima = data?.ultima_consulta || null;
-      if (ultimaConsultaEl) {
-        const formatarPtBr = (valor) => {
-          if (!valor) return null;
-          // Evita bug de fuso (YYYY-MM-DD vira UTC e pode voltar 1 dia no pt-BR)
-          if (typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}/.test(valor)) {
-            const [y, m, d] = valor.slice(0, 10).split('-').map(Number);
-            if ([y, m, d].some((n) => Number.isNaN(n))) return null;
-            return new Date(y, m - 1, d).toLocaleDateString('pt-BR');
-          }
-          const d = new Date(valor);
-          if (Number.isNaN(d.getTime())) return null;
-          return d.toLocaleDateString('pt-BR');
-        };
-        const ultimaFmt = formatarPtBr(ultima);
-        ultimaConsultaEl.textContent = ultimaFmt ? `Última consulta foi dia ${ultimaFmt}` : 'Última consulta não informada.';
-      }
-      if (dataInicioEl) {
-        const hoje = new Date();
-        const hojeIso = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
-        dataInicioEl.value = (typeof ultima === 'string' && ultima.length >= 10) ? ultima.slice(0, 10) : hojeIso;
-      }
-    })
-    .catch(() => {
-      if (ultimaConsultaEl) {
-        ultimaConsultaEl.textContent = 'Última consulta não informada.';
-      }
-    });
 
 }
 
@@ -2627,7 +2533,9 @@ function inicializarDesativarLembrete() {
     btn.addEventListener('click', async () => {
       const idPaciente = document.getElementById('disable-patient-id').value;
       const submitBtn = btn;
-      const clearLoading = setButtonLoading(submitBtn);
+      submitBtn.disabled = true;
+      submitBtn.classList.add('loading');
+      submitBtn.dataset.loadingAdded = 'true';
 
       try {
         const response = await fetch(`/api/status-lembrete/${idPaciente}/`, {
@@ -2653,7 +2561,8 @@ function inicializarDesativarLembrete() {
       } catch (err) {
         showToast('Erro inesperado ao desabilitar lembrete.', 'error');
       } finally {
-        clearLoading();
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('loading');
       }
     });
   }
@@ -2669,7 +2578,7 @@ function inicializarHabilitarLembrete() {
     btn.addEventListener('click', async () => {
       const idPaciente = document.getElementById('enable-patient-id').value;
       const submitBtn = btn;
-      const clearLoading = setButtonLoading(submitBtn);
+      submitBtn.disabled = true;
 
       try {
         const response = await fetch(`/api/status-lembrete/${idPaciente}/`, {
@@ -2695,7 +2604,7 @@ function inicializarHabilitarLembrete() {
       } catch (err) {
         showToast('Erro inesperado ao habilitar lembrete.', 'error');
       } finally {
-        clearLoading();
+        submitBtn.disabled = false;
       }
     });
   }
@@ -2797,12 +2706,6 @@ function inicializarFormularioAtribuirGrupo() {
 
       const grupoId = document.getElementById('grupo-select').value;
       const pacienteId = document.getElementById('paciente-id').value;
-      const dataInicio = document.getElementById('atribuir-data-inicio')?.value;
-
-      if (!dataInicio) {
-        showToast('Informe a data de início da contagem.', 'error');
-        return;
-      }
 
       const modalAtribuirGrupoModalEl = document.getElementById('atribuirGrupoModal');
       const modalAtribuirGrupoModal = bootstrap.Modal.getInstance(modalAtribuirGrupoModalEl)
@@ -2817,13 +2720,10 @@ function inicializarFormularioAtribuirGrupo() {
           'Content-Type': 'application/json',
           'X-CSRFToken': getCookie('csrftoken')
         },
-        body: JSON.stringify({ data_inicio: dataInicio })
+        body: {}  // corpo vazio, como no original
       })
         .then(res => res.json())
-        .then((data) => {
-          if (data && data.erro) {
-            throw new Error(data.erro);
-          }
+        .then(() => {
           form.reset();
           modalAtribuirGrupoModal.hide(); // Fecha modal
 
@@ -2842,8 +2742,8 @@ function inicializarFormularioAtribuirGrupo() {
 
           showToast('Sucesso!', 'success');
         })
-        .catch((err) => {
-          showToast(err?.message || 'Erro ao atribuir grupo.', 'error');
+        .catch(() => {
+          showToast('Erro ao atribuir grupo.', 'error');
         })
         .finally(() => {
           clearLoading();

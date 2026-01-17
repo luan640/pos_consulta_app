@@ -85,31 +85,60 @@ def registrar_contato_service(
             lembrete_atual.contato_em = now().date()
             lembrete_atual.save()
 
-            # 7. Achar próxima regra
+            # 7. Achar próxima regra / aplicar ação final do grupo
             regra_atual = lembrete_atual.regra
+            grupo_atual = paciente.grupo_lembrete
             nova_regra = None
+            nova_data = None
 
-            if regra_atual:
+            if regra_atual and grupo_atual:
                 regras = list(
                     RegraLembrete.objects.filter(
                         nutricionista=usuario,
-                        grupo=paciente.grupo_lembrete,
+                        grupo=grupo_atual,
                     ).order_by("ordem")
                 )
 
-                regras_por_ordem = {r.ordem: r for r in regras}
-                proxima_ordem = regra_atual.ordem + 1
+                # Próxima regra é a primeira com "ordem" maior (não assume sequência 1,2,3...)
+                regras_maiores = sorted(
+                    (r for r in regras if r.ordem > regra_atual.ordem),
+                    key=lambda r: r.ordem,
+                )
 
-                nova_regra = (
-                    regras_por_ordem.get(proxima_ordem, regra_atual)
-                )  # se não houver próxima, repete a última
+                if regras_maiores:
+                    nova_regra = regras_maiores[0]
+                    nova_data = now().date() + timedelta(days=nova_regra.dias_apos)
+                else:
+                    # Final do fluxo: respeita a configuração do GrupoLembrete
+                    acao_final = (grupo_atual.acao_final or "").strip() or "loop"
 
-            # 8. Criar novo lembrete
-            if nova_regra:
-                nova_data = now().date() + timedelta(days=nova_regra.dias_apos)
+                    if acao_final == "redirect" and grupo_atual.redirecionar_para_id:
+                        paciente.grupo_lembrete = grupo_atual.redirecionar_para
+                        paciente.save(update_fields=["grupo_lembrete"])
 
+                        nova_regra = (
+                            RegraLembrete.objects.filter(
+                                nutricionista=usuario,
+                                grupo=paciente.grupo_lembrete,
+                            )
+                            .order_by("ordem")
+                            .first()
+                        )
+                        if nova_regra:
+                            nova_data = now().date() + timedelta(days=nova_regra.dias_apos)
+
+                    elif acao_final == "loop":
+                        # Recomeça o fluxo no mesmo grupo após o intervalo recorrente
+                        nova_regra = regras[0] if regras else None
+                        if nova_regra:
+                            dias = grupo_atual.dias_recorrentes or 15
+                            nova_data = now().date() + timedelta(days=dias)
+
+            # 8. Criar novo lembrete (se houver)
+            if nova_regra and nova_data:
                 if not Lembrete.objects.filter(
                     paciente=paciente,
+                    regra=nova_regra,
                     data_lembrete=nova_data,
                     concluido=False,
                 ).exists():

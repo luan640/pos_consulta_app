@@ -147,6 +147,7 @@ def listar_pacientes_com_consultas(request):
 
     nome = request.GET.get('nome', '').strip()
     status_lembrete = request.GET.get('status_lembrete', '').strip()
+    grupo_id = request.GET.get('grupo', '').strip()
     mes = request.GET.get('mes')
     ano = request.GET.get('ano')
 
@@ -174,6 +175,15 @@ def listar_pacientes_com_consultas(request):
             pacientes = pacientes.filter(lembretes_ativos=status_lembrete.lower() == 'true')
         else:
             pacientes = pacientes.filter(lembretes_ativos=status_lembrete)
+
+    if grupo_id:
+        if grupo_id.lower() == 'none':
+            pacientes = pacientes.filter(grupo_lembrete__isnull=True)
+        else:
+            try:
+                pacientes = pacientes.filter(grupo_lembrete_id=int(grupo_id))
+            except (TypeError, ValueError):
+                pass
 
     pacientes = pacientes.annotate(
         proximo_lembrete_data=Min(
@@ -476,6 +486,8 @@ def grupo_regras_list_create(request):
             'tamanho_grupo': r.regras.count(),
             'redirecionar_para_id': r.redirecionar_para_id,
             'redirecionar_para_nome': r.redirecionar_para.nome if r.redirecionar_para else None,
+            'acao_final': r.acao_final,
+            'dias_recorrentes': r.dias_recorrentes,
         } for r in grupo_regras]
         return JsonResponse({'grupos': data })
     
@@ -487,6 +499,23 @@ def grupo_regras_list_create(request):
             return JsonResponse({'erro': 'Nome do grupo é obrigatório'}, status=400)
         
         descricao = data.get('descricao', '')
+        acao_final = (data.get('acao_final') or '').strip() or GrupoLembrete.AcaoFinal.LOOP
+        if acao_final not in dict(GrupoLembrete.AcaoFinal.choices):
+            return JsonResponse({'erro': 'Ação final inválida'}, status=400)
+
+        dias_recorrentes = data.get('dias_recorrentes')
+        if acao_final == GrupoLembrete.AcaoFinal.LOOP:
+            if dias_recorrentes in [None, '']:
+                dias_recorrentes = 15
+            try:
+                dias_recorrentes = int(dias_recorrentes)
+            except (TypeError, ValueError):
+                return JsonResponse({'erro': 'Intervalo de dias inválido'}, status=400)
+            if dias_recorrentes <= 0:
+                return JsonResponse({'erro': 'Intervalo de dias deve ser maior que zero'}, status=400)
+        else:
+            dias_recorrentes = None
+
         redirecionar_para_id = data.get('redirecionar_para')
         redirecionar_para = None
         if redirecionar_para_id:
@@ -497,11 +526,15 @@ def grupo_regras_list_create(request):
                 )
             except GrupoLembrete.DoesNotExist:
                 return JsonResponse({'erro': 'Grupo de redirecionamento não encontrado'}, status=400)
+        elif acao_final == GrupoLembrete.AcaoFinal.REDIRECT:
+            return JsonResponse({'erro': 'Selecione um fluxo para redirecionamento'}, status=400)
         grupo = GrupoLembrete.objects.create(
             dono=request.user,
             nome=nome,
             descricao=descricao,
             redirecionar_para=redirecionar_para,
+            acao_final=acao_final,
+            dias_recorrentes=dias_recorrentes,
         )
 
         return JsonResponse({'id': grupo.id, 'mensagem': 'Grupo de regras criada com sucesso'})
@@ -522,6 +555,23 @@ def grupo_regras_update(request, pk):
         data = json.loads(request.body)
         grupo.nome = data.get('nome', grupo.nome)
         grupo.descricao = data.get('descricao', grupo.descricao)
+        acao_final = (data.get('acao_final') or grupo.acao_final or '').strip() or GrupoLembrete.AcaoFinal.LOOP
+        if acao_final not in dict(GrupoLembrete.AcaoFinal.choices):
+            return JsonResponse({'erro': 'Ação final inválida'}, status=400)
+
+        dias_recorrentes = data.get('dias_recorrentes', grupo.dias_recorrentes)
+        if acao_final == GrupoLembrete.AcaoFinal.LOOP:
+            if dias_recorrentes in [None, '']:
+                dias_recorrentes = grupo.dias_recorrentes or 15
+            try:
+                dias_recorrentes = int(dias_recorrentes)
+            except (TypeError, ValueError):
+                return JsonResponse({'erro': 'Intervalo de dias inválido'}, status=400)
+            if dias_recorrentes <= 0:
+                return JsonResponse({'erro': 'Intervalo de dias deve ser maior que zero'}, status=400)
+        else:
+            dias_recorrentes = None
+
         redirecionar_para_id = data.get('redirecionar_para', None)
         if redirecionar_para_id:
             try:
@@ -531,8 +581,13 @@ def grupo_regras_update(request, pk):
                 )
             except GrupoLembrete.DoesNotExist:
                 return JsonResponse({'erro': 'Grupo de redirecionamento não encontrado'}, status=400)
+        elif acao_final == GrupoLembrete.AcaoFinal.REDIRECT:
+            return JsonResponse({'erro': 'Selecione um fluxo para redirecionamento'}, status=400)
         else:
             grupo.redirecionar_para = None
+
+        grupo.acao_final = acao_final
+        grupo.dias_recorrentes = dias_recorrentes
         grupo.save()
         return JsonResponse({'mensagem': 'Grupo atualizado'})
 
@@ -960,7 +1015,7 @@ def registrar_consulta_retorno(request, pk):
     Consulta.objects.create(
         paciente=paciente,
         data_consulta=parse_date(data_consulta),
-        tipo_consulta=tipo_consulta
+        tipo_consulta=tipo_consulta,
     )
 
     return JsonResponse({'mensagem': 'Consulta registrada com sucesso'})
@@ -970,6 +1025,15 @@ def registrar_consulta_retorno(request, pk):
 def atribuir_grupo(request, pk_grupo, pk_paciente):
     if request.method != 'POST':
         return JsonResponse({'erro': 'Método não permitido'}, status=405)
+
+    try:
+        payload = json.loads(request.body or b'{}')
+    except json.JSONDecodeError:
+        payload = {}
+
+    data_inicio = parse_date(str(payload.get('data_inicio') or ''))
+    if not data_inicio:
+        return JsonResponse({'erro': 'Informe a data de início da contagem (YYYY-MM-DD).'}, status=400)
 
     try:
         grupo_lembrete = GrupoLembrete.objects.get(pk=pk_grupo, dono=request.user)
@@ -982,12 +1046,10 @@ def atribuir_grupo(request, pk_grupo, pk_paciente):
         return JsonResponse({'erro': 'Paciente não encontrado'}, status=404)
 
     paciente.grupo_lembrete = grupo_lembrete
+    paciente.data_inicio_contagem = data_inicio
     paciente.lembretes_ativos = True
     paciente.ativo = True
     paciente.save()
-
-    # buscar última consulta
-    ultima_consulta = Consulta.objects.filter(paciente=paciente).values('data_consulta').order_by('-data_consulta').first()
 
     # Excluir lembretes em aberto para o paciente
     Lembrete.objects.filter(paciente=paciente, concluido=False).delete()
@@ -997,28 +1059,8 @@ def atribuir_grupo(request, pk_grupo, pk_paciente):
     if not regra_lembrete:
         return JsonResponse({'erro': 'Nenhuma regra encontrada para o grupo'}, status=400)
 
-    # Busca o último lembrete (concluído ou não)
-    ultimo_lembrete = Lembrete.objects.filter(paciente=paciente).order_by('-pk').first()
-
-    if not ultimo_lembrete:
-        # Se não tem nenhum lembrete, usa a data da consulta ou hoje como base
-        if ultima_consulta and ultima_consulta.get('data_consulta'):
-            base_data = ultima_consulta['data_consulta']
-        else:
-            base_data = now().date()
-        
-        nova_data = base_data + timedelta(days=regra_lembrete.dias_apos)
-    else:
-        # Se o último lembrete está pendente (não foi concluído)
-        if not ultimo_lembrete.concluido:
-            # Marca o lembrete pendente como concluído com a data de hoje
-            ultimo_lembrete.concluido = True
-            ultimo_lembrete.contato_em = now().date()
-            ultimo_lembrete.save()
-        
-        # Usa a data de contato do último lembrete (se existir) ou a data do lembrete como base
-        base_data = ultimo_lembrete.contato_em if ultimo_lembrete.contato_em else ultimo_lembrete.data_lembrete
-        nova_data = base_data + timedelta(days=regra_lembrete.dias_apos)
+    base_data = data_inicio
+    nova_data = base_data + timedelta(days=regra_lembrete.dias_apos)
 
     # Cria o novo lembrete (pendente)
     Lembrete.objects.create(
@@ -1219,15 +1261,32 @@ def historico_consulta(request, pk):
         return JsonResponse({'erro': 'Paciente não encontrado'}, status=404)
 
     consultas = Consulta.objects.filter(paciente=paciente).order_by('data_consulta')
-    consultas_list = [
-        {
+    consultas_list = []
+    for consulta in consultas:
+        grupo_nome = None
+        try:
+            lembrete_ref = (
+                Lembrete.objects.filter(
+                    paciente=paciente,
+                    data_lembrete__gte=consulta.data_consulta,
+                    regra__isnull=False,
+                )
+                .select_related("regra__grupo")
+                .order_by("data_lembrete", "pk")
+                .first()
+            )
+            if lembrete_ref and lembrete_ref.regra and lembrete_ref.regra.grupo:
+                grupo_nome = lembrete_ref.regra.grupo.nome
+        except Exception:
+            grupo_nome = None
+
+        consultas_list.append({
             'id': consulta.id,
             'data_consulta': consulta.data_consulta.strftime('%d/%m/%Y') if consulta.data_consulta else None,
             'tipo_consulta': consulta.tipo_consulta,
             'criado_em': consulta.created_at.isoformat() if consulta.created_at else None,
-        }
-        for consulta in consultas
-    ]
+            'grupo_lembrete_nome': grupo_nome,
+        })
 
     return JsonResponse({'consultas': consultas_list})
 
@@ -1251,11 +1310,29 @@ def historico_contatos(request, pk):
                 'materiais_enviados': materiais,
                 'criado_em': anotacao.criado_em.isoformat() if anotacao.criado_em else None,
             })
+        grupo_nome = None
+        try:
+            lembrete_ref = (
+                Lembrete.objects.filter(
+                    paciente=paciente,
+                    contato_em=contato.data_contato,
+                    regra__isnull=False,
+                )
+                .select_related("regra__grupo")
+                .order_by("-pk")
+                .first()
+            )
+            if lembrete_ref and lembrete_ref.regra and lembrete_ref.regra.grupo:
+                grupo_nome = lembrete_ref.regra.grupo.nome
+        except Exception:
+            grupo_nome = None
+
         contatos_list.append({
             'id': contato.id,
             'data_contato': contato.data_contato,
             'tipo': contato.tipo,
             'criado_em': contato.criado_em.isoformat() if contato.criado_em else None,
+            'grupo_lembrete_nome': grupo_nome,
             'anotacoes': anotacoes,
         })
 

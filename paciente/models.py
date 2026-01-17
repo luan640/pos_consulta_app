@@ -14,6 +14,11 @@ class Paciente(models.Model):
     lembretes_ativos = models.BooleanField(default=True)
     ativo = models.BooleanField(default=True)
     grupo_lembrete = models.ForeignKey('GrupoLembrete', blank=True, null=True, on_delete=models.CASCADE, related_name='grupo_paciente')
+    data_inicio_contagem = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Quando o paciente deve começar a contagem do fluxo de lembretes (base para o 1º lembrete ao atribuir grupo).",
+    )
     created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
 
     def __str__(self):
@@ -75,6 +80,11 @@ class Material(models.Model):
 
 
 class GrupoLembrete(models.Model):
+    class AcaoFinal(models.TextChoices):
+        NONE = ('none', 'Nao fazer nada')
+        REDIRECT = ('redirect', 'Redirecionar para outro fluxo')
+        LOOP = ('loop', 'Envios recorrentes')
+
     dono = models.ForeignKey(User, on_delete=models.CASCADE, related_name='grupos_lembrete')
     nome = models.CharField(max_length=100)
     descricao = models.TextField(blank=True, null=True)
@@ -85,6 +95,17 @@ class GrupoLembrete(models.Model):
         null=True,
         related_name='grupos_origem',
         help_text="Ao finalizar o fluxo, redirecionar para este grupo (opcional).",
+    )
+    acao_final = models.CharField(
+        max_length=20,
+        choices=AcaoFinal.choices,
+        default=AcaoFinal.LOOP,
+        help_text="O que fazer ao terminar o fluxo: none, redirect ou loop (recorrente).",
+    )
+    dias_recorrentes = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text="Intervalo fixo em dias quando acao_final=loop.",
     )
     created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
 

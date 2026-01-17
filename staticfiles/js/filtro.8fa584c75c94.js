@@ -11,6 +11,7 @@ export function inicializarFiltrosPacientes() {
   const filtroNome = document.getElementById('filter-name');
   const filtroStatus = document.getElementById('filter-reminder');
   const filtroPrazo = document.getElementById('filter-reminder-due');
+  const filtroGrupo = document.getElementById('filter-group');
   const filtroSort = document.getElementById('filter-sort');
 
   if (aplicarBtn) {
@@ -27,6 +28,7 @@ export function inicializarFiltrosPacientes() {
       if (filtroNome) filtroNome.value = '';
       if (filtroStatus) filtroStatus.value = '';
       if (filtroPrazo) filtroPrazo.value = '';
+      if (filtroGrupo) filtroGrupo.value = '';
       if (filtroSort) filtroSort.value = '';
 
       listarPacientes();

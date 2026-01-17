@@ -1,7 +1,65 @@
 import { showToast } from './message.js';
 
+const regrasSidebarEl = document.getElementById('regras-sidebar');
+const regrasSidebarBackdropEl = document.getElementById('regras-sidebar-backdrop');
+const regrasSidebarToggleEl = document.getElementById('regras-sidebar-toggle');
+const regrasSidebarCloseEl = document.getElementById('regras-sidebar-close');
+const regrasSidebarFabEl = document.getElementById('regras-sidebar-fab');
+
+function regrasSidebarIsMobile() {
+  if (typeof window === 'undefined' || !window.matchMedia) return false;
+  return window.matchMedia('(max-width: 767px)').matches;
+}
+
+function abrirRegrasSidebar() {
+  if (!regrasSidebarEl || !regrasSidebarIsMobile()) return;
+  regrasSidebarEl.classList.remove('-translate-x-full');
+  regrasSidebarEl.classList.add('translate-x-0');
+  if (regrasSidebarBackdropEl) regrasSidebarBackdropEl.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function fecharRegrasSidebar() {
+  if (!regrasSidebarEl) return;
+  regrasSidebarEl.classList.add('-translate-x-full');
+  regrasSidebarEl.classList.remove('translate-x-0');
+  if (regrasSidebarBackdropEl) regrasSidebarBackdropEl.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+function inicializarSidebarRegras() {
+  if (!regrasSidebarEl) return;
+
+  regrasSidebarToggleEl?.addEventListener('click', () => abrirRegrasSidebar());
+  regrasSidebarFabEl?.addEventListener('click', () => abrirRegrasSidebar());
+  regrasSidebarCloseEl?.addEventListener('click', () => fecharRegrasSidebar());
+  regrasSidebarBackdropEl?.addEventListener('click', () => fecharRegrasSidebar());
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      fecharRegrasSidebar();
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    if (!regrasSidebarIsMobile()) {
+      if (regrasSidebarEl) {
+        regrasSidebarEl.classList.remove('-translate-x-full');
+        regrasSidebarEl.classList.remove('translate-x-0');
+      }
+      if (regrasSidebarBackdropEl) regrasSidebarBackdropEl.classList.add('hidden');
+      document.body.style.overflow = '';
+    } else {
+      if (regrasSidebarEl && !regrasSidebarEl.classList.contains('-translate-x-full')) {
+        fecharRegrasSidebar();
+      }
+    }
+  });
+}
+
 const gruposListEl = document.getElementById('regra-grupos-list');
 const gruposEmptyEl = document.getElementById('regra-grupos-empty');
+const gruposSearchEl = document.getElementById('regra-grupos-search');
 const grupoNomeEl = document.getElementById('regra-grupo-nome');
 const grupoDescricaoEl = document.getElementById('regra-grupo-descricao');
 const regraListEl = document.getElementById('regra-flow-list');
@@ -84,6 +142,15 @@ function renderizarLoading(container, mensagem) {
   if (!container) return;
   container.innerHTML = '';
   container.appendChild(criarSpinnerSuave(mensagem));
+}
+
+function normalizarTexto(valor) {
+  return (valor || '')
+    .toString()
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 }
 
 function ativarLoadingSuave(container) {
@@ -442,12 +509,14 @@ function atualizarEstadoGrupoSelecionado(grupo) {
   setBotaoEstado(btnNovaRegra, true);
 }
 
-function renderizarGrupos(grupos) {
+function renderizarGrupos(grupos, { preservarSelecao = false } = {}) {
   gruposListEl.innerHTML = '';
 
   if (!grupos.length) {
     gruposEmptyEl.classList.remove('hidden');
-    atualizarEstadoGrupoSelecionado(null);
+    if (!preservarSelecao) {
+      atualizarEstadoGrupoSelecionado(null);
+    }
     return;
   }
 
@@ -475,6 +544,9 @@ function renderizarGrupos(grupos) {
 
     item.addEventListener('click', () => {
       selecionarGrupo(grupo.id, { suave: true });
+      if (regrasSidebarIsMobile()) {
+        fecharRegrasSidebar();
+      }
     });
 
     fragment.appendChild(item);
@@ -485,6 +557,16 @@ function renderizarGrupos(grupos) {
   if (!grupoSelecionadoId && grupos.length) {
     selecionarGrupo(grupos[0].id);
   }
+}
+
+function aplicarFiltroGrupos() {
+  const termo = normalizarTexto(gruposSearchEl?.value || '');
+  if (!termo) {
+    renderizarGrupos(gruposCache, { preservarSelecao: true });
+    return;
+  }
+  const filtrados = gruposCache.filter((grupo) => normalizarTexto(grupo?.nome).includes(termo));
+  renderizarGrupos(filtrados, { preservarSelecao: true });
 }
 
 function renderizarRegras(regras) {
@@ -604,6 +686,7 @@ function carregarGrupos() {
     .then((data) => {
       gruposCache = data?.grupos || [];
       renderizarGrupos(gruposCache);
+      aplicarFiltroGrupos();
     })
     .catch(() => {
       showToast('Erro ao carregar grupos de regras', 'error');
@@ -757,7 +840,10 @@ function abrirModalRegraExcluir(regraId) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  inicializarSidebarRegras();
   carregarGrupos();
+
+  gruposSearchEl?.addEventListener('input', () => aplicarFiltroGrupos());
 
   btnNovoGrupo?.addEventListener('click', abrirModalGrupoNovo);
   btnNovoGrupoLateral?.addEventListener('click', abrirModalGrupoNovo);

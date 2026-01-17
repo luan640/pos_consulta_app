@@ -2295,25 +2295,13 @@ function openAtribuirGrupoModal(patient) {
 
   carregarGrupoRegras();
 
+  // Carrega a última consulta para exibir no modal e sugerir um valor inicial para a contagem
   fetch(`/api/paciente/${patient}/`)
     .then((res) => res.json())
     .then((data) => {
       const ultima = data?.ultima_consulta || null;
       if (ultimaConsultaEl) {
-        const formatarPtBr = (valor) => {
-          if (!valor) return null;
-          // Evita bug de fuso (YYYY-MM-DD vira UTC e pode voltar 1 dia no pt-BR)
-          if (typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}/.test(valor)) {
-            const [y, m, d] = valor.slice(0, 10).split('-').map(Number);
-            if ([y, m, d].some((n) => Number.isNaN(n))) return null;
-            return new Date(y, m - 1, d).toLocaleDateString('pt-BR');
-          }
-          const d = new Date(valor);
-          if (Number.isNaN(d.getTime())) return null;
-          return d.toLocaleDateString('pt-BR');
-        };
-        const ultimaFmt = formatarPtBr(ultima);
-        ultimaConsultaEl.textContent = ultimaFmt ? `Última consulta foi dia ${ultimaFmt}` : 'Última consulta não informada.';
+        ultimaConsultaEl.textContent = ultima ? `Última consulta foi dia ${ultima}` : 'Última consulta não informada.';
       }
       if (dataInicioEl) {
         const hoje = new Date();
@@ -2627,7 +2615,9 @@ function inicializarDesativarLembrete() {
     btn.addEventListener('click', async () => {
       const idPaciente = document.getElementById('disable-patient-id').value;
       const submitBtn = btn;
-      const clearLoading = setButtonLoading(submitBtn);
+      submitBtn.disabled = true;
+      submitBtn.classList.add('loading');
+      submitBtn.dataset.loadingAdded = 'true';
 
       try {
         const response = await fetch(`/api/status-lembrete/${idPaciente}/`, {
@@ -2653,7 +2643,8 @@ function inicializarDesativarLembrete() {
       } catch (err) {
         showToast('Erro inesperado ao desabilitar lembrete.', 'error');
       } finally {
-        clearLoading();
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('loading');
       }
     });
   }
@@ -2669,7 +2660,7 @@ function inicializarHabilitarLembrete() {
     btn.addEventListener('click', async () => {
       const idPaciente = document.getElementById('enable-patient-id').value;
       const submitBtn = btn;
-      const clearLoading = setButtonLoading(submitBtn);
+      submitBtn.disabled = true;
 
       try {
         const response = await fetch(`/api/status-lembrete/${idPaciente}/`, {
@@ -2695,7 +2686,7 @@ function inicializarHabilitarLembrete() {
       } catch (err) {
         showToast('Erro inesperado ao habilitar lembrete.', 'error');
       } finally {
-        clearLoading();
+        submitBtn.disabled = false;
       }
     });
   }
