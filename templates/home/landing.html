@@ -1,298 +1,490 @@
 {% load static %}
+
 <!DOCTYPE html>
+
 <html class="light" lang="pt-BR"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>LembraPro - Pós-Consulta Humanizado</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<title>LembraPro - Organização para Nutricionistas</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
 <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#22c55e", // Verde (Success/Care)
-                        "secondary": "#0ea5e9", // Azul (Professional/Health)
-                        "background-light": "#f8fafc",
-                        "background-dark": "#0f172a",
+                        "primary": "#13c8ec",
+                        "primary-dark": "#0ea5c5",
+                        "background-light": "#ffffff",
+                        "background-alt": "#f8fafc",
+                        "background-dark": "#101f22",
+                        "text-main": "#111718",
+                        "text-muted": "#618389",
                     },
                     fontFamily: {
-                        "display": ["Inter", "sans-serif"]
+                        "display": ["Manrope", "sans-serif"],
+                        "body": ["Manrope", "sans-serif"],
                     },
-                    borderRadius: {"DEFAULT": "0.375rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.75rem",
+                        "xl": "1rem",
+                        "2xl": "1.5rem",
+                    },
                 },
             },
         }
     </script>
-<style type="text/tailwindcss">
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        .bg-gradient-health {
-            background: linear-gradient(135deg, #22c55e 0%, #0ea5e9 100%);
-        }
-        .landing-headline {
-            color: #0f172a;
-        }
-        .dark .landing-headline {
-            color: #ffffff;
-        }
-    </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 transition-colors duration-200">
-<header class="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-background-dark/90 backdrop-blur-md">
-<div class="max-w-[1200px] mx-auto px-4 py-4 flex items-center justify-between">
+<body class="font-display bg-background-light text-text-main antialiased overflow-x-hidden">
+<!-- Navbar -->
+<nav class="sticky top-0 z-50 w-full border-b border-[#f0f4f4] bg-white/90 backdrop-blur-md">
+<div class="px-4 md:px-8 lg:px-12 xl:px-40 flex h-20 items-center justify-between mx-auto max-w-7xl">
 <div class="flex items-center gap-2">
-<div class="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-health text-white">
-<span class="material-symbols-outlined">notifications_active</span>
+<div class="flex items-center justify-center size-8 rounded-lg bg-primary text-white">
+<span class="material-symbols-outlined text-[20px]">nutrition</span>
 </div>
-<h2 class="text-slate-900 dark:text-white text-2xl font-black tracking-tight">Lembra<span class="text-primary">Pro</span></h2>
+<h2 class="text-text-main text-xl font-bold tracking-tight">LembraPro</h2>
 </div>
-<div class="hidden md:flex flex-1 justify-end gap-8">
-<nav class="flex items-center gap-8">
-<a class="text-slate-600 dark:text-slate-300 text-sm font-semibold hover:text-secondary transition-colors" href="#como-funciona">Como Funciona</a>
-<a class="text-slate-600 dark:text-slate-300 text-sm font-semibold hover:text-secondary transition-colors" href="#beneficios">Diferenciais</a>
-<a class="text-slate-600 dark:text-slate-300 text-sm font-semibold hover:text-secondary transition-colors" href="#precos">Planos</a>
-</nav>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-text-main text-sm font-medium hover:text-primary transition-colors" href="#funciona">Como funciona</a>
+<a class="text-text-main text-sm font-medium hover:text-primary transition-colors" href="#beneficios">Benefícios</a>
+</div>
 <div class="flex items-center gap-3">
-<button class="flex items-center justify-center rounded-lg h-10 px-5 bg-primary text-white text-sm font-bold hover:brightness-110 transition-all shadow-sm">
-                    Experimentar Grátis
-                </button>
-<a href="{% url 'login' %}" class="flex items-center justify-center rounded-lg h-10 px-5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-white text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Login</a>
+</div>
+</div>
+</nav>
+<!-- Hero Section -->
+<header class="relative w-full bg-white pt-12 pb-20 lg:pt-20 lg:pb-32 overflow-hidden">
+<!-- Background decorative blobs -->
+<div class="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-primary/10 blur-3xl"></div>
+<div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-blue-100 blur-3xl"></div>
+<div class="container mx-auto px-4 md:px-8 lg:px-12 xl:px-40 max-w-7xl relative z-10">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+<div class="flex flex-col gap-6 max-w-xl">
+<h1 class="text-4xl md:text-5xl lg:text-6xl font-black leading-[1.1] tracking-tight text-text-main">
+                        Você cuida bem do paciente na consulta. <span class="text-primary">Mas e depois?</span>
+</h1>
+<p class="text-lg text-text-muted leading-relaxed">
+                        A plataforma que automatiza o acompanhamento dos seus pacientes para garantir adesão, fidelização e menos remarcações.
+                    </p>
+<div class="flex flex-col sm:flex-row gap-4 mt-2">
+<a class="h-12 px-6 rounded-lg bg-primary text-text-main text-base font-bold shadow-lg shadow-primary/20 hover:bg-primary-dark hover:shadow-xl transition-all flex items-center justify-center gap-2" href="#solicitar-acesso">
+<span>Quero organizar meu pós-atendimento</span>
+<span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</a>
+</div>
+<div class="flex items-center gap-4 mt-4 text-sm text-text-muted">
+<div class="flex -space-x-2">
+<div class="size-8 rounded-full border-2 border-white bg-gray-200 bg-cover bg-center" data-alt="Portrait of a smiling woman" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBl8Y0lVaB4pKWZR7kd5g0I-7QmczyIZhlUUjHjSpnr8bGLL6aucrzGZ-PprSO3DebqzKk5HlHbu9OVWpI4THbL_IMFn6MLFUg8HOupmi1_iHh30F5xYyGBxw9GWMOYrjClJO3d15-Lg9P16S07OA7fWWiNpkeWgCM17283QwIeJNyk7iraxg4vKeKY3zBtI2vjv13xR-ZO26nmuq-X8uJwYMvPSDwZ1q6xIgdTgLx02VgLRD6IeQyNtrYcMwe6i6-KhTzPV_5XGi8')"></div>
+<div class="size-8 rounded-full border-2 border-white bg-gray-200 bg-cover bg-center" data-alt="Portrait of a smiling man" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCt4sbvSOavMvyP2TCuZvWIyBhsiBg73OqG4OPAvqqMJbJlj7_s2f7KrBB8Qjl7f4EN1ODDRZ89VG7Q0daAASWXX7sUxqYFTvn3VfFvfaOmL9nqxruR-ghIQjyNMc_TqLkLNWeFvby7U9yo94UcD2FD8r4ZsDtUhiIUFxZYMxarcSDFcZS4SjYyPgabqKqOrdSXMQi6FYzpO8Wr0gKDFcoGrWn4t61jFMIgXa689TeErmRHx9Dc_f-xOMYTiI2vv9mHhXTYzvjJRCY')"></div>
+<div class="size-8 rounded-full border-2 border-white bg-gray-200 bg-cover bg-center" data-alt="Portrait of another smiling man" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBBB1I4gmV22qBEfHUCdhGlbm5_4pcUK7sR_shIcCTT3MKV-tthLQ7jNwtIOEH2U9NH9CbkYBbB8kkMJNXe4jXms9UuvQHUAoCAOZD2gqTzEnnR7J5Rrj3RfIdYqUaAV5VadelIfcCbCyB9PxtCKUz5YL1rG2YccMZGqSnRaByYsoNw_QGKDOUfvjfNHsd6WTA5dglR9Jm4KT8cACM-XqnE1lkt7XWCTRtbGTKOP6K4fXGqgIDYzJLavodWgTAGUD1Ek13rgToqRKA')"></div>
+</div>
+<p>Usado por nutris</p>
+</div>
+</div>
+<!-- Dashboard Mockup -->
+<div class="relative w-full max-w-2xl mx-auto lg:justify-self-center perspective-1000 group">
+<div class="absolute -inset-4 bg-gradient-to-r from-primary to-blue-400 opacity-20 blur-lg rounded-2xl group-hover:opacity-30 transition-opacity"></div>
+<div class="relative bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden transform transition-transform duration-500 hover:scale-[1.01] rotate-y-6 rotate-x-6 hover:rotate-0">
+<!-- Fake Browser Header -->
+<div class="h-8 bg-gray-50 border-b border-gray-100 flex items-center px-4 gap-2">
+<div class="size-2.5 rounded-full bg-red-400"></div>
+<div class="size-2.5 rounded-full bg-yellow-400"></div>
+<div class="size-2.5 rounded-full bg-green-400"></div>
+</div>
+<!-- App Content -->
+<div class="bg-gray-50/50">
+<img alt="Exemplo real da mensagem recebida no WhatsApp para entrar em contato com o paciente" class="w-full h-auto" loading="lazy" src="{% static 'img/dashboard_landing.png' %}"/>
+</div>
+<div class="p-6 grid gap-6 bg-gray-50/50 hidden">
+<!-- Stats Row -->
+<div class="grid grid-cols-3 gap-4">
+<div class="bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+<p class="text-xs text-text-muted mb-1">Pacientes Ativos</p>
+<p class="text-xl font-bold text-text-main">124</p>
+</div>
+<div class="bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+<p class="text-xs text-text-muted mb-1">Lembretes Hoje</p>
+<p class="text-xl font-bold text-primary">08</p>
+</div>
+<div class="bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+<p class="text-xs text-text-muted mb-1">Taxa de Retorno</p>
+<p class="text-xl font-bold text-green-500">85%</p>
+</div>
+</div>
+<!-- Active Reminders List -->
+<div class="bg-white rounded-lg border border-gray-100 shadow-sm p-4">
+<h3 class="text-sm font-bold text-text-main mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">notifications_active</span>
+                                    Próximas Ações
+                                </h3>
+<div class="space-y-3">
+<div class="flex items-start gap-3 p-2 hover:bg-gray-50 rounded-md transition-colors cursor-pointer border-l-2 border-primary">
+<div class="size-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">AM</div>
+<div>
+<p class="text-sm font-semibold text-text-main">Ana Maria Silva</p>
+<p class="text-xs text-text-muted">Enviar feedback de 15 dias</p>
+</div>
+<button class="ml-auto text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded">Enviar</button>
+</div>
+<div class="flex items-start gap-3 p-2 hover:bg-gray-50 rounded-md transition-colors cursor-pointer border-l-2 border-orange-400">
+<div class="size-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-xs">JP</div>
+<div>
+<p class="text-sm font-semibold text-text-main">João Paulo</p>
+<p class="text-xs text-text-muted">Cobrar diário alimentar</p>
+</div>
+<button class="ml-auto text-xs font-medium text-text-main bg-gray-100 px-2 py-1 rounded">Ver</button>
+</div>
+</div>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
 </header>
-<main>
-<section class="relative overflow-hidden pt-16 pb-20 md:pt-24 md:pb-32">
-<div class="max-w-[1200px] mx-auto px-4 relative z-10">
-<div class="flex flex-col md:flex-row items-center gap-12">
-<div class="md:w-3/5 text-left">
-<span class="inline-block py-1 px-3 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-4 border border-primary/20">Acompanhamento Humanizado</span>
-<h1 class="landing-headline text-4xl md:text-6xl font-black leading-[1.1] mb-6">
-                        O toque humano que faltava no seu <span class="text-transparent bg-clip-text bg-gradient-health">pós-consulta.</span>
-</h1>
-<p class="text-slate-600 dark:text-slate-400 text-lg md:text-xl font-medium leading-relaxed mb-8 max-w-xl">
-                        O LembraPro avisa você no WhatsApp quando é hora de falar com seu paciente. Automatizamos a gestão, mas mantemos o contato manual para gerar valor real e fidelização.
-                    </p>
-<div class="flex flex-col sm:flex-row gap-4">
-<button class="flex items-center justify-center rounded-xl h-14 px-8 bg-gradient-health text-white text-lg font-bold hover:shadow-lg hover:scale-[1.02] transition-all">
-                            Começar agora gratuitamente
-                        </button>
-<div class="flex items-center gap-2 text-sm text-slate-500 font-medium px-2">
-<span class="material-symbols-outlined text-primary">verified_user</span>
-                            Configuração em 5 minutos
-                        </div>
-</div>
-</div>
-<div class="md:w-2/5 w-full">
-<div class="relative">
-<div class="absolute -inset-4 bg-gradient-health opacity-20 blur-2xl rounded-full"></div>
-<div class="relative rounded-2xl shadow-2xl border-8 border-white dark:border-slate-800 overflow-hidden">
-<img alt="Painel LembraPro" class="w-full h-auto object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAw4Wq5AOE1VtPbpj_v_rIOP8fzCXi4bgToX47rs4f6zYeqzwn451uBZWOWTrDW1Q9VA-Ao9vnVBFtaiR1GV9Dl1WwgxsckQMFjo8M3gSLFqSOIPSsT050CHDFxmegBtnGKc7_Ecsv7t8HI1FwtNeLK3By22xUCHrHMJTT8fLfj55mlVhrW2zOE6LzaHj_8pPZowjSAW50_BzO6KHbjxUZbdupfBQ_VJ-D_wGMlHHPJC_XtFJjF9a0jhfkV0M76HK6WrhjsxnTwvQA"/>
+<!-- Pain Points Section -->
+<section class="bg-background-alt py-20 border-y border-[#f0f4f4]">
+<div class="container mx-auto px-4 md:px-8 lg:px-12 xl:px-40 max-w-7xl">
+<div class="flex flex-col lg:flex-row gap-16 items-center">
+<!-- Illustration/Image -->
+<div class="w-full lg:w-1/2 flex justify-center">
+<div class="relative w-full max-w-md aspect-square bg-gray-200 rounded-2xl overflow-hidden shadow-inner" data-alt="Stressed nutritionist looking at paperwork" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBRUL_F6oltoWN6N4b_WtpnUPtrupk7zD9yLuqGDRcdwZt4CLBbLWleF8wuWU3x2ZnmZA4ur7s6WESQec4Jx6IKophMlSorlXUIbErd6HQCk1icQkoG1GJGHVkzhV02-thl5S_o4s-6OEoTFCt5Y_3FKa3Ee48t-x3Rq88SCh6iftCbS4ouwp4fBJoBYr_DwMEsBUBkRpAtnalhuGoABebC4f4jFDwfWuKA-zNfSo9rDaEweft1zPeoAiJduci65t4hvE8abG3pRYE'); background-size: cover; background-position: center;">
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-8">
+<div class="text-white">
+<p class="font-bold text-lg">Nutricionista Sobrecarregada</p>
+<p class="text-sm opacity-90">Tentando lembrar de tudo manualmente...</p>
 </div>
 </div>
 </div>
 </div>
+<!-- Content -->
+<div class="w-full lg:w-1/2 flex flex-col gap-8">
+<div>
+<h2 class="text-3xl font-bold text-text-main mb-4 leading-tight">
+                            Não é falta de cuidado.<br/>
+<span class="text-red-500">É falta de processo.</span>
+</h2>
+<p class="text-text-muted text-lg">
+                            Nutricionistas perdem pacientes porque não conseguem manter o contato frequente manualmente. O dia a dia te consome e o pós-consulta é esquecido.
+                        </p>
 </div>
-</section>
-<section class="bg-white dark:bg-slate-900 py-24 border-y border-slate-100 dark:border-slate-800" id="como-funciona">
-<div class="max-w-[1200px] mx-auto px-4">
-<div class="text-center mb-16">
-<h2 class="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-4">Como o LembraPro funciona?</h2>
-<p class="text-slate-500 max-w-2xl mx-auto text-lg">Unimos a organização do software com o calor do atendimento humano.</p>
+<div class="grid gap-6">
+<div class="flex gap-4">
+<div class="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-500">
+<span class="material-symbols-outlined">chat_error</span>
 </div>
-<div class="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
-<div class="flex flex-col items-center text-center">
-<div class="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 flex items-center justify-center text-secondary mb-6 shadow-sm">
-<span class="material-symbols-outlined text-3xl font-bold">rule</span>
-</div>
-<h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">1. Configuração de Regras</h3>
-<p class="text-slate-500 text-sm leading-relaxed">Defina quando cada tipo de paciente deve ser contatado (ex: 7 dias após a consulta).</p>
-</div>
-<div class="flex flex-col items-center text-center">
-<div class="w-16 h-16 rounded-2xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center text-primary mb-6 shadow-sm">
-<span class="material-symbols-outlined text-3xl font-bold">chat</span>
-</div>
-<h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">2. Alerta no WhatsApp</h3>
-<p class="text-slate-500 text-sm leading-relaxed">Você (ou sua secretária) recebe uma notificação: "É hora de falar com o João!".</p>
-</div>
-<div class="flex flex-col items-center text-center">
-<div class="w-16 h-16 rounded-2xl bg-secondary/10 border-2 border-secondary/20 flex items-center justify-center text-secondary mb-6 shadow-sm">
-<span class="material-symbols-outlined text-3xl font-bold">send_and_archive</span>
-</div>
-<h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">3. Contato e Materiais</h3>
-<p class="text-slate-500 text-sm leading-relaxed">Você envia a mensagem e materiais personalizados manualmente, gerando conexão.</p>
-</div>
-<div class="flex flex-col items-center text-center">
-<div class="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 mb-6 shadow-sm">
-<span class="material-symbols-outlined text-3xl font-bold">history_edu</span>
-</div>
-<h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">4. Registro no Sistema</h3>
-<p class="text-slate-500 text-sm leading-relaxed">O sistema registra o contato feito, mantendo o histórico clínico sempre atualizado.</p>
+<div>
+<h3 class="font-bold text-text-main text-lg">Mensagens esquecidas</h3>
+<p class="text-text-muted">Você esquece de perguntar como foi a primeira semana e o paciente se sente abandonado.</p>
 </div>
 </div>
+<div class="flex gap-4">
+<div class="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-500">
+<span class="material-symbols-outlined">feedback</span>
 </div>
-</section>
-<section class="py-24" id="beneficios">
-<div class="max-w-[1200px] mx-auto px-4">
-<div class="flex flex-col md:flex-row items-center gap-16">
-<div class="md:w-1/2">
-<h2 class="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-6">Por que não automatizar 100%?</h2>
-<p class="text-slate-600 dark:text-slate-400 text-lg mb-8 leading-relaxed">
-                        Pacientes de saúde buscam cuidado e atenção. Mensagens automáticas e frias muitas vezes são ignoradas ou parecem spam. <br/><br/>
-                        Com o <strong>LembraPro</strong>, você garante que nenhum paciente seja esquecido, mas quem dá o "Olá" final é você. Isso aumenta drasticamente a taxa de retorno e a percepção de valor do seu serviço.
-                    </p>
-<ul class="space-y-4">
-<li class="flex items-start gap-3">
-<span class="material-symbols-outlined text-primary bg-primary/10 rounded-full p-1 text-sm">check</span>
-<span class="text-slate-700 dark:text-slate-300 font-medium">Fim do esquecimento de pacientes antigos</span>
-</li>
-<li class="flex items-start gap-3">
-<span class="material-symbols-outlined text-primary bg-primary/10 rounded-full p-1 text-sm">check</span>
-<span class="text-slate-700 dark:text-slate-300 font-medium">Valorização do atendimento humanizado</span>
-</li>
-<li class="flex items-start gap-3">
-<span class="material-symbols-outlined text-primary bg-primary/10 rounded-full p-1 text-sm">check</span>
-<span class="text-slate-700 dark:text-slate-300 font-medium">Organização total do fluxo de materiais</span>
-</li>
-</ul>
+<div>
+<h3 class="font-bold text-text-main text-lg">Falta de feedback</h3>
+<p class="text-text-muted">O paciente tem dúvidas, não pergunta, desanima e acaba abandonando o plano alimentar.</p>
 </div>
-<div class="md:w-1/2 grid grid-cols-1 sm:grid-cols-2 gap-6">
-<div class="p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-<span class="material-symbols-outlined text-secondary text-4xl mb-4">verified</span>
-<h4 class="font-bold mb-2">Credibilidade</h4>
-<p class="text-sm text-slate-500">Seu paciente sente que você realmente se importa com a evolução dele.</p>
 </div>
-<div class="p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-<span class="material-symbols-outlined text-primary text-4xl mb-4">monitoring</span>
-<h4 class="font-bold mb-2">Retenção</h4>
-<p class="text-sm text-slate-500">Aumente o faturamento trazendo pacientes de volta de forma natural.</p>
+<div class="flex gap-4">
+<div class="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-500">
+<span class="material-symbols-outlined">trending_down</span>
 </div>
-<div class="p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-<span class="material-symbols-outlined text-orange-500 text-4xl mb-4">speed</span>
-<h4 class="font-bold mb-2">Agilidade</h4>
-<p class="text-sm text-slate-500">Links de WhatsApp pré-prontos para você apenas clicar e enviar.</p>
+<div>
+<h3 class="font-bold text-text-main text-lg">Retorno cancelado</h3>
+<p class="text-text-muted">Sem acompanhamento, a adesão ao tratamento cai drasticamente e o paciente não volta.</p>
 </div>
-<div class="p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-<span class="material-symbols-outlined text-purple-500 text-4xl mb-4">folder_special</span>
-<h4 class="font-bold mb-2">Centralização</h4>
-<p class="text-sm text-slate-500">Todos os materiais e guias organizados para cada protocolo.</p>
+</div>
 </div>
 </div>
 </div>
 </div>
 </section>
-<section class="py-24" id="precos">
-<div class="max-w-[1200px] mx-auto px-4">
-<div class="text-center mb-16">
-<h2 class="text-3xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">Investimento no seu cuidado</h2>
-<p class="text-slate-500 text-lg">Escolha o plano ideal para a sua estrutura atual.</p>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
-<div class="flex flex-col p-8 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 transition-all hover:border-primary/50">
-<h3 class="text-xl font-bold mb-1 text-slate-900 dark:text-white">Starter</h3>
-<p class="text-slate-500 text-sm mb-6">Para profissionais solo.</p>
-<div class="mb-8 flex items-baseline gap-1">
-<span class="text-sm font-bold">R$</span>
-<span class="text-4xl font-black text-slate-900 dark:text-white">79</span>
-<span class="text-slate-500 text-sm">/mês</span>
-</div>
-<ul class="flex flex-col gap-4 mb-10 grow">
-<li class="flex items-center gap-3 text-sm"><span class="material-symbols-outlined text-primary text-lg">check_circle</span> Até 50 pacientes/mês</li>
-<li class="flex items-center gap-3 text-sm"><span class="material-symbols-outlined text-primary text-lg">check_circle</span> Alertas via WhatsApp</li>
-<li class="flex items-center gap-3 text-sm text-slate-400"><span class="material-symbols-outlined text-lg">cancel</span> Gestão de Equipe</li>
-<li class="flex items-center gap-3 text-sm text-slate-400"><span class="material-symbols-outlined text-lg">cancel</span> Relatórios Avançados</li>
-</ul>
-<button class="w-full h-12 rounded-xl border-2 border-primary text-primary font-bold hover:bg-primary/5 transition-colors">Assinar Agora</button>
-</div>
-<div class="flex flex-col p-8 bg-white dark:bg-slate-800 rounded-2xl border-4 border-primary relative shadow-2xl transform scale-105 z-10">
-<div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-white text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">Mais Vendido</div>
-<h3 class="text-xl font-bold mb-1 text-slate-900 dark:text-white">Profissional</h3>
-<p class="text-slate-500 text-sm mb-6">Fidelização em escala.</p>
-<div class="mb-8 flex items-baseline gap-1">
-<span class="text-sm font-bold">R$</span>
-<span class="text-4xl font-black text-slate-900 dark:text-white">149</span>
-<span class="text-slate-500 text-sm">/mês</span>
-</div>
-<ul class="flex flex-col gap-4 mb-10 grow">
-<li class="flex items-center gap-3 text-sm font-semibold"><span class="material-symbols-outlined text-primary text-lg font-bold">check_circle</span> Pacientes Ilimitados</li>
-<li class="flex items-center gap-3 text-sm font-semibold"><span class="material-symbols-outlined text-primary text-lg font-bold">check_circle</span> Alertas p/ Você ou Secretária</li>
-<li class="flex items-center gap-3 text-sm font-semibold"><span class="material-symbols-outlined text-primary text-lg font-bold">check_circle</span> Biblioteca de Materiais</li>
-<li class="flex items-center gap-3 text-sm font-semibold"><span class="material-symbols-outlined text-primary text-lg font-bold">check_circle</span> Suporte Prioritário</li>
-</ul>
-<button class="w-full h-14 rounded-xl bg-gradient-health text-white font-bold hover:shadow-lg transition-all">Começar Teste Grátis</button>
-</div>
-<div class="flex flex-col p-8 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 transition-all hover:border-primary/50">
-<h3 class="text-xl font-bold mb-1 text-slate-900 dark:text-white">Clínica</h3>
-<p class="text-slate-500 text-sm mb-6">Para equipes e clínicas.</p>
-<div class="mb-8 flex items-baseline gap-1">
-<span class="text-sm font-bold">R$</span>
-<span class="text-4xl font-black text-slate-900 dark:text-white">399</span>
-<span class="text-slate-500 text-sm">/mês</span>
-</div>
-<ul class="flex flex-col gap-4 mb-10 grow">
-<li class="flex items-center gap-3 text-sm"><span class="material-symbols-outlined text-primary text-lg">check_circle</span> Até 5 Profissionais</li>
-<li class="flex items-center gap-3 text-sm"><span class="material-symbols-outlined text-primary text-lg">check_circle</span> Dashboard de Gestão</li>
-<li class="flex items-center gap-3 text-sm"><span class="material-symbols-outlined text-primary text-lg">check_circle</span> Integração API</li>
-<li class="flex items-center gap-3 text-sm"><span class="material-symbols-outlined text-primary text-lg">check_circle</span> Treinamento p/ Equipe</li>
-</ul>
-<button class="w-full h-12 rounded-xl border-2 border-primary text-primary font-bold hover:bg-primary/5 transition-colors">Falar com Consultor</button>
-</div>
-</div>
-</div>
-</section>
-</main>
-<footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 pt-16 pb-8">
-<div class="max-w-[1200px] mx-auto px-4">
-<div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-<div class="md:col-span-1">
-<div class="flex items-center gap-2 mb-6">
-<div class="flex items-center justify-center w-8 h-8 rounded bg-gradient-health text-white">
-<span class="material-symbols-outlined text-sm">notifications_active</span>
-</div>
-<h2 class="text-slate-900 dark:text-white text-xl font-black">LembraPro</h2>
-</div>
-<p class="text-sm text-slate-500 leading-relaxed">
-                    SaaS de assistência manual em pós-consulta. Humanizando o contato para profissionais da saúde que valorizam o cuidado.
+<!-- Solution Section -->
+<section class="bg-white py-24">
+<div class="container mx-auto px-4 md:px-8 lg:px-12 xl:px-40 max-w-7xl">
+<div class="text-center max-w-3xl mx-auto mb-16">
+<span class="text-primary font-bold tracking-wider text-sm uppercase">A Solução Definitiva</span>
+<h2 class="text-3xl md:text-4xl font-bold text-text-main mt-2 mb-4">
+                    O LembraPro organiza o seu pós-consulta automaticamente.
+                </h2>
+<p class="text-text-muted text-lg">
+                    Transforme o acompanhamento esporádico em uma jornada contínua de cuidado.
                 </p>
 </div>
-<div>
-<h4 class="font-bold mb-6 text-slate-900 dark:text-white">Produto</h4>
-<ul class="flex flex-col gap-3 text-sm text-slate-500">
-<li><a class="hover:text-primary transition-colors" href="#">Como Funciona</a></li>
-<li><a class="hover:text-primary transition-colors" href="#">Benefícios</a></li>
-<li><a class="hover:text-primary transition-colors" href="#">Segurança de Dados</a></li>
-</ul>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Feature Card 1 -->
+<div class="group p-6 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300">
+<div class="size-12 rounded-xl bg-blue-50 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[28px]">alarm_on</span>
 </div>
-<div>
-<h4 class="font-bold mb-6 text-slate-900 dark:text-white">Suporte</h4>
-<ul class="flex flex-col gap-3 text-sm text-slate-500">
-<li><a class="hover:text-primary transition-colors" href="#">Central de Ajuda</a></li>
-<li><a class="hover:text-primary transition-colors" href="#">Fale Conosco</a></li>
-<li><a class="hover:text-primary transition-colors" href="#">WhatsApp Suporte</a></li>
-</ul>
+<h3 class="font-bold text-lg text-text-main mb-2">Lembretes Inteligentes</h3>
+<p class="text-sm text-text-muted leading-relaxed">O sistema te avisa exatamente quem você precisa contatar e o que deve perguntar.</p>
 </div>
-<div>
-<h4 class="font-bold mb-6 text-slate-900 dark:text-white">Legal</h4>
-<ul class="flex flex-col gap-3 text-sm text-slate-500">
-<li><a class="hover:text-primary transition-colors" href="#">Privacidade</a></li>
-<li><a class="hover:text-primary transition-colors" href="#">Termos de Uso</a></li>
-<li><a class="hover:text-primary transition-colors" href="#">LGPD</a></li>
-</ul>
+<!-- Feature Card 2 -->
+<div class="group p-6 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300">
+<div class="size-12 rounded-xl bg-teal-50 text-teal-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[28px]">account_tree</span>
+</div>
+<h3 class="font-bold text-lg text-text-main mb-2">Fluxos de Acompanhamento</h3>
+<p class="text-sm text-text-muted leading-relaxed">Crie réguas de contato automáticas para 7, 15, 30 dias após a consulta.</p>
+</div>
+<!-- Feature Card 3 -->
+<div class="group p-6 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300">
+<div class="size-12 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[28px]">menu_book</span>
+</div>
+<h3 class="font-bold text-lg text-text-main mb-2">Materiais Educativos</h3>
+<p class="text-sm text-text-muted leading-relaxed">Envie e-books e dicas nutricionais automaticamente para manter o engajamento.</p>
+</div>
+<!-- Feature Card 4 -->
+<div class="group p-6 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300">
+<div class="size-12 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[28px]">sentiment_satisfied</span>
+</div>
+<h3 class="font-bold text-lg text-text-main mb-2">Rastreio Humanizado</h3>
+<p class="text-sm text-text-muted leading-relaxed">Tecnologia que parece cuidado pessoal. Seu paciente se sente acolhido.</p>
 </div>
 </div>
-<div class="pt-8 border-t border-slate-100 dark:border-slate-800 flex flex-col md:row justify-between items-center gap-4">
-<p class="text-xs text-slate-400">© 2024 LembraPro. Transformando o pós-consulta em cuidado humano.</p>
-<div class="flex gap-6">
-<span class="material-symbols-outlined text-slate-400 hover:text-primary cursor-pointer transition-colors">share</span>
-<span class="material-symbols-outlined text-slate-400 hover:text-primary cursor-pointer transition-colors">diversity_3</span>
-<span class="material-symbols-outlined text-slate-400 hover:text-primary cursor-pointer transition-colors">chat_bubble</span>
+</div>
+</section>
+<!-- How it works (Process) -->
+<section class="bg-background-alt py-24 relative overflow-hidden" id="funciona">
+<div class="container mx-auto px-4 md:px-8 lg:px-12 xl:px-40 max-w-7xl relative z-10">
+<div class="mb-16 text-center">
+<h2 class="text-3xl font-bold text-text-main">Como funciona na prática</h2>
+</div>
+<div class="relative">
+<!-- Line connecting steps (Desktop) -->
+<div class="hidden lg:block absolute top-1/2 left-0 w-full h-0.5 bg-gray-200 -translate-y-1/2 z-0"></div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 relative z-10">
+<!-- Step 1 -->
+<div class="flex flex-col items-center text-center group">
+<div class="size-12 rounded-full bg-white border-2 border-primary text-primary font-bold text-xl flex items-center justify-center mb-4 shadow-sm group-hover:bg-primary group-hover:text-white transition-colors">1</div>
+<h3 class="font-bold text-text-main mb-2">Cadastre</h3>
+<p class="text-sm text-text-muted">Adicione seu paciente após a consulta em segundos.</p>
+</div>
+<!-- Step 2 -->
+<div class="flex flex-col items-center text-center group">
+<div class="size-12 rounded-full bg-white border-2 border-primary text-primary font-bold text-xl flex items-center justify-center mb-4 shadow-sm group-hover:bg-primary group-hover:text-white transition-colors">2</div>
+<h3 class="font-bold text-text-main mb-2">Defina o Fluxo</h3>
+<p class="text-sm text-text-muted">Escolha a régua de acompanhamento ideal para o perfil.</p>
+</div>
+<!-- Step 3 -->
+<div class="flex flex-col items-center text-center group">
+<div class="size-12 rounded-full bg-white border-2 border-primary text-primary font-bold text-xl flex items-center justify-center mb-4 shadow-sm group-hover:bg-primary group-hover:text-white transition-colors">3</div>
+<h3 class="font-bold text-text-main mb-2">O Sistema Lembra</h3>
+<p class="text-sm text-text-muted">Receba notificações no dia certo para agir.</p>
+</div>
+<!-- Step 4 -->
+<div class="flex flex-col items-center text-center group">
+<div class="size-12 rounded-full bg-white border-2 border-primary text-primary font-bold text-xl flex items-center justify-center mb-4 shadow-sm group-hover:bg-primary group-hover:text-white transition-colors">4</div>
+<h3 class="font-bold text-text-main mb-2">Você Age</h3>
+<p class="text-sm text-text-muted">Envie mensagens personalizadas com 1 clique.</p>
+</div>
+<!-- Step 5 -->
+<div class="flex flex-col items-center text-center group">
+<div class="size-12 rounded-full bg-white border-2 border-primary text-primary font-bold text-xl flex items-center justify-center mb-4 shadow-sm group-hover:bg-primary group-hover:text-white transition-colors">5</div>
+<h3 class="font-bold text-text-main mb-2">Fidelização</h3>
+<p class="text-sm text-text-muted">Paciente satisfeito volta e indica mais pessoas.</p>
 </div>
 </div>
+</div>
+</div>
+</section>
+<!-- WhatsApp Message Preview -->
+<section class="py-24 bg-background-alt">
+<div class="container mx-auto px-4 md:px-8 lg:px-12 xl:px-40 max-w-7xl">
+<div class="flex flex-col md:flex-row items-center gap-12">
+<div class="md:w-1/2">
+<h2 class="text-3xl font-bold text-text-main mb-6">Controle total na palma da mão</h2>
+<p class="text-text-muted text-lg leading-relaxed">
+                        Imagine acordar e já saber exatamente com quem você precisa falar hoje para garantir que seus pacientes não desistam. Sem planilhas confusas, sem post-its perdidos.
+                    </p>
+</div>
+<div class="md:w-1/2 w-full flex justify-center">
+<figure class="w-full max-w-md">
+<img alt="Exemplo de mensagem recebida no WhatsApp para entrar em contato com o paciente" class="w-full rounded-2xl shadow-2xl border border-gray-200 bg-white" loading="lazy" src="{% static 'img/wpp_msg.png' %}"/>
+<figcaption class="mt-3 text-sm text-text-muted text-center">Exemplo da mensagem que chega para o profissional no WhatsApp.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<!-- Benefits Section -->
+<section class="bg-background-dark py-24 text-white" id="beneficios">
+<div class="container mx-auto px-4 md:px-8 lg:px-12 xl:px-40 max-w-7xl">
+<div class="text-center mb-16">
+<h2 class="text-3xl md:text-4xl font-bold mb-4">Mais resultado para o paciente. <br/>Menos esforço para você.</h2>
+<p class="text-gray-400 max-w-2xl mx-auto">Automatize o operacional e foque no que realmente importa: a saúde e o resultado de quem confia em você.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="bg-white/5 border border-white/10 rounded-xl p-8 text-center hover:bg-white/10 transition-colors">
+<div class="inline-flex items-center justify-center size-16 rounded-full bg-primary/20 text-primary mb-6">
+<span class="material-symbols-outlined text-[32px]">favorite</span>
+</div>
+<h3 class="text-xl font-bold mb-3">Adesão Aumentada</h3>
+<p class="text-gray-400 text-sm leading-relaxed">Pacientes que recebem acompanhamento seguem o plano 3x mais do que os que ficam sozinhos.</p>
+</div>
+<div class="bg-white/5 border border-white/10 rounded-xl p-8 text-center hover:bg-white/10 transition-colors">
+<div class="inline-flex items-center justify-center size-16 rounded-full bg-primary/20 text-primary mb-6">
+<span class="material-symbols-outlined text-[32px]">handshake</span>
+</div>
+<h3 class="text-xl font-bold mb-3">Engajamento Real</h3>
+<p class="text-gray-400 text-sm leading-relaxed">Crie um relacionamento de confiança. Seu paciente se sente cuidado e não apenas mais um número.</p>
+</div>
+<div class="bg-white/5 border border-white/10 rounded-xl p-8 text-center hover:bg-white/10 transition-colors">
+<div class="inline-flex items-center justify-center size-16 rounded-full bg-primary/20 text-primary mb-6">
+<span class="material-symbols-outlined text-[32px]">verified_user</span>
+</div>
+<h3 class="text-xl font-bold mb-3">Profissionalismo</h3>
+<p class="text-gray-400 text-sm leading-relaxed">Mostre organização e autoridade. Diferencie-se de nutricionistas que só entregam o papel e somem.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Final CTA -->
+<section class="py-24 bg-white" id="form-end">
+<div class="container mx-auto px-4 md:px-8 lg:px-12 xl:px-40 max-w-7xl">
+<div class="bg-gradient-to-br from-primary/10 to-blue-100/30 rounded-3xl p-8 md:p-16 text-center border border-primary/10 relative overflow-hidden">
+<!-- Decorative Elements -->
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
+<div class="absolute bottom-0 left-0 w-64 h-64 bg-blue-200/20 rounded-full blur-3xl -ml-32 -mb-32"></div>
+<div class="relative z-10">
+<h2 class="text-3xl md:text-5xl font-black text-text-main mb-6 tracking-tight">
+                        Seu cuidado não termina na consulta.
+                    </h2>
+<p class="text-lg text-text-muted mb-8 max-w-2xl mx-auto">
+                        Comece a fidelizar seus pacientes hoje mesmo. Teste gratuitamente por 7 dias, sem compromisso.
+                    </p>
+<section class="py-24 bg-background-alt" id="solicitar-acesso">
+<div class="container mx-auto px-4 md:px-8 lg:px-12 xl:px-40 max-w-7xl">
+<div class="max-w-3xl mx-auto">
+<div class="text-center mb-10">
+<h2 class="text-3xl md:text-4xl font-bold text-text-main mb-3">Solicite acesso</h2>
+<p class="text-text-muted text-lg">Preencha seus dados e a equipe entra em contato pelo WhatsApp.</p>
+</div>
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-10">
+<form action="{% url 'solicitar_acesso' %}" class="grid gap-5" id="solicitarAcessoForm" method="post" novalidate>
+{% csrf_token %}
+<div class="grid gap-2">
+<label class="text-sm font-semibold text-text-main" for="solicitarAcessoNome">Nome</label>
+<input autocomplete="name" class="h-12 rounded-lg border-gray-200 focus:border-primary focus:ring-primary" id="solicitarAcessoNome" name="nome" placeholder="Seu nome" required type="text"/>
+</div>
+<div class="grid gap-2">
+<label class="text-sm font-semibold text-text-main" for="solicitarAcessoEmail">E-mail</label>
+<input autocomplete="email" class="h-12 rounded-lg border-gray-200 focus:border-primary focus:ring-primary" id="solicitarAcessoEmail" name="email" placeholder="seuemail@exemplo.com" required type="email"/>
+</div>
+<div class="grid gap-2">
+<label class="text-sm font-semibold text-text-main" for="solicitarAcessoWhatsapp">WhatsApp</label>
+<input autocomplete="tel" class="h-12 rounded-lg border-gray-200 focus:border-primary focus:ring-primary" id="solicitarAcessoWhatsapp" name="whatsapp" placeholder="(DDD) 9xxxx-xxxx" required type="tel"/>
+</div>
+<button class="h-12 rounded-lg bg-primary px-6 text-text-main text-base font-bold shadow-lg shadow-primary/20 hover:bg-primary-dark hover:shadow-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed" id="solicitarAcessoSubmit" type="submit">
+Solicitar acesso
+</button>
+<p class="text-sm text-text-muted" id="solicitarAcessoStatus" role="status"></p>
+</form>
+</div>
+</div>
+</div>
+</section>
+<p class="mt-4 text-xs text-text-muted">Não requer cartão de crédito • Cancelamento a qualquer momento</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="bg-background-dark text-white py-12 border-t border-white/10">
+<div class="container mx-auto px-4 md:px-8 lg:px-12 xl:px-40 max-w-7xl flex flex-col md:flex-row justify-between items-center gap-8">
+<div class="flex items-center gap-2">
+<div class="flex items-center justify-center size-8 rounded-lg bg-primary text-white">
+<span class="material-symbols-outlined text-[20px]">nutrition</span>
+</div>
+<h2 class="text-xl font-bold tracking-tight">LembraPro</h2>
+</div>
+<div class="text-sm text-gray-500">
+                © 2025 LembraPro. Todos os direitos reservados.
+            </div>
 </div>
 </footer>
+<script>
+        (function () {
+            function setStatus(el, message, kind) {
+                if (!el) return;
+                el.textContent = message || '';
+                el.className = kind === 'success'
+                    ? 'text-sm text-green-700'
+                    : kind === 'error'
+                        ? 'text-sm text-red-700'
+                        : 'text-sm text-text-muted';
+            }
 
+            document.addEventListener('DOMContentLoaded', function () {
+                const form = document.getElementById('solicitarAcessoForm');
+                if (!form) return;
+
+                const statusEl = document.getElementById('solicitarAcessoStatus');
+                const submitBtn = document.getElementById('solicitarAcessoSubmit');
+
+                form.addEventListener('submit', async function (event) {
+                    event.preventDefault();
+                    setStatus(statusEl, '', 'neutral');
+
+                    const nome = (document.getElementById('solicitarAcessoNome')?.value || '').trim();
+                    const email = (document.getElementById('solicitarAcessoEmail')?.value || '').trim();
+                    const whatsapp = (document.getElementById('solicitarAcessoWhatsapp')?.value || '').trim();
+
+                    if (!nome || !email || !whatsapp) {
+                        setStatus(statusEl, 'Informe nome, e-mail e WhatsApp.', 'error');
+                        return;
+                    }
+
+                    const csrfToken = form.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '';
+
+                    if (submitBtn) submitBtn.disabled = true;
+                    setStatus(statusEl, 'Enviando...', 'neutral');
+
+                    try {
+                        const response = await fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken,
+                            },
+                            credentials: 'same-origin',
+                            body: JSON.stringify({ nome, email, whatsapp }),
+                        });
+
+                        let payload = null;
+                        try {
+                            payload = await response.json();
+                        } catch (err) {
+                            payload = null;
+                        }
+
+                        if (!response.ok) {
+                            setStatus(statusEl, payload?.erro || 'Não foi possível enviar. Tente novamente.', 'error');
+                            return;
+                        }
+
+                        setStatus(statusEl, payload?.mensagem || 'Recebemos seus dados! Em breve entraremos em contato.', 'success');
+                        form.reset();
+                    } catch (error) {
+                        setStatus(statusEl, 'Erro de conexão. Tente novamente.', 'error');
+                    } finally {
+                        if (submitBtn) submitBtn.disabled = false;
+                    }
+                });
+            });
+        })();
+</script>
 </body></html>
