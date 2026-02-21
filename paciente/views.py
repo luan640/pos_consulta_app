@@ -1045,14 +1045,14 @@ def filtrar_home(request):
 def verificar_e_disparar_mensagem(request):
     
     hoje = (timezone.now() - timedelta(hours=3)).date()
-    data_alvo = hoje + timedelta(days=1)
+    data_alvo = hoje
     
     lembretes = Lembrete.objects.select_related('regra', 'paciente').prefetch_related('regra__materiais').filter(
         whatsapp_status__in=('pendente', 'erro', None, ''), 
         data_lembrete=data_alvo,
         concluido=False
     ).order_by('criado_em')[:5]
-    
+
     if lembretes.exists():
         for lembrete in lembretes:
             
